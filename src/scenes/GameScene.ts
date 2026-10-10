@@ -66,24 +66,20 @@ export class GameScene extends Phaser.Scene {
   // ---------- setup ----------
 
   private drawBackground() {
-    const { width, sky, ground, hills } = this.stage;
-    const g = this.add.graphics().setDepth(-100);
-    g.fillGradientStyle(sky[0], sky[0], sky[1], sky[1], 1);
-    g.fillRect(0, 0, width, GROUND_TOP);
-    g.fillStyle(ground);
-    g.fillRect(0, GROUND_TOP - 20, width, H - GROUND_TOP + 20);
-    g.fillStyle(Phaser.Display.Color.ValueToColor(ground).darken(10).color);
-    g.fillRect(0, GROUND_BOTTOM + 10, width, H);
-    // hills, parallax-free for prototype
-    g.fillStyle(hills, 0.9);
-    for (let x = -100; x < width + 200; x += 260) {
-      g.fillEllipse(x, GROUND_TOP - 10, 420, 180 + ((x / 260) % 3) * 40);
+    const { width } = this.stage;
+    const tex = this.textures.get('bg_chapter1');
+    const src = tex.getSourceImage() as HTMLImageElement;
+    const groundY = 528; // where the walkable grass strip starts in the painting
+    if (!tex.has('sky')) {
+      tex.add('sky', 0, 0, 0, src.width, groundY);
+      tex.add('ground', 0, 0, groundY, src.width, src.height - groundY);
     }
-    g.fillStyle(0xffffff, 0.85);
-    for (let x = 120; x < width; x += 430) g.fillEllipse(x, 90 + (x % 70), 160, 50);
-    // simple flowers / grass tufts
-    g.fillStyle(0xffffff, 0.5);
-    for (let i = 0; i < width / 60; i++) g.fillCircle(i * 60 + ((i * 37) % 40), GROUND_TOP + 20 + ((i * 53) % 220), 4);
+    // far layer: sky, castle and hills scroll at half speed
+    this.add.tileSprite(0, 0, width / 2 + W, groundY, 'bg_chapter1', 'sky').setOrigin(0).setScrollFactor(0.5, 0).setDepth(-100);
+    // near layer: grass and soil move with the player and sit under the fighters
+    const gh = H - (GROUND_TOP - 30);
+    const ground = this.add.tileSprite(0, GROUND_TOP - 30, width + W, gh, 'bg_chapter1', 'ground').setOrigin(0).setDepth(-50);
+    ground.tileScaleY = gh / (src.height - groundY);
     // goal flag
     const gx = width - 120;
     this.add.rectangle(gx, GROUND_BOTTOM - 10, 8, 170, 0x6b4a2b).setOrigin(0.5, 1).setDepth(GROUND_BOTTOM - 11);

@@ -12,7 +12,7 @@ export class TouchControls {
   private stickPointer: Phaser.Input.Pointer | null = null;
   private stickOrigin = new Phaser.Math.Vector2();
   private guardPointer: Phaser.Input.Pointer | null = null;
-  private skillBtns: { cover: Phaser.GameObjects.Rectangle; label: Phaser.GameObjects.Text; skill: number }[] = [];
+  private skillBtns: { cover: Phaser.GameObjects.Rectangle; label: Phaser.GameObjects.Image; skill: number }[] = [];
 
   constructor(scene: Phaser.Scene, private player: Player) {
     const add = scene.add;
@@ -56,10 +56,10 @@ export class TouchControls {
     // Skills (right column above actions)
     const cls = player.cls;
     cls.skills.forEach((s, i) => {
-      const bx = W - 60 - (i % 2) * 90;
+      const bx = W - 150 + (i % 2) * 90;
       const by = 150 + Math.floor(i / 2) * 90;
-      const bg = fixed(add.rectangle(bx, by, 76, 76, s.color, 0.75).setStrokeStyle(2, 0xffffff, 0.6)).setInteractive();
-      const label = fixed(add.text(bx, by, s.short, { fontFamily: FONT, fontSize: '22px', fontStyle: 'bold', color: '#fff', stroke: '#000', strokeThickness: 3 }).setOrigin(0.5));
+      const bg = fixed(add.rectangle(bx, by, 76, 76, 0x000000, 0.35).setStrokeStyle(2, 0xffffff, 0.6)).setInteractive();
+      const label = fixed(add.image(bx, by, `icon_${s.id}`).setDisplaySize(72, 72));
       const cover = fixed(add.rectangle(bx - 38, by + 38, 76, 0, 0x000000, 0.65).setOrigin(0, 1));
       bg.on('pointerdown', () => controls.press(`skill${i}` as Action));
       this.skillBtns.push({ cover, label, skill: i });

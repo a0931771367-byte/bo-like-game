@@ -11,9 +11,8 @@ export class Enemy extends Fighter {
   defDownUntil = 0;
   hitCount = 0;
   lastHitAt = 0;
-  private body: Phaser.GameObjects.Ellipse | Phaser.GameObjects.Rectangle;
-  private eyeL: Phaser.GameObjects.Arc;
-  private eyeR: Phaser.GameObjects.Arc;
+  private body: Phaser.GameObjects.Image;
+  private baseScale = 1;
   private hpBar?: Phaser.GameObjects.Rectangle;
   private lungeDir = 1;
   private retreatUntil = 0;
@@ -22,25 +21,14 @@ export class Enemy extends Fighter {
     super(scene, x, y, def.w, def.h);
     this.maxHp = this.hp = def.hp;
     this.facing = x > scene.player.x ? -1 : 1;
-    const { w, h, color, behavior } = def;
-    if (behavior === 'hopper' || behavior === 'bossSlime') {
-      this.body = scene.add.ellipse(0, -h / 2, w, h, color);
-      this.view.add(scene.add.ellipse(-w * 0.15, -h * 0.72, w * 0.3, h * 0.18, 0xffffff, 0.5));
-    } else {
-      this.body = scene.add.rectangle(0, -h / 2, w, h, color).setStrokeStyle(3, 0x000000, 0.25);
-      if (behavior === 'lunger') {
-        this.view.add(scene.add.rectangle(w * 0.45, -h * 0.85, 22, 18, color));
-        this.view.add(scene.add.rectangle(w * 0.5, -h * 0.55, 20, 8, 0xffffff));
-      }
-      for (let i = -1; i <= 1; i++) this.view.add(scene.add.rectangle(i * w * 0.3, -3, 8, 10, 0x2a2a2a));
-    }
-    this.view.addAt(this.body, 0);
-    this.eyeL = scene.add.circle(w * 0.18, -h * 0.6, 5, 0x1a1020);
-    this.eyeR = scene.add.circle(w * 0.36, -h * 0.6, 5, 0x1a1020);
-    this.view.add([this.eyeL, this.eyeR]);
+    const { w } = def;
+    this.body = scene.add.image(0, 0, `${def.id}_side`).setOrigin(0.5, 1);
+    this.baseScale = def.spriteH / this.body.height;
+    this.body.setScale(this.baseScale);
+    this.view.add(this.body);
     if (!def.boss) {
-      this.view.add(scene.add.rectangle(0, -h - 14, w, 6, 0x000000, 0.5));
-      this.hpBar = scene.add.rectangle(-w / 2, -h - 14, w, 6, 0xff4d4d).setOrigin(0, 0.5);
+      this.view.add(scene.add.rectangle(0, -def.spriteH - 14, w, 6, 0x000000, 0.5).setData('noflash', true));
+      this.hpBar = scene.add.rectangle(-w / 2, -def.spriteH - 14, w, 6, 0xff4d4d).setOrigin(0, 0.5).setData('noflash', true);
       this.view.add(this.hpBar);
     }
   }
@@ -287,10 +275,10 @@ export class Enemy extends Fighter {
       case 'frozen': lean = 0; break;
     }
     if (this.airborne && this.state !== 'knock' && this.state !== 'slam') { sy = 1.1; sx = 0.92; }
-    this.body.setScale(sx, sy);
+    this.body.setScale(this.baseScale * sx, this.baseScale * sy);
     this.view.angle = lean * this.facing;
     const weak = this.now < this.defDownUntil;
-    this.eyeL.setFillStyle(weak ? 0xff4d6d : 0x1a1020);
-    this.eyeR.setFillStyle(weak ? 0xff4d6d : 0x1a1020);
+    if (weak && !this.frozen && !this.body.isTinted) this.body.setTint(0xffb0b0);
+    else if (!weak && !this.frozen && this.body.isTinted) this.body.clearTint();
   }
 }

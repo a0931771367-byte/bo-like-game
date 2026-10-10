@@ -19,7 +19,7 @@ export class Hud {
   private bossBar?: Phaser.GameObjects.Rectangle;
   private bossName?: Phaser.GameObjects.Text;
   private toastText: Phaser.GameObjects.Text;
-  private skillCd: { bg: Phaser.GameObjects.Rectangle; cover: Phaser.GameObjects.Rectangle; label: Phaser.GameObjects.Text; key: Phaser.GameObjects.Text }[] = [];
+  private skillCd: { bg: Phaser.GameObjects.Rectangle; cover: Phaser.GameObjects.Rectangle; label: Phaser.GameObjects.Image; key: Phaser.GameObjects.Text }[] = [];
   private goText: Phaser.GameObjects.Text;
 
   constructor(private scene: Phaser.Scene, private player: Player, touch: boolean) {
@@ -45,8 +45,8 @@ export class Hud {
       const keys = ['U', 'I', 'O', 'P'];
       cls.skills.forEach((s, i) => {
         const bx = W / 2 - 150 + i * 76, by = 20;
-        const bg = fixed(add.rectangle(bx, by, 64, 64, s.color, 0.85).setOrigin(0).setStrokeStyle(2, 0xffffff, 0.6));
-        const label = fixed(add.text(bx + 32, by + 34, s.short, { ...style, fontSize: '18px', fontStyle: 'bold' }).setOrigin(0.5));
+        const bg = fixed(add.rectangle(bx, by, 64, 64, 0x000000, 0.4).setOrigin(0).setStrokeStyle(2, 0xffffff, 0.6));
+        const label = fixed(add.image(bx + 32, by + 32, `icon_${s.id}`).setDisplaySize(60, 60));
         const cover = fixed(add.rectangle(bx, by + 64, 64, 0, 0x000000, 0.65).setOrigin(0, 1));
         const key = fixed(add.text(bx + 4, by + 2, keys[i], { ...style, fontSize: '12px' }));
         this.skillCd.push({ bg, cover, label, key });
@@ -98,8 +98,8 @@ export class Hud {
     this.skillCd.forEach((b, i) => {
       const s = p.cls.skills[i];
       const learned = p.skillLv(s) > 0;
-      b.bg.setAlpha(learned ? 0.85 : 0.25);
-      b.label.setAlpha(learned ? 1 : 0.4);
+      b.bg.setAlpha(learned ? 0.4 : 0.2);
+      b.label.setAlpha(learned ? 1 : 0.3);
       const left = p.cooldownLeft(s);
       b.cover.height = left > 0 ? 64 * Math.min(1, left / (s.cooldown * p.d.castMult)) : 0;
       b.cover.y = 20 + 64;

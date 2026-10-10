@@ -9,10 +9,9 @@ export class TitleScene extends Phaser.Scene {
   constructor() { super('title'); }
 
   create() {
-    const g = this.add.graphics();
-    g.fillGradientStyle(0x1b1f3a, 0x1b1f3a, 0x3a2a55, 0x3a2a55, 1);
-    g.fillRect(0, 0, W, H);
-    for (let i = 0; i < 60; i++) this.add.circle(Phaser.Math.Between(0, W), Phaser.Math.Between(0, H * 0.6), Phaser.Math.Between(1, 3), 0xffffff, Phaser.Math.FloatBetween(0.3, 0.9));
+    const art = this.add.image(W / 2, H / 2, 'title_keyart');
+    art.setScale(Math.max(W / art.width, H / art.height));
+    this.add.rectangle(W / 2, H / 2, W, H, 0x0b0d14, 0.35);
 
     this.add.text(W / 2, 90, '劍與魔法亂鬥', { fontFamily: FONT, fontSize: '72px', fontStyle: 'bold', color: '#ffe9a8', stroke: '#2a1a40', strokeThickness: 10 }).setOrigin(0.5);
     this.add.text(W / 2, 150, '原型版 v0.1  ·  暫定名稱', { fontFamily: FONT, fontSize: '20px', color: '#cfc8e8' }).setOrigin(0.5);
@@ -23,13 +22,11 @@ export class TitleScene extends Phaser.Scene {
     CLASSES.forEach((c, i) => {
       const x = startX + i * (cardW + gap);
       const y = 360;
-      const card = this.add.rectangle(x, y, cardW, 240, c.playable ? 0x000000 : 0x111111, c.playable ? 0.45 : 0.6)
+      const card = this.add.rectangle(x, y, cardW, 240, c.playable ? 0x000000 : 0x111111, c.playable ? 0.55 : 0.7)
         .setStrokeStyle(3, c.playable ? c.color : 0x444444, 1);
-      // mannequin
-      this.add.rectangle(x, y - 10, 36, 44, c.playable ? c.color : 0x555555);
-      this.add.circle(x, y - 48, 18, c.playable ? 0xf5d0b0 : 0x777777);
-      this.add.rectangle(x - 4, y - 62, 36, 12, c.playable ? c.accent : 0x666666);
-      this.add.rectangle(x, y + 30, 30, 30, c.playable ? 0x2b2d42 : 0x444444);
+      const portrait = this.add.image(x, y + 45, `${c.id}_front`).setOrigin(0.5, 1);
+      portrait.setScale(150 / portrait.height);
+      if (!c.playable) portrait.setTint(0x555555).setAlpha(0.7);
       this.add.text(x, y + 68, c.name, { ...btnStyle, fontSize: '26px', fontStyle: 'bold', color: c.playable ? '#ffffff' : '#888888' }).setOrigin(0.5);
       this.add.text(x, y + 98, c.playable ? c.role : '第 3 步製作', { fontFamily: FONT, fontSize: '13px', color: c.playable ? '#dcd6f0' : '#777777', wordWrap: { width: cardW - 20 }, align: 'center' }).setOrigin(0.5, 0);
       if (c.playable) {

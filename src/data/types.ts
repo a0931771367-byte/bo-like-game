@@ -86,6 +86,8 @@ export interface EnemyDef {
   windup: number;
   attackCd: number;
   boss?: boolean;
+  /** On-screen sprite height in px (hitbox uses w/h). */
+  spriteH: number;
 }
 
 export interface SpawnDef {

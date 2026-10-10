@@ -86,28 +86,35 @@ export abstract class Fighter {
   }
 
   flash(color = 0xffffff, ms = 80) {
-    this.eachShape((sh) => {
-      if (sh.getData('base') === undefined) sh.setData('base', sh.fillColor);
-      sh.setFillStyle(color, sh.fillAlpha);
+    this.eachVisual((o) => {
+      if (o instanceof Phaser.GameObjects.Image) o.setTintFill(color);
+      else {
+        if (o.getData('base') === undefined) o.setData('base', o.fillColor);
+        o.setFillStyle(color, o.fillAlpha);
+      }
     });
     this.scene.time.delayedCall(ms, () => this.restoreColors());
   }
 
   restoreColors() {
     if (this.dead && !this.root.active) return;
-    this.eachShape((sh) => {
-      const base = sh.getData('base') as number | undefined;
+    this.eachVisual((o) => {
+      if (o instanceof Phaser.GameObjects.Image) {
+        if (this.frozen) o.setTint(0x9fe8ff); else o.clearTint();
+        return;
+      }
+      const base = o.getData('base') as number | undefined;
       if (base === undefined) return;
-      sh.setFillStyle(this.frozen ? 0x9fe8ff : base, sh.fillAlpha);
+      o.setFillStyle(this.frozen ? 0x9fe8ff : base, o.fillAlpha);
     });
   }
 
-  private eachShape(fn: (s: Phaser.GameObjects.Shape) => void) {
+  private eachVisual(fn: (o: Phaser.GameObjects.Image | Phaser.GameObjects.Shape) => void) {
     if (!this.view.active) return;
     this.view.each((o: Phaser.GameObjects.GameObject) => {
-      const sh = o as Phaser.GameObjects.Shape;
-      if (sh.isFilled === undefined || !sh.active) return;
-      fn(sh);
+      if (!o.active || o.getData('noflash')) return;
+      if (o instanceof Phaser.GameObjects.Image) fn(o);
+      else if ((o as Phaser.GameObjects.Shape).isFilled !== undefined) fn(o as Phaser.GameObjects.Shape);
     });
   }
 

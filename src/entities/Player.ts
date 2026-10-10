@@ -11,6 +11,7 @@ import { Fighter, type HitInfo } from './Fighter';
 const JUMP_V = 680;
 const DODGE_MS = 260;
 const DODGE_SPEED = 640;
+const PLAYER_H = 132;
 const SKILL_KEYS: Action[] = ['skill0', 'skill1', 'skill2', 'skill3'];
 
 export class Player extends Fighter {
@@ -26,8 +27,7 @@ export class Player extends Fighter {
   potionReadyAt = 0;
   dodgeDir: 1 | -1 = 1;
   casting: SkillDef | null = null;
-  private arm: Phaser.GameObjects.Container;
-  private torso: Phaser.GameObjects.Rectangle;
+  private body: Phaser.GameObjects.Image;
   private aura: Phaser.GameObjects.Ellipse;
 
   constructor(scene: GameScene, x: number, y: number, public cls: ClassDef, public prog: ClassProgress) {
@@ -36,22 +36,11 @@ export class Player extends Fighter {
     this.maxHp = this.hp = this.d.maxHp;
     this.maxSp = this.sp = this.d.maxSp;
 
-    this.aura = scene.add.ellipse(0, -48, 90, 120, 0x9be15d, 0).setStrokeStyle(4, 0x9be15d, 0);
-    const legs = scene.add.rectangle(0, -16, 30, 32, 0x2b2d42);
-    this.torso = scene.add.rectangle(0, -50, 40, 40, cls.color);
-    const belt = scene.add.rectangle(0, -32, 40, 6, 0x3a2a1a);
-    const head = scene.add.circle(2, -84, 17, 0xf5d0b0);
-    const hair = scene.add.rectangle(-4, -96, 34, 12, cls.accent);
-    const eye = scene.add.rectangle(10, -86, 4, 6, 0x1a1020);
-    this.arm = scene.add.container(6, -56);
-    if (cls.weapon === 'staff') {
-      this.arm.add(scene.add.rectangle(0, -34, 7, 86, 0x7a5230));
-      this.arm.add(scene.add.circle(0, -80, 10, cls.accent));
-    } else {
-      this.arm.add(scene.add.rectangle(0, -10, 16, 6, 0x5a4630));
-      this.arm.add(scene.add.rectangle(0, -44, 10, 62, cls.accent));
-    }
-    this.view.add([this.aura, legs, this.torso, belt, head, hair, eye, this.arm]);
+    this.aura = scene.add.ellipse(0, -60, 110, 150, 0x9be15d, 0).setStrokeStyle(4, 0x9be15d, 0);
+    this.aura.setData('noflash', true);
+    this.body = scene.add.image(0, 0, `${cls.id}_side`).setOrigin(0.5, 1);
+    this.body.setScale(PLAYER_H / this.body.height);
+    this.view.add([this.aura, this.body]);
   }
 
   /** Recalculate derived stats after leveling or allocating points. */
@@ -459,33 +448,31 @@ export class Player extends Fighter {
 
   syncView() {
     super.syncView();
-    let angle = 25;
-    let bob = 0;
-    let lean = 0;
     const t = this.stateTime;
+    const base = PLAYER_H / this.body.height;
+    let sx = 1, sy = 1, lean = 0, bob = 0;
     switch (this.state) {
-      case 'walk': bob = Math.abs(Math.sin(t / 80)) * 4; angle = 25 + Math.sin(t / 80) * 8; break;
-      case 'guard': angle = -10; lean = -4; break;
+      case 'walk': bob = Math.abs(Math.sin(t / 80)) * 5; sy = 1 + Math.sin(t / 80) * 0.03; break;
+      case 'guard': sx = 0.92; lean = -6; break;
       case 'attack': {
         const h = this.timing(this.cls.combo[this.combo]);
-        if (t < h.startup) angle = Phaser.Math.Linear(25, -100, t / h.startup);
-        else if (t < h.startup + h.active) angle = Phaser.Math.Linear(-100, 120, (t - h.startup) / h.active);
-        else angle = 120;
-        lean = 6;
+        if (t < h.startup) { sx = 0.9 + 0.1 * (1 - t / h.startup); lean = -8; }
+        else if (t < h.startup + h.active) { sx = 1.15; sy = 0.95; lean = 10; }
+        else { sx = 1.05; lean = 6; }
         break;
       }
-      case 'airAttack': angle = Math.min(160, -60 + t * 1.2); break;
-      case 'jump': angle = -30; break;
-      case 'cast': angle = -150 + Math.sin(t / 50) * 10; break;
-      case 'castEnd': angle = 90; lean = 5; break;
-      case 'dodge': lean = 18; angle = 60; break;
-      case 'hurt': lean = -14; angle = 60; break;
-      case 'knock': case 'down': case 'dead': lean = -80; angle = 90; break;
+      case 'airAttack': lean = 18; sx = 1.1; break;
+      case 'jump': sy = 1.08; sx = 0.95; lean = 5; break;
+      case 'cast': sy = 1.05 + Math.sin(t / 50) * 0.02; lean = -4; break;
+      case 'castEnd': sx = 1.1; lean = 8; break;
+      case 'dodge': lean = 22; sx = 1.1; sy = 0.9; break;
+      case 'hurt': lean = -14; sx = 0.92; break;
+      case 'knock': lean = -45; break;
+      case 'down': case 'dead': lean = -90; break;
     }
-    this.arm.angle = angle;
+    this.body.setScale(base * sx, base * sy);
     this.view.angle = lean * this.facing;
     this.view.y -= bob;
-    if (this.state === 'down' || this.state === 'dead') this.view.angle = -90 * this.facing;
     const armored = this.now < this.endureUntil;
     this.aura.setStrokeStyle(4, 0x9be15d, armored ? 0.6 + Math.sin(this.now / 90) * 0.3 : 0);
     const blink = this.now < this.invulnUntil && this.state !== 'dodge';
