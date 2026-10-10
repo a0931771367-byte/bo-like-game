@@ -5,6 +5,7 @@ import type { GameScene } from '../scenes/GameScene';
 import { controls, type Action } from '../systems/Controls';
 import { session, type ClassProgress } from '../systems/Save';
 import { calcDamage, derive, type Derived } from '../systems/Stats';
+import { sfx } from '../systems/Sfx';
 import type { Enemy } from './Enemy';
 import { Fighter, type HitInfo } from './Fighter';
 
@@ -32,6 +33,8 @@ export class Player extends Fighter {
   dodgeMs = DODGE_MS;
   dodgeSpeed = DODGE_SPEED;
   private shotFired = false;
+  private lastStepAt = 0;
+  private lastGhostAt = 0;
   casting: SkillDef | null = null;
   private body: Phaser.GameObjects.Image;
   private aura: Phaser.GameObjects.Ellipse;
@@ -191,9 +194,19 @@ export class Player extends Fighter {
 
     const landed = this.physics(dt, xMin, xMax);
     if (landed) this.onLand(grounded);
+    if (this.state === 'walk' && this.now - this.lastStepAt > 280) {
+      this.lastStepAt = this.now;
+      this.scene.fx.dust(this.x - this.facing * 10, this.y, 2, 0.6);
+    }
+    if (this.state === 'dodge' && this.now - this.lastGhostAt > 40) {
+      this.lastGhostAt = this.now;
+      this.scene.fx.ghost(this.body, this.x, this.y - this.z, this.facing, this.view.angle, this.cls.accent);
+    }
   }
 
   private onLand(_wasGrounded: boolean) {
+    this.scene.fx.dust(this.x, this.y, 6);
+    sfx.play('land', 0.7);
     if (this.state === 'jump' || this.state === 'airAttack') {
       this.setState('idle');
       this.vx = 0;
@@ -210,6 +223,8 @@ export class Player extends Fighter {
       this.z = 1;
       this.airAttackUsed = false;
       this.setState('jump');
+      sfx.play('jump');
+      this.scene.fx.dust(this.x, this.y, 4, 0.8);
       return;
     }
     if (controls.guard) {
@@ -242,6 +257,8 @@ export class Player extends Fighter {
     this.invulnUntil = this.now + DODGE_MS;
     this.setState('dodge');
     this.scene.fx.aura(this.x, this.y - 20, 0xffffff);
+    this.scene.fx.dust(this.x, this.y, 5);
+    sfx.play('dodge');
     return true;
   }
 
@@ -266,6 +283,7 @@ export class Player extends Fighter {
     this.breakHidden();
     if (controls.moveX) this.facing = controls.moveX > 0 ? 1 : -1;
     this.setState('attack');
+    if (!this.cls.ranged) this.scene.time.delayedCall(this.timing(this.cls.combo[i]).startup * 0.6, () => { if (this.state === 'attack') sfx.play('swing', 0.8 + i * 0.1); });
   }
 
   private updateAttack() {
@@ -308,6 +326,7 @@ export class Player extends Fighter {
       make: (t) => this.makeHit(t as Enemy, h.power, 'neutral', false, h.knock, h.launch, h.stun),
     });
     fire(0);
+    sfx.play('arrow');
     this.scene.fx.spark(this.x + this.facing * 36, this.y - 70 - this.z, this.cls.accent, 0.6);
     const da = this.passiveValue('doubleAttack');
     if (da && Math.random() < da) this.scene.time.delayedCall(80, () => { if (!this.dead) fire(-12); });
@@ -357,6 +376,7 @@ export class Player extends Fighter {
       this.struck.clear();
       this.setState('cast');
       this.scene.fx.aura(this.x, this.y - 10, s.color);
+      sfx.play(s.magic ? 'cast' : 'skill', 0.8);
       return true;
     }
     return false;
@@ -369,6 +389,9 @@ export class Player extends Fighter {
     const el = s.element;
     const fx = this.scene.fx;
     if (!s.buff?.(L).hidden) this.breakHidden();
+    const skillSound = { melee: 'hitHeavy', aoe: 'fire', debuff: 'buff', buff: 'buff', heal: 'heal', dash: 'dodge', passive: 'select',
+      projectile: el === 'water' ? 'ice' : el === 'fire' ? 'fire' : el === 'holy' ? 'cast' : 'arrow', strikes: el === 'wind' ? 'thunder' : 'arrow', wall: 'fire' } as const;
+    sfx.play(skillSound[s.type]);
     switch (s.type) {
       case 'melee': {
         fx.slash(this.x + this.facing * 50, this.y - 60, this.facing, s.color, 80, this.y);
@@ -503,6 +526,7 @@ export class Player extends Fighter {
       this.potionReadyAt = this.now + 800;
       this.scene.fx.number(this.x, this.y - 120, `+${v}`, '#7dff9a');
       this.scene.fx.aura(this.x, this.y, 0xff5d5d);
+      sfx.play('potion');
     }
     if (controls.consume('pot1') && this.now >= this.potionReadyAt) {
       if (pots.blue <= 0) { this.scene.toast('藍色藥水用完了'); return; }
@@ -512,6 +536,7 @@ export class Player extends Fighter {
       this.potionReadyAt = this.now + 800;
       this.scene.fx.number(this.x, this.y - 120, `+${v} SP`, '#7fb2ff');
       this.scene.fx.aura(this.x, this.y, 0x5d8bff);
+      sfx.play('potion');
     }
   }
 
@@ -539,6 +564,7 @@ export class Player extends Fighter {
       this.vx = h.dir * 160;
       fx.spark(this.x + this.facing * 25, this.y - 60, 0x9fd8ff);
       fx.number(this.x, this.y - 110, `${dmg}`, '#9fd8ff');
+      sfx.play('guard');
       return true;
     }
     this.hp -= h.damage;
@@ -546,6 +572,7 @@ export class Player extends Fighter {
     fx.spark(this.x, this.y - 55 - this.z, 0xff7070);
     this.flash(0xff4444, 90);
     this.scene.cameras.main.shake(90, 0.005);
+    sfx.play('hurt');
     this.casting = null;
     if (this.hp <= 0) {
       this.hp = 0;
@@ -577,9 +604,18 @@ export class Player extends Fighter {
     const t = this.stateTime;
     const base = PLAYER_H / this.body.height;
     let sx = 1, sy = 1, lean = 0, bob = 0;
+    const breath = Math.sin(this.now / 420);
     switch (this.state) {
-      case 'walk': bob = Math.abs(Math.sin(t / 80)) * 5; sy = 1 + Math.sin(t / 80) * 0.03; break;
-      case 'guard': sx = 0.92; lean = -6; break;
+      case 'idle': sy = 1 + breath * 0.028; sx = 1 - breath * 0.014; lean = Math.sin(this.now / 840) * 1.5; break;
+      case 'walk': {
+        const ph = t / 75;
+        bob = Math.abs(Math.sin(ph)) * 6;
+        sy = 1 + Math.sin(ph) * 0.04;
+        sx = 1 - Math.sin(ph) * 0.03;
+        lean = 7 + Math.sin(ph * 2) * 2.5;
+        break;
+      }
+      case 'guard': sx = 0.92; sy = 1 + breath * 0.015; lean = -6; break;
       case 'attack': {
         const h = this.timing(this.cls.combo[this.combo]);
         if (t < h.startup) { sx = 0.9 + 0.1 * (1 - t / h.startup); lean = -8; }

@@ -11,6 +11,7 @@ export class ResultScene extends Phaser.Scene {
   create() {
     const cls = getClass(session.classId);
     const p = progressFor(cls);
+    this.cameras.main.fadeIn(300);
     this.add.rectangle(W / 2, H / 2, W, H, this.win ? 0x1b2a3a : 0x2a1016);
     this.add.text(W / 2, 200, this.win ? '關卡完成！' : '挑戰失敗', { fontFamily: FONT, fontSize: '72px', fontStyle: 'bold', color: this.win ? '#ffe066' : '#ff8080', stroke: '#000', strokeThickness: 8 }).setOrigin(0.5);
     this.add.text(W / 2, 300, `${cls.name} Lv.${p.level}    金幣 ${session.save.gold} G`, { fontFamily: FONT, fontSize: '26px', color: '#fff' }).setOrigin(0.5);
@@ -24,7 +25,7 @@ export class ResultScene extends Phaser.Scene {
       this.add.text(x, 480, t, { fontFamily: FONT, fontSize: '24px', color: '#fff' }).setOrigin(0.5);
       r.on('pointerdown', cb);
     };
-    if (next) btn(W / 2 - 300, '下一關', () => { session.stageId = next; writeSave(session.save); this.scene.start('game'); }, 0x4a7bd1);
+    if (next) btn(W / 2 - 300, '下一關', () => { session.stageId = next; writeSave(session.save); this.scene.start('dialogue', { stageId: next, phase: 'before', next: 'game' }); }, 0x4a7bd1);
     btn(next ? W / 2 : W / 2 - 150, this.win ? '加點 / 選關' : '加點 / 再玩一次', () => this.scene.start('levelup', { from: 'title' }));
     btn(next ? W / 2 + 300 : W / 2 + 150, '回標題', () => this.scene.start('title'));
   }

@@ -2,6 +2,7 @@ import Phaser from 'phaser';
 import { FONT, W } from '../config';
 import type { Player } from '../entities/Player';
 import type { Enemy } from '../entities/Enemy';
+import { sfx } from '../systems/Sfx';
 import { session } from '../systems/Save';
 import { expToNext } from '../systems/Stats';
 
@@ -22,6 +23,8 @@ export class Hud {
   private skillCd: { bg: Phaser.GameObjects.Rectangle; cover: Phaser.GameObjects.Rectangle; label: Phaser.GameObjects.Image; key: Phaser.GameObjects.Text }[] = [];
   private goText: Phaser.GameObjects.Text;
   private buffText: Phaser.GameObjects.Text;
+  private comboText: Phaser.GameObjects.Text;
+  private comboTween?: Phaser.Tweens.Tween;
 
   constructor(private scene: Phaser.Scene, private player: Player, touch: boolean) {
     const add = scene.add;
@@ -41,6 +44,9 @@ export class Hud {
     this.goldText = fixed(add.text(x0 + 200, y0 + 8, '', { ...style, color: '#ffd34d' }));
     this.potText = fixed(add.text(W - 24, 22, '', { ...style, fontSize: '16px' }).setOrigin(1, 0));
     this.buffText = fixed(add.text(x0 + 4, y0 + 92, '', { ...style, fontSize: '14px', color: '#b6f28a' }));
+    this.comboText = fixed(add.text(W - 40, 250, '', { ...style, fontSize: '40px', fontStyle: 'bold', color: '#ffe066', strokeThickness: 6 }).setOrigin(1, 0.5)).setAlpha(0);
+    const mute = fixed(add.text(W - 24, 48, sfx.muted ? '🔇' : '🔊', { ...style, fontSize: '18px' }).setOrigin(1, 0)).setInteractive({ useHandCursor: true });
+    mute.on('pointerdown', (_p: Phaser.Input.Pointer, _x: number, _y: number, ev: Phaser.Types.Input.EventData) => { ev.stopPropagation(); mute.setText(sfx.toggleMute() ? '🔇' : '🔊'); });
 
     const cls = player.cls;
     if (!touch) {
@@ -84,6 +90,15 @@ export class Hud {
       this.scene.tweens.killTweensOf(this.goText);
       this.goText.setAlpha(0).setX(W - 60);
     }
+  }
+
+  /** Shows the hit counter with a pop; fades when the chain breaks. */
+  combo(n: number) {
+    if (n < 2) return;
+    this.comboText.setText(`${n} HITS`).setAlpha(1).setScale(1.35);
+    this.comboTween?.remove();
+    this.comboTween = this.scene.tweens.add({ targets: this.comboText, scale: 1, duration: 120 });
+    this.scene.tweens.add({ targets: this.comboText, alpha: 0, delay: 1500, duration: 300 });
   }
 
   update() {

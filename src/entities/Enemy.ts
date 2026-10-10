@@ -1,6 +1,7 @@
 import Phaser from 'phaser';
 import type { EnemyDef } from '../data/types';
 import type { GameScene } from '../scenes/GameScene';
+import { sfx } from '../systems/Sfx';
 import { Fighter, type HitInfo } from './Fighter';
 import type { Player } from './Player';
 
@@ -19,6 +20,7 @@ export class Enemy extends Fighter {
   private hpBar?: Phaser.GameObjects.Rectangle;
   private lungeDir = 1;
   private retreatUntil = 0;
+  private phase = Math.random() * 1000;
 
   constructor(scene: GameScene, x: number, y: number, public def: EnemyDef) {
     super(scene, x, y, def.w, def.h);
@@ -113,6 +115,7 @@ export class Enemy extends Fighter {
   }
 
   private onLand() {
+    this.scene.fx.dust(this.x, this.y, this.def.boss ? 8 : 3, this.def.boss ? 1.6 : 0.8);
     if (this.state === 'knock') {
       this.scene.fx.ring(this.x, this.y, 40, 0xffffff, this.y - 1);
       if (this.dead) this.die();
@@ -237,6 +240,8 @@ export class Enemy extends Fighter {
     this.hitCount = this.now - this.lastHitAt < 1500 ? this.hitCount + 1 : 1;
     this.lastHitAt = this.now;
     const fx = this.scene.fx;
+    if (h.source === this.scene.player) this.scene.registerHit();
+    sfx.play(h.crit ? 'crit' : h.launch > 0 ? 'hitHeavy' : 'hit');
     const color = h.crit ? '#ffe066' : h.mult > 1 ? '#ff9f43' : h.mult < 1 ? '#a0a0ff' : '#ffffff';
     fx.number(this.x, this.y - this.h - 30 - this.z, h.crit ? `${h.damage}!` : `${h.damage}`, color, h.crit || h.mult > 1);
     fx.spark(this.x, this.y - this.h / 2 - this.z, 0xffffff, h.launch > 0 ? 1.5 : 1);
@@ -290,6 +295,9 @@ export class Enemy extends Fighter {
 
   private die() {
     this.setState('dying');
+    this.scene.fx.spark(this.x, this.y - this.h / 2, this.def.color, this.def.boss ? 3 : 1.6);
+    this.scene.fx.dust(this.x, this.y, this.def.boss ? 14 : 6, this.def.boss ? 2 : 1);
+    if (this.def.boss) { this.scene.fx.flash(0.7, 400); this.scene.cameras.main.shake(400, 0.012); }
     this.scene.tweens.add({ targets: this.view, alpha: 0, scaleY: 0.1, y: 10, duration: 260, onComplete: () => this.scene.removeEnemy(this) });
     this.scene.tweens.add({ targets: this.shadow, alpha: 0, duration: 260 });
   }
@@ -299,8 +307,15 @@ export class Enemy extends Fighter {
     if (this.hpBar) this.hpBar.width = this.w * Math.max(0, this.hp / this.maxHp);
     const t = this.stateTime;
     let sx = 1, sy = 1, lean = 0;
+    const b = this.def.behavior;
+    const wob = Math.sin((this.now + this.phase) / (b === 'hopper' ? 260 : this.def.boss ? 520 : 380));
     switch (this.state) {
-      case 'walk': sy = 1 + Math.sin(t / 90) * 0.05; sx = 1 - Math.sin(t / 90) * 0.04; break;
+      case 'idle':
+        if (b === 'hopper' || b === 'bossSlime') { sy = 1 + wob * 0.07; sx = 1 - wob * 0.05; }
+        else if (b === 'lunger') { sy = 1 + wob * 0.03; lean = wob * 2; }
+        else { sx = 1 + wob * 0.03; sy = 1 - wob * 0.02; lean = wob * 1.5; }
+        break;
+      case 'walk': sy = 1 + Math.sin(t / 90) * 0.05; sx = 1 - Math.sin(t / 90) * 0.04; lean = b === 'lunger' ? 6 + Math.sin(t / 90) * 3 : Math.sin(t / 90) * 4; break;
       case 'windup': sx = 1.15; sy = 0.85; lean = -8; break;
       case 'attack': case 'lunge': lean = 14; sx = 1.1; break;
       case 'slam': sy = 1.25; sx = 0.85; break;

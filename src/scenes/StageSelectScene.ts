@@ -11,6 +11,7 @@ export class StageSelectScene extends Phaser.Scene {
   create() {
     const cls = getClass(session.classId);
     const p = progressFor(cls);
+    this.cameras.main.fadeIn(300);
     this.add.image(W / 2, H / 2, 'title_keyart').setDisplaySize(W, H).setAlpha(0.35);
     this.add.rectangle(W / 2, H / 2, W, H, 0x0b0d14, 0.55);
     const txt = { fontFamily: FONT, color: '#ffffff', stroke: '#000', strokeThickness: 4 };
@@ -39,7 +40,7 @@ export class StageSelectScene extends Phaser.Scene {
           session.stageId = id;
           writeSave(session.save);
           this.cameras.main.fadeOut(250);
-          this.time.delayedCall(260, () => this.scene.start('game'));
+          this.time.delayedCall(260, () => this.scene.start('dialogue', { stageId: id, phase: 'before', next: 'game' }));
         };
         go.on('pointerdown', start);
         card.setInteractive({ useHandCursor: true }).on('pointerdown', start);

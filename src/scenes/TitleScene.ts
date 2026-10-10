@@ -2,6 +2,7 @@ import Phaser from 'phaser';
 import { FONT, H, W } from '../config';
 import { CLASSES } from '../data/classes';
 import { exportCode, importCode, progressFor, session, writeSave } from '../systems/Save';
+import { sfx } from '../systems/Sfx';
 
 const btnStyle = { fontFamily: FONT, fontSize: '22px', color: '#ffffff', stroke: '#000', strokeThickness: 3 };
 
@@ -9,6 +10,9 @@ export class TitleScene extends Phaser.Scene {
   constructor() { super('title'); }
 
   create() {
+    this.cameras.main.fadeIn(300);
+    sfx.startMusic('title');
+    this.events.once('shutdown', () => sfx.stopMusic());
     const art = this.add.image(W / 2, H / 2, 'title_keyart');
     art.setScale(Math.max(W / art.width, H / art.height));
     this.add.rectangle(W / 2, H / 2, W, H, 0x0b0d14, 0.35);

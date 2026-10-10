@@ -11,6 +11,7 @@ import { Player } from '../entities/Player';
 import { controls } from '../systems/Controls';
 import { progressFor, session, writeSave } from '../systems/Save';
 import { addExp } from '../systems/Stats';
+import { sfx } from '../systems/Sfx';
 import { Fx } from '../ui/Fx';
 import { Hud } from '../ui/Hud';
 import { TouchControls, isTouchDevice } from '../ui/TouchControls';
@@ -32,6 +33,8 @@ export class GameScene extends Phaser.Scene {
   private finished = false;
   private boss?: Enemy;
   private cleared = false;
+  comboHits = 0;
+  comboUntil = 0;
 
   constructor() { super('game'); }
 
@@ -61,6 +64,16 @@ export class GameScene extends Phaser.Scene {
     this.cameras.main.startFollow(this.player.root, true, 0.12, 0.12, -150, 0);
     this.cameras.main.fadeIn(400);
     this.fx.banner(`${this.stage.chapter}  ${this.stage.name}`, '#ffffff', 48);
+    this.comboHits = 0;
+    sfx.startMusic(this.stage.tint && this.stage.tint < 0xa0a0ff ? 'night' : 'field');
+    this.events.once('shutdown', () => sfx.stopMusic());
+  }
+
+  /** Counts consecutive player hits for the combo display. */
+  registerHit() {
+    this.comboHits = this.time.now < this.comboUntil ? this.comboHits + 1 : 1;
+    this.comboUntil = this.time.now + 1600;
+    this.hud.combo(this.comboHits);
   }
 
   // ---------- setup ----------
@@ -97,6 +110,7 @@ export class GameScene extends Phaser.Scene {
     };
     kb.on('keydown', (e: KeyboardEvent) => {
       if (e.repeat) return;
+      if (e.code === 'KeyM') { this.toast(sfx.toggleMute() ? '音效已靜音' : '音效已開啟'); return; }
       const a = map[e.code];
       if (a) { controls.press(a); e.preventDefault(); }
     });
@@ -179,6 +193,8 @@ export class GameScene extends Phaser.Scene {
           this.hud.showBoss(e);
           this.fx.banner(`${def.name} 出現！`, '#ffb3c6', 56);
           this.cameras.main.shake(300, 0.01);
+          sfx.play('bossAppear');
+          sfx.startMusic('boss');
         }
       });
     }
@@ -191,8 +207,12 @@ export class GameScene extends Phaser.Scene {
     if (gold > e.def.gold) this.fx.number(e.x + 30, e.y - e.h - 30, `+${gold} G`, '#ffd34d');
     const gained = addExp(p.prog, e.def.exp);
     this.fx.number(e.x, e.y - e.h - 60, `+${e.def.exp} EXP`, '#ffd34d');
+    sfx.play(e.def.boss ? 'bossDie' : 'enemyDie');
+    this.time.delayedCall(150, () => sfx.play('gold', 0.6));
+    if (e.def.boss) sfx.stopMusic();
     if (gained > 0) {
       p.recompute(true);
+      sfx.play('levelup');
       this.fx.banner('LEVEL UP!', '#ffe066', 72);
       this.fx.aura(p.x, p.y, 0xffe066);
       this.fx.ring(p.x, p.y, 160, 0xffe066, p.y - 1);
@@ -213,6 +233,8 @@ export class GameScene extends Phaser.Scene {
     this.player.prog.exp = Math.floor(this.player.prog.exp / 2);
     writeSave(session.save);
     this.fx.banner('你倒下了…', '#ff8080', 64);
+    sfx.stopMusic();
+    sfx.play('lose');
     this.time.delayedCall(1400, () => this.scene.start('result', { win: false }));
   }
 
@@ -223,7 +245,11 @@ export class GameScene extends Phaser.Scene {
     if (!session.save.cleared.includes(this.stage.id)) session.save.cleared.push(this.stage.id);
     writeSave(session.save);
     this.fx.banner('STAGE CLEAR!', '#ffe066', 72);
-    this.time.delayedCall(1800, () => this.scene.start('result', { win: true }));
+    sfx.play('clear');
+    this.time.delayedCall(1800, () => {
+      this.cameras.main.fadeOut(300);
+      this.time.delayedCall(320, () => this.scene.start('dialogue', { stageId: this.stage.id, phase: 'after', next: 'result', nextData: { win: true } }));
+    });
   }
 
   private openMenu() {
@@ -239,6 +265,8 @@ export class GameScene extends Phaser.Scene {
     this.lastDt = dt;
 
     if (controls.consume('menu') && !this.finished) { this.openMenu(); return; }
+    const cam = this.cameras.main;
+    cam.followOffset.x = Phaser.Math.Linear(cam.followOffset.x, -150 * this.player.facing, 0.03);
 
     this.player.update(dt);
     for (const e of this.enemies) e.update(dt);

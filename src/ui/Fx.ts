@@ -51,6 +51,29 @@ export class Fx {
     this.scene.tweens.add({ targets: [r, glow], alpha: 0, scaleX: 0.3, duration: 260, onComplete: () => { r.destroy(); glow.destroy(); } });
   }
 
+  /** Ground dust puff (landing, footsteps, dashes). */
+  dust(x: number, y: number, n = 5, size = 1) {
+    for (let i = 0; i < n; i++) {
+      const c = this.scene.add.circle(x + Phaser.Math.Between(-12, 12), y - Phaser.Math.Between(0, 6), (6 + Math.random() * 6) * size, 0xf2ead8, 0.7).setDepth(y + 1);
+      const dir = (i % 2 ? 1 : -1) * (0.5 + Math.random());
+      this.scene.tweens.add({ targets: c, x: c.x + dir * 34 * size, y: c.y - (10 + Math.random() * 18) * size, scale: 1.8, alpha: 0, duration: 320 + Math.random() * 120, ease: 'Cubic.easeOut', onComplete: () => c.destroy() });
+    }
+  }
+
+  /** A fading copy of a sprite (dash afterimage). */
+  ghost(src: Phaser.GameObjects.Image, x: number, y: number, facing: number, angle: number, tint: number) {
+    const g = this.scene.add.image(x, y, src.texture.key).setOrigin(src.originX, src.originY)
+      .setScale(src.scaleX * facing, src.scaleY).setAngle(angle).setTintFill(tint).setAlpha(0.45).setDepth(y - 1);
+    this.scene.tweens.add({ targets: g, alpha: 0, duration: 260, onComplete: () => g.destroy() });
+  }
+
+  /** Full-screen white flash (boss defeated). */
+  flash(alpha = 0.8, ms = 260) {
+    const cam = this.scene.cameras.main;
+    const r = this.scene.add.rectangle(cam.width / 2, cam.height / 2, cam.width, cam.height, 0xffffff, alpha).setScrollFactor(0).setDepth(TOP + 20);
+    this.scene.tweens.add({ targets: r, alpha: 0, duration: ms, onComplete: () => r.destroy() });
+  }
+
   aura(x: number, y: number, color: number) {
     for (let i = 0; i < 10; i++) {
       const p = this.scene.add.rectangle(x + Phaser.Math.Between(-30, 30), y - Phaser.Math.Between(0, 30), 6, 14, color, 0.9).setDepth(TOP);
