@@ -33,7 +33,8 @@ ICON_SHEETS = {
 }
 # animation sheets -> rows of frames (row label, expected frame count); frames face right
 ANIM_SHEETS = {
-    'anim/swordsman-anim.png': ('swordsman', [('idle', 4), ('walk', 6), ('attack', 4)]),
+    f'anim/{c}-anim.png': (c, [('idle', 4), ('walk', 6), ('attack', 4)])
+    for c in ('swordsman', 'mage', 'merchant', 'acolyte', 'thief', 'archer')
 }
 # background paintings -> (output, where the floor strip starts in the 720px-high export)
 BACKGROUNDS = {
@@ -151,6 +152,8 @@ def export_anim(rel, name, rows_spec):
     for (label, n), (y0, y1) in zip(rows_spec, rows):
         band = fg[y0:y1]
         cols = clusters(band.any(axis=0), min_gap=14, min_size=40)
+        # drop stray bits drawn beside a frame (a loose arrow, a spark): they are far shorter than the character
+        cols = [c for c in cols if np.ptp(np.where(band[:, c[0]:c[1]].any(axis=1))[0]) > (y1 - y0) * 0.5]
         if len(cols) != n:
             print(f'!! {rel} row {label}: found {len(cols)} frames, expected {n}')
         for i, (x0, x1) in enumerate(cols):
