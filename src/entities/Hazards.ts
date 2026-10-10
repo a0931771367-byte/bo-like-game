@@ -4,6 +4,8 @@ import type { Fighter, HitInfo } from './Fighter';
 
 export interface ProjectileOpts {
   owner: Fighter; x: number; y: number; z: number; dir: 1 | -1; speed: number; color: number; range: number;
+  /** Draw as an arrow shaft instead of a magic orb. */
+  arrow?: boolean;
   make: (target: Fighter) => HitInfo;
 }
 
@@ -12,17 +14,26 @@ export class Projectile {
   travelled = 0;
   done = false;
   constructor(private scene: GameScene, public o: ProjectileOpts) {
-    const core = scene.add.ellipse(0, 0, 34, 18, o.color);
-    const glow = scene.add.ellipse(-10, 0, 46, 24, o.color, 0.35);
-    const hot = scene.add.ellipse(6, 0, 16, 8, 0xffffff, 0.9);
-    this.g = scene.add.container(o.x, o.y - o.z, [glow, core, hot]).setDepth(o.y + 1).setScale(o.dir, 1);
+    const parts: Phaser.GameObjects.GameObject[] = o.arrow
+      ? [
+        scene.add.rectangle(-6, 0, 52, 4, 0xd9c7a0),
+        scene.add.triangle(24, 0, 0, -6, 14, 0, 0, 6, 0xf4f4f4),
+        scene.add.triangle(-30, 0, 0, -7, 10, 0, 0, 7, o.color),
+        scene.add.rectangle(-4, 0, 60, 10, o.color, 0.18),
+      ]
+      : [
+        scene.add.ellipse(-10, 0, 46, 24, o.color, 0.35),
+        scene.add.ellipse(0, 0, 34, 18, o.color),
+        scene.add.ellipse(6, 0, 16, 8, 0xffffff, 0.9),
+      ];
+    this.g = scene.add.container(o.x, o.y - o.z, parts).setDepth(o.y + 1).setScale(o.dir, 1);
   }
   update(dt: number, targets: Fighter[]) {
     const step = this.o.speed * dt;
     this.o.x += this.o.dir * step;
     this.travelled += step;
     this.g.x = this.o.x;
-    this.g.y = this.o.y - this.o.z + Math.sin(this.travelled / 40) * 3;
+    this.g.y = this.o.y - this.o.z + (this.o.arrow ? 0 : Math.sin(this.travelled / 40) * 3);
     for (const t of targets) {
       if (t.dead || Math.abs(t.y - this.o.y) > 50) continue;
       if (Math.abs(t.x - this.o.x) < t.w / 2 + 14 && t.z < this.o.z + 40) {

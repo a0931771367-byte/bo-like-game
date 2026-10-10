@@ -184,7 +184,9 @@ export class GameScene extends Phaser.Scene {
 
   onEnemyKilled(e: Enemy) {
     const p = this.player;
-    session.save.gold += e.def.gold;
+    const gold = Math.round(e.def.gold * (1 + p.passiveValue('goldFind')));
+    session.save.gold += gold;
+    if (gold > e.def.gold) this.fx.number(e.x + 30, e.y - e.h - 30, `+${gold} G`, '#ffd34d');
     const gained = addExp(p.prog, e.def.exp);
     this.fx.number(e.x, e.y - e.h - 60, `+${e.def.exp} EXP`, '#ffd34d');
     if (gained > 0) {

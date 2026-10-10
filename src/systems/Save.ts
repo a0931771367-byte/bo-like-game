@@ -19,7 +19,7 @@ export interface SaveData {
 
 const KEY = 'rbo-like-save-v1';
 
-export const newSave = (): SaveData => ({ version: 1, classes: {}, gold: 0, potions: { red: 3, blue: 2 }, cleared: [] });
+export const newSave = (): SaveData => ({ version: 1, classes: {}, gold: 50, potions: { red: 3, blue: 2 }, cleared: [] });
 
 export const newProgress = (cls: ClassDef): ClassProgress => ({
   level: 1, exp: 0, stats: { ...cls.baseStats }, statPoints: 3, skillPoints: 1,

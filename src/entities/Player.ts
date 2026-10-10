@@ -1,6 +1,6 @@
 import Phaser from 'phaser';
 import { GROUND_BOTTOM, GROUND_TOP } from '../config';
-import { lv, type ClassDef, type ComboHit, type SkillDef } from '../data/types';
+import { lv, type BuffEffect, type ClassDef, type ComboHit, type SkillDef } from '../data/types';
 import type { GameScene } from '../scenes/GameScene';
 import { controls, type Action } from '../systems/Controls';
 import { session, type ClassProgress } from '../systems/Save';
@@ -13,6 +13,9 @@ const DODGE_MS = 260;
 const DODGE_SPEED = 640;
 const PLAYER_H = 132;
 const SKILL_KEYS: Action[] = ['skill0', 'skill1', 'skill2', 'skill3'];
+const ARROW_SPEED = 1150;
+
+export interface ActiveBuff { id: string; name: string; color: number; until: number; eff: BuffEffect; hits?: number }
 
 export class Player extends Fighter {
   readonly team = 'player';
@@ -23,9 +26,12 @@ export class Player extends Fighter {
   queued = false;
   airAttackUsed = false;
   cooldowns: Record<string, number> = {};
-  endureUntil = 0;
+  buffs: ActiveBuff[] = [];
   potionReadyAt = 0;
   dodgeDir: 1 | -1 = 1;
+  dodgeMs = DODGE_MS;
+  dodgeSpeed = DODGE_SPEED;
+  private shotFired = false;
   casting: SkillDef | null = null;
   private body: Phaser.GameObjects.Image;
   private aura: Phaser.GameObjects.Ellipse;
@@ -47,7 +53,16 @@ export class Player extends Fighter {
   recompute(fullHeal = false) {
     const hpRatio = this.hp / this.maxHp;
     const spRatio = this.sp / this.maxSp;
-    this.d = derive(this.cls, this.prog);
+    const all = this.buffs.reduce((a, b) => a + (b.eff.allStats ?? 0), 0);
+    const stats = { ...this.prog.stats };
+    if (all) for (const k of Object.keys(stats) as (keyof typeof stats)[]) stats[k] += all;
+    this.d = derive(this.cls, { ...this.prog, stats });
+    for (const b of this.buffs) {
+      this.d.atk = Math.round(this.d.atk * (b.eff.atkMult ?? 1));
+      this.d.matk = Math.round(this.d.matk * (b.eff.matkMult ?? 1));
+      this.d.move *= b.eff.moveMult ?? 1;
+      this.d.aspd *= b.eff.aspdMult ?? 1;
+    }
     this.maxHp = this.d.maxHp;
     this.maxSp = this.d.maxSp;
     this.hp = fullHeal ? this.maxHp : Math.max(1, Math.round(this.maxHp * hpRatio));
@@ -57,6 +72,35 @@ export class Player extends Fighter {
   skillLv(s: SkillDef) { return this.prog.skillLv[s.id] ?? 0; }
   skillCost(s: SkillDef) { return Math.round(lv(s.sp, Math.max(1, this.skillLv(s)))); }
   cooldownLeft(s: SkillDef) { return Math.max(0, (this.cooldowns[s.id] ?? 0) - this.now); }
+  skillGold(s: SkillDef) { return s.goldCost ? Math.round(lv(s.goldCost, Math.max(1, this.skillLv(s)))) : 0; }
+  /** Value of a learned passive (0 when not learned). */
+  passiveValue(kind: NonNullable<SkillDef['passive']>) {
+    const s = this.cls.skills.find((k) => k.passive === kind);
+    if (!s || !s.passiveValue) return 0;
+    const L = this.skillLv(s);
+    return L > 0 ? lv(s.passiveValue, L) : 0;
+  }
+  get hidden() { return this.buffs.some((b) => b.eff.hidden); }
+  get endure() { return this.buffs.some((b) => b.eff.endure); }
+
+  addBuff(s: SkillDef, eff: BuffEffect, duration: number) {
+    this.buffs = this.buffs.filter((b) => b.id !== s.id);
+    this.buffs.push({ id: s.id, name: s.name, color: s.color, until: this.now + duration, eff, hits: eff.shieldHits });
+    this.recompute();
+  }
+
+  /** Attacking or casting reveals a hidden player. */
+  private breakHidden() {
+    if (!this.hidden) return;
+    this.buffs = this.buffs.filter((b) => !b.eff.hidden);
+    this.recompute();
+  }
+
+  private expireBuffs() {
+    const n = this.buffs.length;
+    this.buffs = this.buffs.filter((b) => this.now < b.until && (b.hits === undefined || b.hits > 0));
+    if (this.buffs.length !== n) this.recompute();
+  }
 
   private get bounds() { return this.scene.playerBounds(); }
   private get enemies(): Enemy[] { return this.scene.enemies; }
@@ -67,6 +111,7 @@ export class Player extends Fighter {
     if (!this.dead) {
       this.sp = Math.min(this.maxSp, this.sp + this.d.spRegen * dt);
       this.hp = Math.min(this.maxHp, this.hp + this.d.hpRegen * dt);
+      this.expireBuffs();
       this.tryPotions();
     }
     const [xMin, xMax] = this.bounds;
@@ -93,6 +138,8 @@ export class Player extends Fighter {
         if (!this.airAttackUsed && controls.consume('attack')) {
           this.airAttackUsed = true;
           this.struck.clear();
+          this.shotFired = false;
+          this.breakHidden();
           this.stateTime = 0;
           this.setState('airAttack');
         }
@@ -101,22 +148,23 @@ export class Player extends Fighter {
         const a = this.cls.air;
         this.vx = controls.moveX * this.d.move * 0.6;
         if (this.stateTime >= a.startup && this.stateTime <= a.startup + a.active) {
-          this.strikeFront(a, 'neutral', false, 30);
+          if (this.cls.ranged) this.shootArrow(a);
+          else this.strikeFront(a, 30);
         }
         break;
       }
       case 'dodge':
-        this.vx = this.dodgeDir * DODGE_SPEED * (1 - this.stateTime / DODGE_MS * 0.6);
+        this.vx = this.dodgeDir * this.dodgeSpeed * (1 - this.stateTime / this.dodgeMs * 0.6);
         this.vy = controls.moveY * 200;
-        if (this.stateTime >= DODGE_MS) this.setState('idle');
+        if (this.stateTime >= this.dodgeMs) this.setState('idle');
         break;
       case 'cast':
         this.vx *= 0.8;
         this.vy = 0;
         if (this.casting && this.stateTime >= this.casting.cast * this.d.castMult) {
-          this.executeSkill(this.casting);
+          const s = this.casting;
           this.casting = null;
-          this.setState('castEnd');
+          if (!this.executeSkill(s)) this.setState('castEnd');
         }
         break;
       case 'castEnd':
@@ -189,6 +237,8 @@ export class Player extends Fighter {
     const mx = controls.moveX;
     if (Math.abs(mx) < 0.5) return false;
     this.dodgeDir = mx > 0 ? 1 : -1;
+    this.dodgeMs = DODGE_MS;
+    this.dodgeSpeed = DODGE_SPEED;
     this.invulnUntil = this.now + DODGE_MS;
     this.setState('dodge');
     this.scene.fx.aura(this.x, this.y - 20, 0xffffff);
@@ -212,6 +262,8 @@ export class Player extends Fighter {
     this.combo = i;
     this.queued = false;
     this.struck.clear();
+    this.shotFired = false;
+    this.breakHidden();
     if (controls.moveX) this.facing = controls.moveX > 0 ? 1 : -1;
     this.setState('attack');
   }
@@ -223,10 +275,13 @@ export class Player extends Fighter {
     this.vx = this.stateTime < t.startup ? this.facing * 70 : 0;
     const activeEnd = t.startup + t.active;
     if (this.stateTime >= t.startup && this.stateTime <= activeEnd) {
-      if (this.stateTime - this.scene.lastDt * 1000 < t.startup) {
-        this.scene.fx.slash(this.x + this.facing * 40, this.y - 60 - this.z, this.facing, this.cls.accent, 60 + this.combo * 8, this.y);
+      if (this.cls.ranged) this.shootArrow(h);
+      else {
+        if (this.stateTime - this.scene.lastDt * 1000 < t.startup) {
+          this.scene.fx.slash(this.x + this.facing * 40, this.y - 60 - this.z, this.facing, this.cls.accent, 60 + this.combo * 8, this.y);
+        }
+        this.strikeFront(h, 40);
       }
-      this.strikeFront(h, 'neutral', false, 40);
     }
     if (this.stateTime > t.startup) {
       if (this.combo < this.cls.combo.length - 1 && controls.consume('attack')) this.queued = true;
@@ -238,10 +293,39 @@ export class Player extends Fighter {
     }
   }
 
-  private strikeFront(h: ComboHit, element: SkillDef['element'], magic: boolean, depth: number) {
-    const n = this.scene.strikeFront(this, this.enemies, h.range, depth, (t) =>
-      this.makeHit(t as Enemy, h.power, element, magic, h.knock, h.launch, h.stun));
+  private strikeFront(h: ComboHit, depth: number) {
+    const n = this.scene.strikeFront(this, this.enemies, h.range, depth, (t) => this.normalHit(t as Enemy, h));
     if (n > 0) this.scene.hitStop(h.launch > 0 ? 90 : 55);
+  }
+
+  /** Ranged classes fire one arrow per combo step instead of swinging. */
+  private shootArrow(h: ComboHit) {
+    if (this.shotFired) return;
+    this.shotFired = true;
+    const fire = (zOff: number) => this.scene.spawnProjectile({
+      owner: this, x: this.x + this.facing * 30, y: this.y, z: this.z + 70 + zOff, dir: this.facing,
+      speed: ARROW_SPEED, color: this.cls.accent, range: h.range, arrow: true,
+      make: (t) => this.makeHit(t as Enemy, h.power, 'neutral', false, h.knock, h.launch, h.stun),
+    });
+    fire(0);
+    this.scene.fx.spark(this.x + this.facing * 36, this.y - 70 - this.z, this.cls.accent, 0.6);
+    const da = this.passiveValue('doubleAttack');
+    if (da && Math.random() < da) this.scene.time.delayedCall(80, () => { if (!this.dead) fire(-12); });
+  }
+
+  /** A normal-attack hit, with the thief's double-attack passive rolled in. */
+  private normalHit(t: Enemy, h: ComboHit): HitInfo {
+    const hit = this.makeHit(t, h.power, 'neutral', false, h.knock, h.launch, h.stun);
+    const da = this.passiveValue('doubleAttack');
+    if (da && Math.random() < da) {
+      this.scene.time.delayedCall(70, () => {
+        if (t.dead || this.dead) return;
+        this.scene.fx.number(t.x, t.y - t.h - 70 - t.z, '連擊', '#b9f5c8');
+        this.scene.fx.slash(t.x, t.y - 60 - t.z, this.facing, this.cls.accent, 50, t.y);
+        t.takeHit(this.makeHit(t, h.power, 'neutral', false, h.knock * 0.5, 0, h.stun));
+      });
+    }
+    return hit;
   }
 
   makeHit(t: Enemy, power: number, element: SkillDef['element'], magic: boolean, knock: number, launch: number, stun: number): HitInfo {
@@ -259,9 +343,13 @@ export class Player extends Fighter {
       const s = this.cls.skills[i];
       if (!s) continue;
       if (this.skillLv(s) < 1) { this.scene.toast(`尚未學習「${s.name}」，按選單加技能點`); continue; }
+      if (s.type === 'passive') { this.scene.toast(`「${s.name}」是被動技能，已自動生效`); continue; }
       if (this.cooldownLeft(s) > 0) continue;
       const cost = this.skillCost(s);
       if (this.sp < cost) { this.scene.fx.number(this.x, this.y - 120, 'SP 不足', '#7fb2ff'); continue; }
+      const gold = this.skillGold(s);
+      if (session.save.gold < gold) { this.scene.fx.number(this.x, this.y - 120, '金幣不足', '#ffd34d'); continue; }
+      if (gold) { session.save.gold -= gold; this.scene.fx.number(this.x, this.y - 150, `-${gold} G`, '#ffd34d'); }
       this.sp -= cost;
       this.cooldowns[s.id] = this.now + s.cooldown * this.d.castMult;
       if (controls.moveX) this.facing = controls.moveX > 0 ? 1 : -1;
@@ -274,11 +362,13 @@ export class Player extends Fighter {
     return false;
   }
 
-  private executeSkill(s: SkillDef) {
+  /** Returns true when the skill took over the state machine (e.g. a dash). */
+  private executeSkill(s: SkillDef): boolean {
     const L = this.skillLv(s);
     const power = lv(s.power, L);
     const el = s.element;
     const fx = this.scene.fx;
+    if (!s.buff?.(L).hidden) this.breakHidden();
     switch (s.type) {
       case 'melee': {
         fx.slash(this.x + this.facing * 50, this.y - 60, this.facing, s.color, 80, this.y);
@@ -286,6 +376,7 @@ export class Player extends Fighter {
         const n = this.scene.strikeFront(this, this.enemies, s.range ?? 120, 45, (t) => {
           const stun = Math.random() < stunChance ? 1800 : s.stun ?? 400;
           const h = this.makeHit(t as Enemy, power, el, s.magic, s.knock ?? 200, s.launch ?? 0, stun);
+          if (s.poison) h.poison = { dps: lv(s.poison, L), duration: 5000 };
           if (stun > 1000) this.scene.time.delayedCall(10, () => fx.number(t.x, t.y - t.h - 50, '暈眩', '#ffe066'));
           return h;
         });
@@ -316,11 +407,37 @@ export class Player extends Fighter {
       }
       case 'buff': {
         const dur = s.duration ? lv(s.duration, L) : 5000;
-        this.endureUntil = this.now + dur;
+        this.addBuff(s, s.buff ? s.buff(L) : { endure: true }, dur);
         fx.aura(this.x, this.y, s.color);
         fx.number(this.x, this.y - 130, s.name, '#b6f28a');
         break;
       }
+      case 'heal': {
+        const v = Math.round(this.maxHp * (s.heal ? lv(s.heal, L) : 0.2) + this.d.matk * 0.6);
+        this.hp = Math.min(this.maxHp, this.hp + v);
+        fx.aura(this.x, this.y, s.color);
+        fx.ring(this.x, this.y, s.radius ?? 150, s.color, this.y - 1);
+        fx.number(this.x, this.y - 130, `+${v}`, '#7dff9a', true);
+        // Holy light also burns the undead nearby.
+        const undead = this.enemies.filter((e) => e.def.element === 'dark');
+        this.scene.strikeCircle(this, undead, this.x, this.y, s.radius ?? 150, (t) =>
+          this.makeHit(t as Enemy, power, 'holy', true, s.knock ?? 200, 0, s.stun ?? 400));
+        break;
+      }
+      case 'dash': {
+        const dist = s.dashDistance ? lv(s.dashDistance, L) : 220;
+        const dur = s.duration ? lv(s.duration, L) : 260;
+        this.dodgeDir = -this.facing as 1 | -1;
+        this.dodgeMs = dur;
+        this.dodgeSpeed = dist / (dur / 1000) / 0.7;
+        this.invulnUntil = this.now + dur + 60;
+        fx.aura(this.x, this.y - 20, s.color);
+        fx.spark(this.x, this.y - 60, s.color, 1.2);
+        this.setState('dodge');
+        return true;
+      }
+      case 'passive':
+        break;
       case 'projectile': {
         const n = Math.floor(s.count ? lv(s.count, L) : 1);
         const freeze = s.freezeChance ? lv(s.freezeChance, L) : 0;
@@ -371,6 +488,7 @@ export class Player extends Fighter {
         break;
       }
     }
+    return false;
   }
 
   // ---------- items ----------
@@ -402,6 +520,14 @@ export class Player extends Fighter {
   takeHit(h: HitInfo) {
     if (this.dead || this.now < this.invulnUntil || this.state === 'dodge') return false;
     const fx = this.scene.fx;
+    const shield = this.buffs.find((b) => (b.hits ?? 0) > 0);
+    if (shield) {
+      shield.hits!--;
+      fx.ring(this.x, this.y, 80, shield.color, this.y - 1);
+      fx.number(this.x, this.y - 120 - this.z, '結界', '#cfe8ff');
+      if (shield.hits! <= 0) this.expireBuffs();
+      return true;
+    }
     if (Math.random() * 100 < this.d.flee) {
       fx.number(this.x, this.y - 110 - this.z, 'MISS', '#d0d0d0');
       return false;
@@ -430,7 +556,7 @@ export class Player extends Fighter {
       this.setState('knock');
       return true;
     }
-    if (this.now < this.endureUntil) return true;
+    if (this.endure) return true;
     if (h.launch > 0 || this.airborne) {
       this.vz = Math.max(h.launch, 380);
       this.z = Math.max(this.z, 1);
@@ -473,9 +599,10 @@ export class Player extends Fighter {
     this.body.setScale(base * sx, base * sy);
     this.view.angle = lean * this.facing;
     this.view.y -= bob;
-    const armored = this.now < this.endureUntil;
-    this.aura.setStrokeStyle(4, 0x9be15d, armored ? 0.6 + Math.sin(this.now / 90) * 0.3 : 0);
+    const glow = this.buffs.find((b) => b.eff.endure || (b.hits ?? 0) > 0 || b.eff.atkMult || b.eff.allStats || b.eff.aspdMult);
+    if (glow) this.aura.setStrokeStyle(4, glow.color, 0.6 + Math.sin(this.now / 90) * 0.3);
+    else this.aura.setStrokeStyle(4, 0x9be15d, 0);
     const blink = this.now < this.invulnUntil && this.state !== 'dodge';
-    this.view.alpha = blink ? (Math.floor(this.now / 60) % 2 ? 0.35 : 1) : this.state === 'dodge' ? 0.6 : 1;
+    this.view.alpha = this.hidden ? 0.3 : blink ? (Math.floor(this.now / 60) % 2 ? 0.35 : 1) : this.state === 'dodge' ? 0.6 : 1;
   }
 }

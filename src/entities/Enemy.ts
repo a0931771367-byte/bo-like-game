@@ -11,6 +11,9 @@ export class Enemy extends Fighter {
   defDownUntil = 0;
   hitCount = 0;
   lastHitAt = 0;
+  poisonDps = 0;
+  poisonUntil = 0;
+  private poisonNext = 0;
   private body: Phaser.GameObjects.Image;
   private baseScale = 1;
   private hpBar?: Phaser.GameObjects.Rectangle;
@@ -49,6 +52,10 @@ export class Enemy extends Fighter {
     const ms = dt * 1000;
     this.stateTime += ms;
     const [xMin, xMax] = this.scene.enemyBounds();
+    if (!this.dead && this.now < this.poisonUntil && this.now >= this.poisonNext) {
+      this.poisonNext = this.now + 500;
+      this.applyDot(Math.max(1, Math.round(this.poisonDps * 0.5)), '#c47eff');
+    }
     if (this.frozen && !this.dead) {
       this.vx = this.vy = 0;
       if (this.state !== 'knock') this.setState('frozen');
@@ -122,9 +129,30 @@ export class Enemy extends Fighter {
     }
   }
 
+  /** Damage that never interrupts (poison ticks). */
+  private applyDot(dmg: number, color: string) {
+    this.hp -= dmg;
+    this.scene.fx.number(this.x + Phaser.Math.Between(-10, 10), this.y - this.h - 20 - this.z, `${dmg}`, color);
+    if (this.hp <= 0) {
+      this.hp = 0;
+      this.dead = true;
+      this.frozenUntil = 0;
+      this.vz = 420;
+      this.z = Math.max(this.z, 1);
+      this.vx = -this.facing * 220;
+      this.setState('knock');
+      this.scene.onEnemyKilled(this);
+    }
+  }
+
   private think(dt: number) {
     const p = this.player;
-    if (p.dead) { this.vx = this.vy = 0; return; }
+    if (p.dead || p.hidden) {
+      // Nothing to chase: stand around (hidden players are invisible to enemies).
+      this.vx = this.vy = 0;
+      if (this.state !== 'idle') this.setState('idle');
+      return;
+    }
     const dx = p.x - this.x;
     const dy = p.y - this.y;
     const dist = Math.abs(dx);
@@ -212,6 +240,12 @@ export class Enemy extends Fighter {
     fx.number(this.x, this.y - this.h - 30 - this.z, h.crit ? `${h.damage}!` : `${h.damage}`, color, h.crit || h.mult > 1);
     fx.spark(this.x, this.y - this.h / 2 - this.z, 0xffffff, h.launch > 0 ? 1.5 : 1);
     this.flash(0xffffff, 70);
+    if (h.poison) {
+      this.poisonDps = Math.max(this.poisonDps, h.poison.dps);
+      this.poisonUntil = this.now + h.poison.duration;
+      this.poisonNext = this.now + 500;
+      fx.number(this.x, this.y - this.h - 60, '中毒', '#c47eff');
+    }
     if (h.freeze) {
       this.frozenUntil = this.now + h.freeze;
       fx.number(this.x, this.y - this.h - 60, '凍結', '#9fe8ff');
@@ -277,8 +311,12 @@ export class Enemy extends Fighter {
     if (this.airborne && this.state !== 'knock' && this.state !== 'slam') { sy = 1.1; sx = 0.92; }
     this.body.setScale(this.baseScale * sx, this.baseScale * sy);
     this.view.angle = lean * this.facing;
-    const weak = this.now < this.defDownUntil;
-    if (weak && !this.frozen && !this.body.isTinted) this.body.setTint(0xffb0b0);
-    else if (!weak && !this.frozen && this.body.isTinted) this.body.clearTint();
+    if (!this.frozen) {
+      const weak = this.now < this.defDownUntil;
+      const poisoned = this.now < this.poisonUntil;
+      const tint = weak ? 0xffb0b0 : poisoned ? 0xc9a0ff : 0;
+      if (tint && this.body.tintTopLeft !== tint) this.body.setTint(tint);
+      else if (!tint && this.body.isTinted) this.body.clearTint();
+    }
   }
 }

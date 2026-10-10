@@ -15,6 +15,8 @@ export interface HitInfo {
   launch: number;
   stun: number;
   freeze?: number;
+  /** Damage over time: dps for duration ms. */
+  poison?: { dps: number; duration: number };
   source: Fighter;
 }
 

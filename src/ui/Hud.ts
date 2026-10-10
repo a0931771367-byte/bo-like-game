@@ -21,6 +21,7 @@ export class Hud {
   private toastText: Phaser.GameObjects.Text;
   private skillCd: { bg: Phaser.GameObjects.Rectangle; cover: Phaser.GameObjects.Rectangle; label: Phaser.GameObjects.Image; key: Phaser.GameObjects.Text }[] = [];
   private goText: Phaser.GameObjects.Text;
+  private buffText: Phaser.GameObjects.Text;
 
   constructor(private scene: Phaser.Scene, private player: Player, touch: boolean) {
     const add = scene.add;
@@ -39,6 +40,7 @@ export class Hud {
     this.spText = fixed(add.text(x0 + 310, y0 + 51, '', { ...style, fontSize: '11px' }).setOrigin(1, 0));
     this.goldText = fixed(add.text(x0 + 200, y0 + 8, '', { ...style, color: '#ffd34d' }));
     this.potText = fixed(add.text(W - 24, 22, '', { ...style, fontSize: '16px' }).setOrigin(1, 0));
+    this.buffText = fixed(add.text(x0 + 4, y0 + 92, '', { ...style, fontSize: '14px', color: '#b6f28a' }));
 
     const cls = player.cls;
     if (!touch) {
@@ -93,6 +95,7 @@ export class Hud {
     this.spText.setText(`${Math.floor(p.sp)} / ${p.maxSp}`);
     this.lvText.setText(`${p.cls.name}  Lv.${p.prog.level}`);
     this.goldText.setText(`${session.save.gold} G`);
+    this.buffText.setText(p.buffs.map((b) => `${b.name} ${Math.ceil((b.until - p.now) / 1000)}s${b.hits ? ` ×${b.hits}` : ''}`).join('   '));
     const pots = session.save.potions;
     this.potText.setText(`[1] 紅藥水 ×${pots.red}    [2] 藍藥水 ×${pots.blue}`);
     this.skillCd.forEach((b, i) => {

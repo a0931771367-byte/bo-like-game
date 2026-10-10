@@ -16,7 +16,19 @@ export interface ComboHit {
   stun: number; // ms
 }
 
-export type SkillType = 'melee' | 'aoe' | 'projectile' | 'buff' | 'debuff' | 'wall' | 'strikes';
+export type SkillType = 'melee' | 'aoe' | 'projectile' | 'buff' | 'debuff' | 'wall' | 'strikes' | 'heal' | 'dash' | 'passive';
+
+/** Temporary stat changes granted by buff skills. */
+export interface BuffEffect {
+  atkMult?: number;
+  matkMult?: number;
+  allStats?: number;
+  moveMult?: number;
+  aspdMult?: number;
+  endure?: boolean;
+  hidden?: boolean;
+  shieldHits?: number;
+}
 
 export interface SkillDef {
   id: string;
@@ -44,6 +56,14 @@ export interface SkillDef {
   speed?: number;
   duration?: Scaling;
   defDown?: Scaling;
+  goldCost?: Scaling;
+  poison?: Scaling; // damage per second for 5 s
+  heal?: Scaling; // fraction of max HP
+  buff?: (level: number) => BuffEffect;
+  passive?: 'doubleAttack' | 'goldFind';
+  passiveValue?: Scaling;
+  /** Dash skills: distance travelled over `duration`. */
+  dashDistance?: Scaling;
 }
 
 export interface ClassDef {
@@ -54,6 +74,8 @@ export interface ClassDef {
   accent: number;
   weapon: 'sword' | 'staff' | 'axe' | 'mace' | 'dagger' | 'bow';
   playable: boolean;
+  /** Normal attacks fire arrows instead of swinging. */
+  ranged?: boolean;
   hpBase: number;
   hpPerLv: number;
   spBase: number;
