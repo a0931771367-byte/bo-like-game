@@ -1,0 +1,270 @@
+import Phaser from 'phaser';
+import { FONT, GROUND_BOTTOM, GROUND_TOP, H, W } from '../config';
+import { ENEMIES } from '../data/enemies';
+import { getClass } from '../data/classes';
+import { STAGES } from '../data/stages';
+import type { StageDef } from '../data/types';
+import { Enemy } from '../entities/Enemy';
+import type { Fighter, HitInfo } from '../entities/Fighter';
+import { Projectile, Wall, type ProjectileOpts, type WallOpts } from '../entities/Hazards';
+import { Player } from '../entities/Player';
+import { controls } from '../systems/Controls';
+import { progressFor, session, writeSave } from '../systems/Save';
+import { addExp } from '../systems/Stats';
+import { Fx } from '../ui/Fx';
+import { Hud } from '../ui/Hud';
+import { TouchControls, isTouchDevice } from '../ui/TouchControls';
+
+export class GameScene extends Phaser.Scene {
+  player!: Player;
+  enemies: Enemy[] = [];
+  projectiles: Projectile[] = [];
+  walls: Wall[] = [];
+  fx!: Fx;
+  hud!: Hud;
+  touch?: TouchControls;
+  stage!: StageDef;
+  waveIndex = 0;
+  pendingSpawns = 0;
+  lockRight = 0;
+  lastDt = 0.016;
+  private hitStopUntil = 0;
+  private finished = false;
+  private boss?: Enemy;
+  private cleared = false;
+
+  constructor() { super('game'); }
+
+  create() {
+    this.stage = STAGES[session.stageId];
+    const cls = getClass(session.classId);
+    this.fx = new Fx(this);
+    this.finished = false;
+    this.cleared = false;
+    this.waveIndex = 0;
+    this.enemies = [];
+    this.projectiles = [];
+    this.walls = [];
+    this.lockRight = W;
+    controls.reset();
+
+    this.drawBackground();
+    this.player = new Player(this, 200, (GROUND_TOP + GROUND_BOTTOM) / 2, cls, progressFor(cls));
+    this.player.recompute(true);
+
+    const touch = isTouchDevice();
+    this.hud = new Hud(this, this.player, touch);
+    if (touch) this.touch = new TouchControls(this, this.player);
+    this.bindKeyboard();
+
+    this.cameras.main.setBounds(0, 0, this.stage.width, H);
+    this.cameras.main.startFollow(this.player.root, true, 0.12, 0.12, -150, 0);
+    this.cameras.main.fadeIn(400);
+    this.fx.banner(`${this.stage.chapter}  ${this.stage.name}`, '#ffffff', 48);
+  }
+
+  // ---------- setup ----------
+
+  private drawBackground() {
+    const { width, sky, ground, hills } = this.stage;
+    const g = this.add.graphics().setDepth(-100);
+    g.fillGradientStyle(sky[0], sky[0], sky[1], sky[1], 1);
+    g.fillRect(0, 0, width, GROUND_TOP);
+    g.fillStyle(ground);
+    g.fillRect(0, GROUND_TOP - 20, width, H - GROUND_TOP + 20);
+    g.fillStyle(Phaser.Display.Color.ValueToColor(ground).darken(10).color);
+    g.fillRect(0, GROUND_BOTTOM + 10, width, H);
+    // hills, parallax-free for prototype
+    g.fillStyle(hills, 0.9);
+    for (let x = -100; x < width + 200; x += 260) {
+      g.fillEllipse(x, GROUND_TOP - 10, 420, 180 + ((x / 260) % 3) * 40);
+    }
+    g.fillStyle(0xffffff, 0.85);
+    for (let x = 120; x < width; x += 430) g.fillEllipse(x, 90 + (x % 70), 160, 50);
+    // simple flowers / grass tufts
+    g.fillStyle(0xffffff, 0.5);
+    for (let i = 0; i < width / 60; i++) g.fillCircle(i * 60 + ((i * 37) % 40), GROUND_TOP + 20 + ((i * 53) % 220), 4);
+    // goal flag
+    const gx = width - 120;
+    this.add.rectangle(gx, GROUND_BOTTOM - 10, 8, 170, 0x6b4a2b).setOrigin(0.5, 1).setDepth(GROUND_BOTTOM - 11);
+    this.add.triangle(gx + 4, GROUND_BOTTOM - 180, 0, 0, 70, 20, 0, 40, 0xffd34d).setOrigin(0, 0).setDepth(GROUND_BOTTOM - 11);
+  }
+
+  private bindKeyboard() {
+    const kb = this.input.keyboard;
+    if (!kb) return;
+    const map: Record<string, Parameters<typeof controls.press>[0]> = {
+      KeyJ: 'attack', KeyK: 'jump', KeyU: 'skill0', KeyI: 'skill1', KeyO: 'skill2', KeyP: 'skill3',
+      Digit1: 'pot0', Digit2: 'pot1', Escape: 'menu', Space: 'jump', KeyZ: 'attack', KeyX: 'jump',
+    };
+    kb.on('keydown', (e: KeyboardEvent) => {
+      if (e.repeat) return;
+      const a = map[e.code];
+      if (a) { controls.press(a); e.preventDefault(); }
+    });
+    const left = [kb.addKey('LEFT'), kb.addKey('A')];
+    const right = [kb.addKey('RIGHT'), kb.addKey('D')];
+    const up = [kb.addKey('UP'), kb.addKey('W')];
+    const down = [kb.addKey('DOWN'), kb.addKey('S')];
+    const guard = [kb.addKey('L'), kb.addKey('C'), kb.addKey('SHIFT')];
+    this.events.on('update', () => {
+      const any = (ks: Phaser.Input.Keyboard.Key[]) => ks.some((k) => k.isDown);
+      controls.kbX = (any(right) ? 1 : 0) - (any(left) ? 1 : 0);
+      controls.kbY = (any(down) ? 1 : 0) - (any(up) ? 1 : 0);
+      controls.kbGuard = any(guard);
+    });
+  }
+
+  // ---------- world queries used by entities ----------
+
+  playerBounds(): [number, number] {
+    const cam = this.cameras.main;
+    return [cam.scrollX + 30, Math.min(this.stage.width - 30, this.lockRight - 30)];
+  }
+
+  enemyBounds(): [number, number] {
+    const cam = this.cameras.main;
+    return [cam.scrollX - 80, Math.min(this.stage.width + 80, Math.max(this.lockRight, cam.scrollX + W) + 80)];
+  }
+
+  /** Front arc hit test; returns the number of new targets struck. */
+  strikeFront(src: Fighter, targets: Fighter[], range: number, depthY: number, make: (t: Fighter) => HitInfo) {
+    let n = 0;
+    for (const t of targets) {
+      if (t.dead || src.struck.has(t)) continue;
+      const dx = t.x - src.x;
+      if (Math.sign(dx) !== src.facing && Math.abs(dx) > t.w * 0.5) continue;
+      if (Math.abs(dx) > range + t.w / 2 || Math.abs(t.y - src.y) > depthY || Math.abs(t.z - src.z) > 120) continue;
+      src.struck.add(t);
+      if (t.takeHit(make(t))) n++;
+    }
+    return n;
+  }
+
+  strikeCircle(src: Fighter, targets: Fighter[], x: number, y: number, r: number, make: (t: Fighter) => HitInfo, ignoreStruck = false) {
+    let n = 0;
+    for (const t of targets) {
+      if (t.dead || (!ignoreStruck && src.struck.has(t))) continue;
+      if (Phaser.Math.Distance.Between(t.x, t.y * 2, x, y * 2) > r + t.w / 2) continue;
+      if (!ignoreStruck) src.struck.add(t);
+      if (t.takeHit(make(t))) n++;
+    }
+    return n;
+  }
+
+  spawnProjectile(o: ProjectileOpts) { this.projectiles.push(new Projectile(this, o)); }
+  spawnWall(o: WallOpts) { this.walls.push(new Wall(this, o)); }
+
+  hitStop(ms: number) { this.hitStopUntil = Math.max(this.hitStopUntil, this.time.now + ms); }
+
+  toast(msg: string) { this.hud.toast(msg); }
+
+  // ---------- waves ----------
+
+  private spawnWave() {
+    const wave = this.stage.waves[this.waveIndex];
+    this.waveIndex++;
+    this.lockRight = Math.min(this.stage.width, this.cameras.main.scrollX + W);
+    this.pendingSpawns = wave.spawns.length;
+    for (const s of wave.spawns) {
+      this.time.delayedCall(s.delay, () => {
+        this.pendingSpawns--;
+        if (this.finished) return;
+        const def = ENEMIES[s.enemy];
+        const cam = this.cameras.main;
+        const x = s.side === 'right' ? cam.scrollX + W + 60 : cam.scrollX - 60;
+        const y = Phaser.Math.Between(GROUND_TOP + 20, GROUND_BOTTOM - 20);
+        const e = new Enemy(this, x, y, def);
+        this.enemies.push(e);
+        if (def.boss) {
+          this.boss = e;
+          this.hud.showBoss(e);
+          this.fx.banner(`${def.name} 出現！`, '#ffb3c6', 56);
+          this.cameras.main.shake(300, 0.01);
+        }
+      });
+    }
+  }
+
+  onEnemyKilled(e: Enemy) {
+    const p = this.player;
+    session.save.gold += e.def.gold;
+    const gained = addExp(p.prog, e.def.exp);
+    this.fx.number(e.x, e.y - e.h - 60, `+${e.def.exp} EXP`, '#ffd34d');
+    if (gained > 0) {
+      p.recompute(true);
+      this.fx.banner('LEVEL UP!', '#ffe066', 72);
+      this.fx.aura(p.x, p.y, 0xffe066);
+      this.fx.ring(p.x, p.y, 160, 0xffe066, p.y - 1);
+    }
+    if (e.def.boss) this.time.delayedCall(900, () => this.stageClear());
+  }
+
+  removeEnemy(e: Enemy) {
+    e.destroy();
+    this.enemies = this.enemies.filter((k) => k !== e);
+  }
+
+  // ---------- flow ----------
+
+  onPlayerDead() {
+    if (this.finished) return;
+    this.finished = true;
+    this.player.prog.exp = Math.floor(this.player.prog.exp / 2);
+    writeSave(session.save);
+    this.fx.banner('你倒下了…', '#ff8080', 64);
+    this.time.delayedCall(1400, () => this.scene.start('result', { win: false }));
+  }
+
+  private stageClear() {
+    if (this.finished) return;
+    this.finished = true;
+    this.cleared = true;
+    if (!session.save.cleared.includes(this.stage.id)) session.save.cleared.push(this.stage.id);
+    writeSave(session.save);
+    this.fx.banner('STAGE CLEAR!', '#ffe066', 72);
+    this.time.delayedCall(1800, () => this.scene.start('result', { win: true }));
+  }
+
+  private openMenu() {
+    writeSave(session.save);
+    this.scene.pause();
+    this.scene.launch('levelup', { from: 'game' });
+  }
+
+  update(_t: number, delta: number) {
+    let dt = Math.min(delta, 50) / 1000;
+    const frozen = this.time.now < this.hitStopUntil;
+    if (frozen) dt *= 0.08;
+    this.lastDt = dt;
+
+    if (controls.consume('menu') && !this.finished) { this.openMenu(); return; }
+
+    this.player.update(dt);
+    for (const e of this.enemies) e.update(dt);
+    for (const p of this.projectiles) p.update(dt, this.enemies);
+    this.projectiles = this.projectiles.filter((p) => !p.done);
+    for (const w of this.walls) w.update(this.enemies);
+    this.walls = this.walls.filter((w) => !w.done);
+
+    this.player.syncView();
+    for (const e of this.enemies) e.syncView();
+
+    // Wave progression
+    const alive = this.enemies.filter((e) => !e.dead).length;
+    const waveActive = alive > 0 || this.pendingSpawns > 0;
+    if (!waveActive && !this.cleared) {
+      if (this.waveIndex < this.stage.waves.length) {
+        if (this.player.x >= this.stage.waves[this.waveIndex].triggerX) this.spawnWave();
+        else this.lockRight = this.stage.width;
+      }
+    }
+    this.hud.showGo(!waveActive && this.waveIndex < this.stage.waves.length && !this.finished);
+
+    this.hud.update();
+    this.touch?.update();
+    void this.boss;
+  }
+}
+
+export const sceneFont = FONT;

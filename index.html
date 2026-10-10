@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <title>劍與魔法亂鬥（暫名）</title>
+  <style>
+    html, body { margin: 0; padding: 0; width: 100%; height: 100%; background: #0b0d14; overflow: hidden;
+      touch-action: none; -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
+    #game { position: fixed; inset: 0; }
+    #rotate { display: none; position: fixed; inset: 0; z-index: 10; background: #0b0d14; color: #e8e6f0;
+      font: 20px/1.6 "Noto Sans TC", "PingFang TC", "Microsoft JhengHei", sans-serif;
+      align-items: center; justify-content: center; flex-direction: column; text-align: center; }
+    #rotate .icon { font-size: 56px; transform: rotate(90deg); }
+    @media (orientation: portrait) and (pointer: coarse) { #rotate { display: flex; } }
+  </style>
+</head>
+<body>
+  <div id="game"></div>
+  <div id="rotate"><div class="icon">📱</div><div>請將手機轉為橫向遊玩</div></div>
+  <script type="module" src="/src/main.ts"></script>
+</body>
+</html>
