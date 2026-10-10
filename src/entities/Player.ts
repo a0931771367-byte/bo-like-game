@@ -1,5 +1,6 @@
 import Phaser from 'phaser';
 import { GROUND_BOTTOM, GROUND_TOP } from '../config';
+import { ANIMS, animKey, type AnimSet } from '../data/anims';
 import { lv, type BuffEffect, type ClassDef, type ComboHit, type SkillDef } from '../data/types';
 import type { GameScene } from '../scenes/GameScene';
 import { controls, type Action } from '../systems/Controls';
@@ -38,6 +39,8 @@ export class Player extends Fighter {
   casting: SkillDef | null = null;
   private body: Phaser.GameObjects.Image;
   private aura: Phaser.GameObjects.Ellipse;
+  private anim?: AnimSet;
+  private bodyScale: number;
 
   constructor(scene: GameScene, x: number, y: number, public cls: ClassDef, public prog: ClassProgress) {
     super(scene, x, y, 46, 96);
@@ -47,8 +50,11 @@ export class Player extends Fighter {
 
     this.aura = scene.add.ellipse(0, -60, 110, 150, 0x9be15d, 0).setStrokeStyle(4, 0x9be15d, 0);
     this.aura.setData('noflash', true);
-    this.body = scene.add.image(0, 0, `${cls.id}_side`).setOrigin(0.5, 1);
-    this.body.setScale(PLAYER_H / this.body.height);
+    this.anim = ANIMS[cls.id] && scene.textures.exists(animKey(cls.id, 'idle', 0)) ? ANIMS[cls.id] : undefined;
+    this.body = scene.add.image(0, 0, this.anim ? animKey(cls.id, 'idle', 0) : `${cls.id}_side`).setOrigin(0.5, 1);
+    // Animation frames share one canvas with the feet on the bottom edge, so one scale fits every frame.
+    this.bodyScale = (this.anim ? PLAYER_H * 1.08 : PLAYER_H) / this.body.height;
+    this.body.setScale(this.bodyScale);
     this.view.add([this.aura, this.body]);
   }
 
@@ -599,28 +605,53 @@ export class Player extends Fighter {
 
   // ---------- presentation ----------
 
+  /** Which drawn frame fits the current state (classes with an animation sheet). */
+  private frameKey(a: AnimSet) {
+    const id = this.cls.id;
+    const t = this.stateTime;
+    switch (this.state) {
+      case 'walk': return animKey(id, 'walk', Math.floor(t / 80) % a.walk);
+      case 'attack': {
+        const h = this.timing(this.cls.combo[this.combo]);
+        const i = t < h.startup ? 0 : t < h.startup + h.active ? 1 : t < h.startup + h.active + h.recovery * 0.45 ? 2 : 3;
+        return animKey(id, 'attack', Math.min(i, a.attack - 1));
+      }
+      case 'airAttack': return animKey(id, 'attack', Math.min(t < this.cls.air.startup ? 0 : 1, a.attack - 1));
+      case 'jump': return animKey(id, 'walk', Math.min(1, a.walk - 1));
+      case 'dodge': return animKey(id, 'walk', Math.min(2, a.walk - 1));
+      case 'cast': case 'castEnd': return animKey(id, 'attack', Math.min(t < 200 ? 0 : 3, a.attack - 1));
+      default: return animKey(id, 'idle', Math.floor(this.now / 170) % a.idle);
+    }
+  }
+
   syncView() {
     super.syncView();
     const t = this.stateTime;
-    const base = PLAYER_H / this.body.height;
+    const base = this.bodyScale;
+    const a = this.anim;
+    if (a) {
+      const key = this.frameKey(a);
+      if (this.body.texture.key !== key) this.body.setTexture(key);
+    }
+    const k = a ? 0.35 : 1; // frames carry most of the motion; keep a little squash on top
     let sx = 1, sy = 1, lean = 0, bob = 0;
     const breath = Math.sin(this.now / 420);
     switch (this.state) {
-      case 'idle': sy = 1 + breath * 0.028; sx = 1 - breath * 0.014; lean = Math.sin(this.now / 840) * 1.5; break;
+      case 'idle': sy = 1 + breath * 0.028 * k; sx = 1 - breath * 0.014 * k; lean = Math.sin(this.now / 840) * 1.5 * k; break;
       case 'walk': {
         const ph = t / 75;
-        bob = Math.abs(Math.sin(ph)) * 6;
-        sy = 1 + Math.sin(ph) * 0.04;
-        sx = 1 - Math.sin(ph) * 0.03;
-        lean = 7 + Math.sin(ph * 2) * 2.5;
+        bob = Math.abs(Math.sin(ph)) * 6 * k;
+        sy = 1 + Math.sin(ph) * 0.04 * k;
+        sx = 1 - Math.sin(ph) * 0.03 * k;
+        lean = (7 + Math.sin(ph * 2) * 2.5) * k;
         break;
       }
       case 'guard': sx = 0.92; sy = 1 + breath * 0.015; lean = -6; break;
       case 'attack': {
         const h = this.timing(this.cls.combo[this.combo]);
-        if (t < h.startup) { sx = 0.9 + 0.1 * (1 - t / h.startup); lean = -8; }
-        else if (t < h.startup + h.active) { sx = 1.15; sy = 0.95; lean = 10; }
-        else { sx = 1.05; lean = 6; }
+        if (t < h.startup) { sx = 1 - 0.1 * k * (1 - t / h.startup); lean = -8 * k; }
+        else if (t < h.startup + h.active) { sx = 1 + 0.15 * k; sy = 1 - 0.05 * k; lean = 10 * k; }
+        else { sx = 1 + 0.05 * k; lean = 6 * k; }
         break;
       }
       case 'airAttack': lean = 18; sx = 1.1; break;

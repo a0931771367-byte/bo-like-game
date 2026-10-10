@@ -21,6 +21,24 @@ SHEETS = {
     'enemies/enemy-bug.png': ('bug', -1),
     'enemies/enemy-wolf.png': ('wolf', -1),
     'enemies/boss-jelly-king.png': ('jellyKing', -1),
+    'enemies/bee.png': ('bee', 1),
+    'enemies/flower.png': ('flower', 1),
+    'enemies/mushroom.png': ('mushroom', 1),
+    'enemies/treant.png': ('treant', 1),
+}
+# icon sheets -> grid of skill icons, row-major; names are <class>_<index>
+ICON_SHEETS = {
+    'ui/skills.png': [f'swordsman_{i}' for i in range(4)] + [f'mage_{i}' for i in range(4)],
+    'ui/skills2.png': [f'{c}_{i}' for c in ('merchant', 'acolyte', 'thief', 'archer') for i in range(4)],
+}
+# animation sheets -> rows of frames (row label, expected frame count); frames face right
+ANIM_SHEETS = {
+    'anim/swordsman-anim.png': ('swordsman', [('idle', 4), ('walk', 6), ('attack', 4)]),
+}
+# background paintings -> (output, where the floor strip starts in the 720px-high export)
+BACKGROUNDS = {
+    'backgrounds/bg-chapter1.png': 'chapter1',
+    'backgrounds/bg-chapter2.png': 'chapter2',
 }
 MAX_H = 320
 
@@ -106,13 +124,12 @@ def export_sheet(rel, name, side_dir):
         print(f'{name}_{label}.png {v.width}x{v.height}')
 
 
-def export_icons():
-    img = Image.open(A('ui', 'skills.png')).convert('RGB')
+def export_icons(rel, names):
+    img = Image.open(A(rel)).convert('RGB')
     a = np.array(img).astype(int)
     fg = a.max(axis=2) > 70
-    cols = clusters(fg.any(axis=0), 20, 100)
-    rows = clusters(fg.any(axis=1), 20, 100)
-    names = [f'swordsman_{i}' for i in range(4)] + [f'mage_{i}' for i in range(4)]
+    cols = clusters(fg.any(axis=0), 6, 100)
+    rows = clusters(fg.any(axis=1), 6, 100)
     k = 0
     for y0, y1 in rows:
         for x0, x1 in cols:
@@ -122,18 +139,64 @@ def export_icons():
     print(f'{k} skill icons ({len(cols)} cols x {len(rows)} rows)')
 
 
+def export_anim(rel, name, rows_spec):
+    """Cut an animation sheet into fixed-size frames: feet on the bottom edge, feet-centre at the middle."""
+    img = Image.open(A(rel)).convert('RGBA')
+    a = np.array(img.convert('RGB')).astype(int)
+    fg = a.min(axis=2) < 235
+    rows = clusters(fg.any(axis=1), min_gap=2, min_size=80)
+    if len(rows) != len(rows_spec):
+        print(f'!! {rel}: found {len(rows)} rows, expected {len(rows_spec)}')
+    frames = []  # (label, index, RGBA crop, feet_cx)
+    for (label, n), (y0, y1) in zip(rows_spec, rows):
+        band = fg[y0:y1]
+        cols = clusters(band.any(axis=0), min_gap=14, min_size=40)
+        if len(cols) != n:
+            print(f'!! {rel} row {label}: found {len(cols)} frames, expected {n}')
+        for i, (x0, x1) in enumerate(cols):
+            ys = np.where(band[:, x0:x1].any(axis=1))[0]
+            crop = img.crop((x0 - 3, y0 + ys[0] - 3, x1 + 3, y0 + ys[-1] + 4))
+            crop = knockout_white(crop)
+            al = np.array(crop)[:, :, 3] > 0
+            feet = al[int(al.shape[0] * 0.88):]
+            xs = np.where(feet.any(axis=0))[0]
+            cx = (xs[0] + xs[-1]) / 2 if len(xs) else crop.width / 2
+            frames.append((label, i, crop, cx))
+    # one canvas size for every frame so the sprite never jitters when frames swap
+    fh = max(f[2].height for f in frames)
+    half = max(max(f[3], f[2].width - f[3]) for f in frames)
+    fw = int(half * 2 + 4)
+    os.makedirs(O('sprites', 'anim'), exist_ok=True)
+    for label, i, crop, cx in frames:
+        canvas = Image.new('RGBA', (fw, fh), (0, 0, 0, 0))
+        canvas.paste(crop, (int(fw / 2 - cx), fh - crop.height), crop)
+        if fh > MAX_H:
+            canvas = canvas.resize((round(fw * MAX_H / fh), MAX_H), Image.LANCZOS)
+        canvas.save(O('sprites', 'anim', f'{name}_{label}_{i}.png'))
+    print(f'{name}: {len(frames)} frames, canvas {fw}x{fh}')
+
+
 def export_backgrounds():
-    bg = Image.open(A('backgrounds', 'bg-chapter1.png')).convert('RGB')
-    bg = bg.resize((round(bg.width * 720 / bg.height), 720), Image.LANCZOS)
-    bg.save(O('bg', 'chapter1.jpg'), quality=88)
+    for rel, out in BACKGROUNDS.items():
+        bg = Image.open(A(rel)).convert('RGB')
+        bg = bg.resize((round(bg.width * 720 / bg.height), 720), Image.LANCZOS)
+        # painting + its mirror image, so the tile repeats without a visible seam
+        pair = Image.new('RGB', (bg.width * 2, bg.height))
+        pair.paste(bg, (0, 0))
+        pair.paste(bg.transpose(Image.FLIP_LEFT_RIGHT), (bg.width, 0))
+        pair.save(O('bg', f'{out}.jpg'), quality=86)
+        print('background', out, bg.size)
     title = Image.open(A('backgrounds', 'title-keyart.png')).convert('RGB')
     title = title.resize((1280, round(title.height * 1280 / title.width)), Image.LANCZOS)
     title.save(O('bg', 'title.jpg'), quality=88)
-    print('backgrounds', bg.size, title.size)
+    print('title', title.size)
 
 
 if __name__ == '__main__':
     for rel, (name, d) in SHEETS.items():
         export_sheet(rel, name, d)
-    export_icons()
+    for rel, names in ICON_SHEETS.items():
+        export_icons(rel, names)
+    for rel, (name, spec) in ANIM_SHEETS.items():
+        export_anim(rel, name, spec)
     export_backgrounds()

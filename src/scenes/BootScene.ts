@@ -1,5 +1,6 @@
 import Phaser from 'phaser';
 import { FONT, H, W } from '../config';
+import { ANIMS, animKey } from '../data/anims';
 import { CLASSES } from '../data/classes';
 import { ENEMIES } from '../data/enemies';
 
@@ -20,9 +21,16 @@ export class BootScene extends Phaser.Scene {
       this.load.image(`${c.id}_side`, `sprites/${c.id}_side.png`);
       this.load.image(`${c.id}_front`, `sprites/${c.id}_front.png`);
       c.skills.forEach((s, i) => this.load.image(`icon_${s.id}`, `icons/skill_${c.id}_${i}.png`));
+      const anim = ANIMS[c.id];
+      if (anim) {
+        for (const label of ['idle', 'walk', 'attack'] as const) {
+          for (let i = 0; i < anim[label]; i++) this.load.image(animKey(c.id, label, i), `sprites/anim/${c.id}_${label}_${i}.png`);
+        }
+      }
     }
     for (const key of new Set(Object.values(ENEMIES).map((e) => e.sprite ?? e.id))) this.load.image(`${key}_side`, `sprites/${key}_side.png`);
     this.load.image('bg_chapter1', 'bg/chapter1.jpg');
+    this.load.image('bg_chapter2', 'bg/chapter2.jpg');
     this.load.image('title_keyart', 'bg/title.jpg');
   }
 

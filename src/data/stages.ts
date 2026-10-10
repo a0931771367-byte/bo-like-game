@@ -35,10 +35,43 @@ export const STAGES: Record<string, StageDef> = {
       { triggerX: 4500, spawns: [sp('wolfLord', 'right', 600), sp('nightWolf', 'left', 6000), sp('nightWolf', 'left', 12000)] },
     ],
   },
+  '2-1': {
+    id: '2-1', chapter: '第 2 章', name: '迷霧森林入口', desc: '紫霧籠罩的林間，蜜蜂與食人花埋伏其中。', width: 4800,
+    bg: 'bg_chapter2', bgGroundY: 546,
+    waves: [
+      { triggerX: 500, spawns: [sp('bee', 'right', 0), sp('bee', 'right', 600), sp('jelly', 'left', 1200), sp('bee', 'left', 2000)] },
+      { triggerX: 1400, spawns: [sp('flower', 'right', 0), sp('bee', 'right', 800), sp('bee', 'left', 1200), sp('bug', 'left', 2000), sp('bee', 'right', 3000)] },
+      { triggerX: 2400, spawns: [sp('flower', 'right', 0), sp('flower', 'left', 300), sp('bee', 'right', 1200), sp('bee', 'right', 1500), sp('wolf', 'left', 2400)] },
+      { triggerX: 3400, spawns: [sp('mushroom', 'right', 0), sp('bee', 'right', 700), sp('bee', 'left', 1000), sp('flower', 'left', 1800), sp('bee', 'right', 2800), sp('bee', 'left', 3200)] },
+      { triggerX: 4200, spawns: [sp('mushroom', 'right', 0), sp('mushroom', 'left', 400), sp('flower', 'right', 1200), sp('bee', 'right', 2000), sp('bee', 'left', 2400), sp('bee', 'right', 2800)] },
+    ],
+  },
+  '2-2': {
+    id: '2-2', chapter: '第 2 章', name: '毒蘑菇窪地', desc: '潮濕的窪地長滿毒蘑菇，霧氣越來越濃。', width: 5200,
+    bg: 'bg_chapter2', bgGroundY: 546, tint: 0xbfe6d8,
+    waves: [
+      { triggerX: 500, spawns: [sp('mushroom', 'right', 0), sp('bee', 'left', 500), sp('mushroom', 'left', 1400), sp('bee', 'right', 2000)] },
+      { triggerX: 1400, spawns: [sp('flower', 'right', 0), sp('mushroom', 'right', 600), sp('bee', 'left', 1000), sp('bee', 'left', 1300), sp('mushroom', 'left', 2400)] },
+      { triggerX: 2400, spawns: [sp('mushroom', 'right', 0), sp('mushroom', 'right', 300), sp('flower', 'left', 800), sp('bee', 'right', 1600), sp('bee', 'left', 2000), sp('ironBug', 'right', 2800)] },
+      { triggerX: 3400, spawns: [sp('flower', 'right', 0), sp('flower', 'right', 400), sp('mushroom', 'left', 1000), sp('bee', 'right', 1800), sp('bee', 'right', 2100), sp('bee', 'left', 2400), sp('mushroom', 'right', 3200)] },
+      { triggerX: 4500, spawns: [sp('mushroom', 'right', 0), sp('mushroom', 'left', 0), sp('mushroom', 'right', 1200), sp('flower', 'left', 1600), sp('bee', 'right', 2400), sp('bee', 'left', 2800), sp('bee', 'right', 3200)] },
+    ],
+  },
+  '2-3': {
+    id: '2-3', chapter: '第 2 章', name: '古樹之心', desc: '森林深處的巨木正在發出紫光，樹精母體在此等待。', width: 5600,
+    bg: 'bg_chapter2', bgGroundY: 546, tint: 0xa8bcc8,
+    waves: [
+      { triggerX: 500, spawns: [sp('bee', 'right', 0), sp('bee', 'right', 300), sp('flower', 'left', 800), sp('mushroom', 'right', 1600)] },
+      { triggerX: 1500, spawns: [sp('mushroom', 'right', 0), sp('flower', 'right', 400), sp('bee', 'left', 900), sp('bee', 'left', 1200), sp('nightWolf', 'right', 2200)] },
+      { triggerX: 2500, spawns: [sp('flower', 'right', 0), sp('flower', 'left', 200), sp('mushroom', 'right', 1000), sp('mushroom', 'left', 1300), sp('bee', 'right', 2200), sp('bee', 'right', 2500)] },
+      { triggerX: 3600, spawns: [sp('nightWolf', 'right', 0), sp('nightWolf', 'left', 300), sp('mushroom', 'right', 1200), sp('bee', 'left', 1800), sp('bee', 'right', 2200), sp('flower', 'left', 2800)] },
+      { triggerX: 4800, spawns: [sp('treant', 'right', 800), sp('bee', 'left', 8000), sp('bee', 'left', 8300), sp('flower', 'left', 16000)] },
+    ],
+  },
 };
 
 /** Play order; a stage unlocks once the one before it is cleared. */
-export const STAGE_ORDER = ['1-1', '1-2', '1-3'];
+export const STAGE_ORDER = ['1-1', '1-2', '1-3', '2-1', '2-2', '2-3'];
 export const nextStage = (id: string) => STAGE_ORDER[STAGE_ORDER.indexOf(id) + 1];
 export const stageUnlocked = (id: string, cleared: string[]) => {
   const i = STAGE_ORDER.indexOf(id);

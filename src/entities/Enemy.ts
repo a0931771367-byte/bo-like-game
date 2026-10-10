@@ -87,6 +87,17 @@ export class Enemy extends Fighter {
       case 'slam':
         this.vx = 0;
         break;
+      case 'stomp':
+        this.vx = this.vy = 0;
+        if (this.stateTime >= 520) {
+          this.scene.cameras.main.shake(220, 0.014);
+          this.scene.fx.ring(this.x, this.y, 240, 0x9be15d, this.y - 1);
+          this.scene.fx.dust(this.x, this.y, 14, 2);
+          sfx.play('thunder', 0.8);
+          this.tryHitPlayer(230, 1.4, 420, 480, 500, true);
+          this.setState('recover');
+        }
+        break;
       case 'recover':
         this.vx *= 0.85;
         if (this.stateTime >= (this.def.boss ? 500 : 400)) {
@@ -112,6 +123,12 @@ export class Enemy extends Fighter {
     }
     const landed = this.physics(dt, xMin, xMax);
     if (landed) this.onLand();
+    if (this.def.behavior === 'flyer' && !this.dead) {
+      // Bees hover instead of falling; a dive drops them to the player's height.
+      const hover = this.state === 'attack' ? 10 : 58 + Math.sin((this.now + this.phase) / 180) * 9;
+      this.z += (hover - this.z) * Math.min(1, dt * 10);
+      this.vz = 0;
+    }
   }
 
   private onLand() {
@@ -198,6 +215,30 @@ export class Enemy extends Fighter {
         this.vx = Math.sign(dx) * sp * (dist > 90 ? 1 : 0);
         this.vy = Phaser.Math.Clamp(dy / 20, -1, 1) * sp * 0.6;
         break;
+      case 'flyer':
+        // Circle in from the side, then sting when lined up.
+        if (dist < this.def.attackRange && aligned && canAttack) { this.setState('windup'); return; }
+        this.vx = Math.sign(dx) * sp * (dist > 70 ? 1 : -0.4);
+        this.vy = Phaser.Math.Clamp(dy / 16, -1, 1) * sp * 0.8;
+        break;
+      case 'turret':
+        // Rooted: turn to face, spit when the player is roughly on the same lane.
+        this.vx = this.vy = 0;
+        if (dist < this.def.attackRange && dist > 60 && Math.abs(dy) < 70 && canAttack) { this.setState('windup'); return; }
+        break;
+      case 'bossTreant':
+        if (canAttack && aligned) {
+          if (dist < this.def.attackRange) { this.setState('windup'); return; }
+          if (dist < 300 && Math.random() < 0.015) {
+            this.scene.fx.number(this.x, this.y - this.h - 40, '!', '#9be15d', true);
+            this.attackReadyAt = this.now + this.def.attackCd + 1200;
+            this.setState('stomp');
+            return;
+          }
+        }
+        this.vx = Math.sign(dx) * sp * (dist > 120 ? 1 : 0);
+        this.vy = Phaser.Math.Clamp(dy / 20, -1, 1) * sp * 0.5;
+        break;
     }
     const moving = Math.abs(this.vx) + Math.abs(this.vy) > 1;
     if (moving && this.state !== 'walk') this.setState('walk');
@@ -217,6 +258,16 @@ export class Enemy extends Fighter {
   private doAttack() {
     this.attackReadyAt = this.now + this.def.attackCd;
     if (this.def.behavior === 'lunger') { this.setState('lunge'); return; }
+    if (this.def.behavior === 'turret') {
+      const dir = this.facing;
+      this.scene.spawnProjectile({
+        owner: this, team: 'player', x: this.x + dir * 30, y: this.y, z: 70, dir, speed: 430, color: 0x9bd45a, range: this.def.attackRange + 80,
+        make: () => this.hitInfo(1, 240, 0, 400),
+      });
+      sfx.play('arrow', 0.6);
+      this.setState('attack');
+      return;
+    }
     this.setState('attack');
     this.scene.fx.slash(this.x + this.facing * 30, this.y - this.h * 0.5, this.facing, 0xffffff, 40 + this.def.w * 0.3, this.y);
   }
@@ -230,8 +281,13 @@ export class Enemy extends Fighter {
       : Math.sign(dx) === this.facing && Math.abs(dx) < range + p.w / 2 && Math.abs(p.y - this.y) < 50;
     if (!inRange || p.z > 90) return;
     this.struck.add(p);
+    p.takeHit(this.hitInfo(powerMult, knock, launch, stun, (Math.sign(dx) || 1) as 1 | -1));
+  }
+
+  private hitInfo(powerMult: number, knock: number, launch: number, stun: number, dir: 1 | -1 = this.facing): HitInfo {
+    const p = this.player;
     const dmg = Math.max(1, Math.round((this.def.atk * powerMult - p.d.def * 0.6) * (0.9 + Math.random() * 0.2)));
-    p.takeHit({ damage: dmg, crit: false, mult: 1, element: this.def.element, dir: (Math.sign(dx) || 1) as 1 | -1, knock, launch, stun, source: this });
+    return { damage: dmg, crit: false, mult: 1, element: this.def.element, dir, knock, launch, stun, source: this };
   }
 
   takeHit(h: HitInfo) {
@@ -313,18 +369,21 @@ export class Enemy extends Fighter {
       case 'idle':
         if (b === 'hopper' || b === 'bossSlime') { sy = 1 + wob * 0.07; sx = 1 - wob * 0.05; }
         else if (b === 'lunger') { sy = 1 + wob * 0.03; lean = wob * 2; }
+        else if (b === 'turret') { lean = wob * 4; sy = 1 + wob * 0.02; }
         else { sx = 1 + wob * 0.03; sy = 1 - wob * 0.02; lean = wob * 1.5; }
         break;
       case 'walk': sy = 1 + Math.sin(t / 90) * 0.05; sx = 1 - Math.sin(t / 90) * 0.04; lean = b === 'lunger' ? 6 + Math.sin(t / 90) * 3 : Math.sin(t / 90) * 4; break;
       case 'windup': sx = 1.15; sy = 0.85; lean = -8; break;
       case 'attack': case 'lunge': lean = 14; sx = 1.1; break;
       case 'slam': sy = 1.25; sx = 0.85; break;
+      case 'stomp': sy = t < 520 ? 1 + t / 520 * 0.18 : 0.85; sx = t < 520 ? 1 - t / 520 * 0.08 : 1.15; break;
       case 'hurt': lean = -10; sx = 0.92; break;
       case 'knock': lean = -60; break;
       case 'down': lean = -90; sy = 0.6; break;
       case 'frozen': lean = 0; break;
     }
-    if (this.airborne && this.state !== 'knock' && this.state !== 'slam') { sy = 1.1; sx = 0.92; }
+    if (b === 'flyer') { sy *= 1 + Math.sin(this.now / 45) * 0.02; }
+    else if (this.airborne && this.state !== 'knock' && this.state !== 'slam') { sy = 1.1; sx = 0.92; }
     this.body.setScale(this.baseScale * sx, this.baseScale * sy);
     this.view.angle = lean * this.facing;
     if (!this.frozen) {

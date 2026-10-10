@@ -17,6 +17,16 @@ export const ENEMIES: Record<string, EnemyDef> = {
     w: 58, h: 38, color: 0x9aa4b4, behavior: 'melee', attackRange: 75, windup: 560, attackCd: 1900, spriteH: 82 },
   nightWolf: { id: 'nightWolf', sprite: 'wolf', tint: 0x8a7ccf, name: '夜狼', hp: 110, atk: 21, def: 3, mdef: 1, element: 'dark', exp: 28, gold: 16, speed: 195,
     w: 70, h: 44, color: 0x6c5fb0, behavior: 'lunger', attackRange: 260, windup: 400, attackCd: 2000, spriteH: 88 },
+  // ---- chapter 2: misty forest ----
+  bee: { id: 'bee', name: '大蜜蜂', hp: 85, atk: 17, def: 1, mdef: 2, element: 'wind', exp: 22, gold: 12, speed: 150,
+    w: 56, h: 46, color: 0xf5c518, behavior: 'flyer', attackRange: 80, windup: 320, attackCd: 1500, spriteH: 82 },
+  flower: { id: 'flower', name: '食人花', hp: 130, atk: 19, def: 3, mdef: 4, element: 'earth', exp: 28, gold: 15, speed: 0,
+    w: 70, h: 110, color: 0xd93b3b, behavior: 'turret', attackRange: 520, windup: 600, attackCd: 2400, spriteH: 150 },
+  mushroom: { id: 'mushroom', name: '毒蘑菇', hp: 170, atk: 21, def: 6, mdef: 6, element: 'poison', exp: 32, gold: 17, speed: 50,
+    w: 80, h: 70, color: 0x9b59b6, behavior: 'melee', attackRange: 80, windup: 600, attackCd: 2000, spriteH: 104 },
+  treant: { id: 'treant', name: '樹精母體', hp: 2600, atk: 30, def: 8, mdef: 6, element: 'earth', exp: 420, gold: 320, speed: 60,
+    w: 160, h: 180, color: 0x6b8e3a, behavior: 'bossTreant', attackRange: 170, windup: 700, attackCd: 1800, boss: true, spriteH: 300 },
+
   wolfLord: { id: 'wolfLord', sprite: 'wolf', tint: 0xd8d8e8, name: '銀牙狼王', hp: 1700, atk: 26, def: 6, mdef: 3, element: 'earth', exp: 260, gold: 200, speed: 190,
     w: 120, h: 70, color: 0xdcdcf0, behavior: 'lunger', attackRange: 320, windup: 500, attackCd: 1900, boss: true, spriteH: 150 },
 };

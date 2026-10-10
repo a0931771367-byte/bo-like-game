@@ -18,24 +18,24 @@ export class StageSelectScene extends Phaser.Scene {
     this.add.text(W / 2, 60, '選擇關卡', { ...txt, fontSize: '44px', fontStyle: 'bold' }).setOrigin(0.5);
     this.add.text(W / 2, 110, `${cls.name} Lv.${p.level}    金幣 ${session.save.gold} G`, { ...txt, fontSize: '20px', color: '#ffd34d' }).setOrigin(0.5);
 
-    const cardW = 340, cardH = 300, gap = 30;
-    const startX = W / 2 - (STAGE_ORDER.length * (cardW + gap) - gap) / 2 + cardW / 2;
+    const cardW = 360, cardH = 230, gap = 24, perRow = 3;
+    const startX = W / 2 - (perRow * (cardW + gap) - gap) / 2 + cardW / 2;
     const cleared = session.save.cleared;
     STAGE_ORDER.forEach((id, i) => {
       const st = STAGES[id];
-      const x = startX + i * (cardW + gap), y = 360;
+      const x = startX + (i % perRow) * (cardW + gap), y = 270 + Math.floor(i / perRow) * (cardH + gap);
       const open = stageUnlocked(id, cleared);
       const done = cleared.includes(id);
       const card = this.add.rectangle(x, y, cardW, cardH, open ? 0x000000 : 0x151515, open ? 0.5 : 0.75)
         .setStrokeStyle(3, done ? 0xffd34d : open ? 0x8fb8ff : 0x444444, 1);
-      this.add.text(x, y - 120, `${st.chapter}  第 ${i + 1} 關`, { ...txt, fontSize: '18px', color: open ? '#9fd0ff' : '#777777' }).setOrigin(0.5);
-      this.add.text(x, y - 80, st.name, { ...txt, fontSize: '32px', fontStyle: 'bold', color: open ? '#ffffff' : '#777777' }).setOrigin(0.5);
-      this.add.text(x, y - 30, open ? st.desc : '先通過上一關才能解鎖', { fontFamily: FONT, fontSize: '16px', color: open ? '#dcd6f0' : '#777777', wordWrap: { width: cardW - 40 }, align: 'center' }).setOrigin(0.5, 0);
-      if (done) this.add.text(x, y + 70, '✓ 已通關', { ...txt, fontSize: '20px', color: '#ffd34d' }).setOrigin(0.5);
-      else if (!open) this.add.text(x, y + 70, '🔒', { fontFamily: FONT, fontSize: '36px' }).setOrigin(0.5);
+      this.add.text(x, y - 90, `${st.chapter}  第 ${(i % perRow) + 1} 關`, { ...txt, fontSize: '16px', color: open ? '#9fd0ff' : '#777777' }).setOrigin(0.5);
+      this.add.text(x, y - 58, st.name, { ...txt, fontSize: '28px', fontStyle: 'bold', color: open ? '#ffffff' : '#777777' }).setOrigin(0.5);
+      this.add.text(x, y - 28, open ? st.desc : '先通過上一關才能解鎖', { fontFamily: FONT, fontSize: '14px', color: open ? '#dcd6f0' : '#777777', wordWrap: { width: cardW - 40 }, align: 'center' }).setOrigin(0.5, 0);
+      if (done) this.add.text(x + cardW / 2 - 16, y - cardH / 2 + 14, '✓', { ...txt, fontSize: '20px', color: '#ffd34d' }).setOrigin(1, 0);
+      else if (!open) this.add.text(x, y + 60, '🔒', { fontFamily: FONT, fontSize: '30px' }).setOrigin(0.5);
       if (open) {
-        const go = this.add.rectangle(x, y + 115, 200, 48, 0x4a7bd1, 0.9).setStrokeStyle(2, 0xffffff, 0.7).setInteractive({ useHandCursor: true });
-        this.add.text(x, y + 115, done ? '再挑戰' : '出發', { ...txt, fontSize: '22px' }).setOrigin(0.5);
+        const go = this.add.rectangle(x, y + 75, 180, 42, 0x4a7bd1, 0.9).setStrokeStyle(2, 0xffffff, 0.7).setInteractive({ useHandCursor: true });
+        this.add.text(x, y + 75, done ? '再挑戰' : '出發', { ...txt, fontSize: '20px' }).setOrigin(0.5);
         const start = () => {
           session.stageId = id;
           writeSave(session.save);

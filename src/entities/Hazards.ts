@@ -6,6 +6,8 @@ export interface ProjectileOpts {
   owner: Fighter; x: number; y: number; z: number; dir: 1 | -1; speed: number; color: number; range: number;
   /** Draw as an arrow shaft instead of a magic orb. */
   arrow?: boolean;
+  /** Who this projectile hurts (default: enemies). */
+  team?: 'player' | 'enemy';
   make: (target: Fighter) => HitInfo;
 }
 

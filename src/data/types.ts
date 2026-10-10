@@ -87,7 +87,7 @@ export interface ClassDef {
   skills: SkillDef[];
 }
 
-export type EnemyBehavior = 'hopper' | 'melee' | 'lunger' | 'bossSlime';
+export type EnemyBehavior = 'hopper' | 'melee' | 'lunger' | 'bossSlime' | 'flyer' | 'turret' | 'bossTreant';
 
 export interface EnemyDef {
   id: string;

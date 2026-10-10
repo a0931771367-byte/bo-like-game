@@ -184,9 +184,20 @@ export class GameScene extends Phaser.Scene {
         if (this.finished) return;
         const def = ENEMIES[s.enemy];
         const cam = this.cameras.main;
-        const x = s.side === 'right' ? cam.scrollX + W + 60 : cam.scrollX - 60;
+        const rooted = def.speed === 0;
+        // Rooted enemies (plants) can't walk in, so they sprout inside the view instead.
+        const x = rooted
+          ? Phaser.Math.Clamp(s.side === 'right' ? cam.scrollX + W - 160 : cam.scrollX + 160, this.player.x - 500, this.player.x + 500)
+          : s.side === 'right' ? cam.scrollX + W + 60 : cam.scrollX - 60;
         const y = Phaser.Math.Between(GROUND_TOP + 20, GROUND_BOTTOM - 20);
         const e = new Enemy(this, x, y, def);
+        if (rooted) {
+          this.fx.dust(x, y, 10, 1.4);
+          this.fx.ring(x, y, 90, def.color, y - 1);
+          e.attackReadyAt = this.time.now + 900;
+          e.view.scaleY = 0.2;
+          this.tweens.add({ targets: e.view, scaleY: 1, duration: 350, ease: 'Back.easeOut' });
+        }
         this.enemies.push(e);
         if (def.boss) {
           this.boss = e;
@@ -239,7 +250,7 @@ export class GameScene extends Phaser.Scene {
   }
 
   private stageClear() {
-    if (this.finished) return;
+    if (this.cleared) return;
     this.finished = true;
     this.cleared = true;
     if (!session.save.cleared.includes(this.stage.id)) session.save.cleared.push(this.stage.id);
@@ -270,7 +281,7 @@ export class GameScene extends Phaser.Scene {
 
     this.player.update(dt);
     for (const e of this.enemies) e.update(dt);
-    for (const p of this.projectiles) p.update(dt, this.enemies);
+    for (const p of this.projectiles) p.update(dt, p.o.team === 'player' ? [this.player] : this.enemies);
     this.projectiles = this.projectiles.filter((p) => !p.done);
     for (const w of this.walls) w.update(this.enemies);
     this.walls = this.walls.filter((w) => !w.done);
@@ -285,6 +296,10 @@ export class GameScene extends Phaser.Scene {
       if (this.waveIndex < this.stage.waves.length) {
         if (this.player.x >= this.stage.waves[this.waveIndex].triggerX) this.spawnWave();
         else this.lockRight = this.stage.width;
+      } else if (!this.finished && !this.player.dead) {
+        // Stages without a boss end once every wave is beaten.
+        this.time.delayedCall(600, () => this.stageClear());
+        this.finished = true;
       }
     }
     this.hud.showGo(!waveActive && this.waveIndex < this.stage.waves.length && !this.finished);
