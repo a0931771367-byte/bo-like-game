@@ -9,6 +9,7 @@ import type { Fighter, HitInfo } from '../entities/Fighter';
 import { Projectile, Wall, type ProjectileOpts, type WallOpts } from '../entities/Hazards';
 import { Player } from '../entities/Player';
 import { controls } from '../systems/Controls';
+import { queueStage, showLoading } from '../systems/Assets';
 import { progressFor, session, writeSave } from '../systems/Save';
 import { addExp } from '../systems/Stats';
 import { sfx } from '../systems/Sfx';
@@ -37,6 +38,11 @@ export class GameScene extends Phaser.Scene {
   comboUntil = 0;
 
   constructor() { super('game'); }
+
+  preload() {
+    queueStage(this, session.stageId, session.classId);
+    showLoading(this);
+  }
 
   create() {
     this.stage = STAGES[session.stageId];

@@ -1,6 +1,6 @@
 """Cut game sprites out of the Higgsfield reference sheets in art/.
 Usage: python3 tools/extract_sprites.py
-Writes transparent PNGs to public/sprites, public/icons, public/bg."""
+Writes WebP files to public/sprites, public/icons, public/bg (WebP is 4-5x smaller than PNG, so the game loads fast)."""
 import os
 import numpy as np
 from PIL import Image, ImageDraw, ImageFilter
@@ -121,8 +121,8 @@ def export_sheet(rel, name, side_dir):
             v = v.transpose(Image.FLIP_LEFT_RIGHT)
         if v.height > MAX_H:
             v = v.resize((round(v.width * MAX_H / v.height), MAX_H), Image.LANCZOS)
-        v.save(O('sprites', f'{name}_{label}.png'))
-        print(f'{name}_{label}.png {v.width}x{v.height}')
+        v.save(O('sprites', f'{name}_{label}.webp'), quality=85, method=6)
+        print(f'{name}_{label}.webp {v.width}x{v.height}')
 
 
 def export_icons(rel, names):
@@ -135,7 +135,7 @@ def export_icons(rel, names):
     for y0, y1 in rows:
         for x0, x1 in cols:
             tile = img.crop((x0 + 2, y0 + 2, x1 - 2, y1 - 2)).resize((128, 128), Image.LANCZOS)
-            tile.save(O('icons', f'skill_{names[k]}.png'))
+            tile.save(O('icons', f'skill_{names[k]}.webp'), quality=90, method=6)
             k += 1
     print(f'{k} skill icons ({len(cols)} cols x {len(rows)} rows)')
 
@@ -175,7 +175,7 @@ def export_anim(rel, name, rows_spec):
         canvas.paste(crop, (int(fw / 2 - cx), fh - crop.height), crop)
         if fh > MAX_H:
             canvas = canvas.resize((round(fw * MAX_H / fh), MAX_H), Image.LANCZOS)
-        canvas.save(O('sprites', 'anim', f'{name}_{label}_{i}.png'))
+        canvas.save(O('sprites', 'anim', f'{name}_{label}_{i}.webp'), quality=85, method=6)
     print(f'{name}: {len(frames)} frames, canvas {fw}x{fh}')
 
 
@@ -187,11 +187,11 @@ def export_backgrounds():
         pair = Image.new('RGB', (bg.width * 2, bg.height))
         pair.paste(bg, (0, 0))
         pair.paste(bg.transpose(Image.FLIP_LEFT_RIGHT), (bg.width, 0))
-        pair.save(O('bg', f'{out}.jpg'), quality=86)
+        pair.save(O('bg', f'{out}.webp'), quality=82, method=6)
         print('background', out, bg.size)
     title = Image.open(A('backgrounds', 'title-keyart.png')).convert('RGB')
     title = title.resize((1280, round(title.height * 1280 / title.width)), Image.LANCZOS)
-    title.save(O('bg', 'title.jpg'), quality=88)
+    title.save(O('bg', 'title.webp'), quality=84, method=6)
     print('title', title.size)
 
 

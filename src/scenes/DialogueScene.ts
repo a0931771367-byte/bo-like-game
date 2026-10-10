@@ -3,6 +3,7 @@ import { FONT, H, W } from '../config';
 import { getClass } from '../data/classes';
 import { STAGES } from '../data/stages';
 import { STORY, type StoryLine } from '../data/story';
+import { queueStage, showLoading } from '../systems/Assets';
 import { session } from '../systems/Save';
 import { sfx } from '../systems/Sfx';
 
@@ -30,6 +31,11 @@ export class DialogueScene extends Phaser.Scene {
 
   constructor() { super('dialogue'); }
   init(d: DialogueData) { this.d = d; }
+
+  preload() {
+    queueStage(this, this.d.stageId, session.classId);
+    showLoading(this);
+  }
 
   create() {
     const cls = getClass(session.classId);
