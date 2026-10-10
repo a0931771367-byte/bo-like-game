@@ -71,7 +71,7 @@ export class LevelUpScene extends Phaser.Scene {
     });
 
     // ---- footer ----
-    const label = this.from === 'game' ? '返回戰鬥' : '出發：第 1 章第 1 關';
+    const label = this.from === 'game' ? '返回戰鬥' : '選擇關卡 →';
     this.bigBtn(W / 2 + 160, H - 60, label, 0x4a7bd1, () => {
       writeSave(session.save);
       if (this.from === 'game') {
@@ -80,7 +80,7 @@ export class LevelUpScene extends Phaser.Scene {
         this.scene.stop();
         this.scene.resume('game');
       } else {
-        this.scene.start('game');
+        this.scene.start('stageselect');
       }
     });
     this.bigBtn(W / 2 - 160, H - 60, this.from === 'game' ? '放棄關卡回標題' : '回標題', 0x555a70, () => {

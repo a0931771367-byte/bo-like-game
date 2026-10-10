@@ -21,7 +21,7 @@ export class BootScene extends Phaser.Scene {
       this.load.image(`${c.id}_front`, `sprites/${c.id}_front.png`);
       c.skills.forEach((s, i) => this.load.image(`icon_${s.id}`, `icons/skill_${c.id}_${i}.png`));
     }
-    for (const e of Object.values(ENEMIES)) this.load.image(`${e.id}_side`, `sprites/${e.id}_side.png`);
+    for (const key of new Set(Object.values(ENEMIES).map((e) => e.sprite ?? e.id))) this.load.image(`${key}_side`, `sprites/${key}_side.png`);
     this.load.image('bg_chapter1', 'bg/chapter1.jpg');
     this.load.image('title_keyart', 'bg/title.jpg');
   }

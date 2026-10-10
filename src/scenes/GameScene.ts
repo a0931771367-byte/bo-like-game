@@ -67,19 +67,21 @@ export class GameScene extends Phaser.Scene {
 
   private drawBackground() {
     const { width } = this.stage;
-    const tex = this.textures.get('bg_chapter1');
+    const key = this.stage.bg;
+    const tex = this.textures.get(key);
     const src = tex.getSourceImage() as HTMLImageElement;
-    const groundY = 528; // where the walkable grass strip starts in the painting
+    const groundY = this.stage.bgGroundY; // where the walkable floor strip starts in the painting
     if (!tex.has('sky')) {
       tex.add('sky', 0, 0, 0, src.width, groundY);
       tex.add('ground', 0, 0, groundY, src.width, src.height - groundY);
     }
     // far layer: sky, castle and hills scroll at half speed
-    this.add.tileSprite(0, 0, width / 2 + W, groundY, 'bg_chapter1', 'sky').setOrigin(0).setScrollFactor(0.5, 0).setDepth(-100);
+    const sky = this.add.tileSprite(0, 0, width / 2 + W, groundY, key, 'sky').setOrigin(0).setScrollFactor(0.5, 0).setDepth(-100);
     // near layer: grass and soil move with the player and sit under the fighters
     const gh = H - (GROUND_TOP - 30);
-    const ground = this.add.tileSprite(0, GROUND_TOP - 30, width + W, gh, 'bg_chapter1', 'ground').setOrigin(0).setDepth(-50);
+    const ground = this.add.tileSprite(0, GROUND_TOP - 30, width + W, gh, key, 'ground').setOrigin(0).setDepth(-50);
     ground.tileScaleY = gh / (src.height - groundY);
+    if (this.stage.tint !== undefined) { sky.setTint(this.stage.tint); ground.setTint(this.stage.tint); }
     // goal flag
     const gx = width - 120;
     this.add.rectangle(gx, GROUND_BOTTOM - 10, 8, 170, 0x6b4a2b).setOrigin(0.5, 1).setDepth(GROUND_BOTTOM - 11);

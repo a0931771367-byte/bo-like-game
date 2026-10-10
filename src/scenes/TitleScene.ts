@@ -45,7 +45,7 @@ export class TitleScene extends Phaser.Scene {
       }
     });
 
-    this.add.text(W / 2, 560, '點選職業開始 → 會先進入加點畫面，再進入第 1 章第 1 關', { fontFamily: FONT, fontSize: '18px', color: '#cfc8e8' }).setOrigin(0.5);
+    this.add.text(W / 2, 560, '點選職業開始 → 加點 → 選關卡', { fontFamily: FONT, fontSize: '18px', color: '#cfc8e8' }).setOrigin(0.5);
 
     this.button(W / 2 - 170, 630, '匯出存檔碼', () => {
       const code = exportCode(session.save);

@@ -4,6 +4,7 @@ import { BootScene } from './scenes/BootScene';
 import { GameScene } from './scenes/GameScene';
 import { LevelUpScene } from './scenes/LevelUpScene';
 import { ResultScene } from './scenes/ResultScene';
+import { StageSelectScene } from './scenes/StageSelectScene';
 import { TitleScene } from './scenes/TitleScene';
 
 const game = new Phaser.Game({
@@ -15,7 +16,7 @@ const game = new Phaser.Game({
   scale: { mode: Phaser.Scale.FIT, autoCenter: Phaser.Scale.CENTER_BOTH },
   input: { activePointers: 4 },
   render: { antialias: true, roundPixels: false },
-  scene: [BootScene, TitleScene, LevelUpScene, GameScene, ResultScene],
+  scene: [BootScene, TitleScene, LevelUpScene, StageSelectScene, GameScene, ResultScene],
 });
 
 (window as unknown as { __game: Phaser.Game }).__game = game;

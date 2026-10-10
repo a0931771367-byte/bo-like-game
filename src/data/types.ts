@@ -110,6 +110,9 @@ export interface EnemyDef {
   boss?: boolean;
   /** On-screen sprite height in px (hitbox uses w/h). */
   spriteH: number;
+  /** Texture id to draw with (defaults to `id`), for recoloured variants. */
+  sprite?: string;
+  tint?: number;
 }
 
 export interface SpawnDef {
@@ -127,10 +130,13 @@ export interface StageDef {
   id: string;
   name: string;
   chapter: string;
+  desc: string;
   width: number;
-  sky: [number, number];
-  ground: number;
-  hills: number;
+  /** Background texture key and the y where its walkable floor strip starts. */
+  bg: string;
+  bgGroundY: number;
+  /** Optional colour wash over the background (time of day). */
+  tint?: number;
   waves: WaveDef[];
 }
 

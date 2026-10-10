@@ -25,7 +25,8 @@ export class Enemy extends Fighter {
     this.maxHp = this.hp = def.hp;
     this.facing = x > scene.player.x ? -1 : 1;
     const { w } = def;
-    this.body = scene.add.image(0, 0, `${def.id}_side`).setOrigin(0.5, 1);
+    this.body = scene.add.image(0, 0, `${def.sprite ?? def.id}_side`).setOrigin(0.5, 1);
+    if (def.tint !== undefined) this.body.setTint(def.tint);
     this.baseScale = def.spriteH / this.body.height;
     this.body.setScale(this.baseScale);
     this.view.add(this.body);
@@ -314,8 +315,8 @@ export class Enemy extends Fighter {
     if (!this.frozen) {
       const weak = this.now < this.defDownUntil;
       const poisoned = this.now < this.poisonUntil;
-      const tint = weak ? 0xffb0b0 : poisoned ? 0xc9a0ff : 0;
-      if (tint && this.body.tintTopLeft !== tint) this.body.setTint(tint);
+      const tint = weak ? 0xffb0b0 : poisoned ? 0xc9a0ff : this.def.tint ?? 0;
+      if (tint && (this.body.tintTopLeft !== tint || this.body.tintFill)) this.body.setTint(tint);
       else if (!tint && this.body.isTinted) this.body.clearTint();
     }
   }
