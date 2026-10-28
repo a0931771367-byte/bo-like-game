@@ -1,0 +1,12 @@
+{
+    "name": "BoLike.Runtime",
+    "rootNamespace": "BoLike",
+    "references": [
+        "Unity.InputSystem"
+    ],
+    "overrideReferences": true,
+    "precompiledReferences": [
+        "Newtonsoft.Json.dll"
+    ],
+    "autoReferenced": true
+}

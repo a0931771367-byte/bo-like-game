@@ -1,0 +1,1403 @@
+{
+ "rooms": [
+  {
+   "id": "meadow",
+   "name": "草原小徑",
+   "scene": "grassland",
+   "kind": "combat",
+   "width": 1800,
+   "bg": "bg_chapter1",
+   "bgGroundY": 528,
+   "waveSets": [
+    [
+     {
+      "spawns": [
+       {
+        "enemy": "jelly",
+        "side": "right",
+        "delay": 0
+       },
+       {
+        "enemy": "jelly",
+        "side": "right",
+        "delay": 500
+       },
+       {
+        "enemy": "jelly",
+        "side": "left",
+        "delay": 1200
+       }
+      ],
+      "timeout": 12000
+     },
+     {
+      "spawns": [
+       {
+        "enemy": "jelly",
+        "side": "right",
+        "delay": 0
+       },
+       {
+        "enemy": "bug",
+        "side": "right",
+        "delay": 600
+       },
+       {
+        "enemy": "jelly",
+        "side": "left",
+        "delay": 1000
+       },
+       {
+        "enemy": "jelly",
+        "side": "left",
+        "delay": 1600
+       }
+      ],
+      "timeout": 14000
+     },
+     {
+      "spawns": [
+       {
+        "enemy": "bug",
+        "side": "left",
+        "delay": 0
+       },
+       {
+        "enemy": "jelly",
+        "side": "right",
+        "delay": 400
+       },
+       {
+        "enemy": "jelly",
+        "side": "right",
+        "delay": 800
+       },
+       {
+        "enemy": "wolf",
+        "side": "left",
+        "delay": 2200
+       }
+      ],
+      "timeout": 16000
+     }
+    ],
+    [
+     {
+      "spawns": [
+       {
+        "enemy": "jelly",
+        "side": "left",
+        "delay": 0
+       },
+       {
+        "enemy": "jelly",
+        "side": "left",
+        "delay": 400
+       },
+       {
+        "enemy": "bug",
+        "side": "right",
+        "delay": 1000
+       }
+      ],
+      "timeout": 12000
+     },
+     {
+      "spawns": [
+       {
+        "enemy": "jelly",
+        "side": "right",
+        "delay": 0
+       },
+       {
+        "enemy": "jelly",
+        "side": "left",
+        "delay": 300
+       },
+       {
+        "enemy": "jelly",
+        "side": "right",
+        "delay": 900
+       },
+       {
+        "enemy": "bug",
+        "side": "left",
+        "delay": 1800
+       }
+      ],
+      "timeout": 14000
+     },
+     {
+      "spawns": [
+       {
+        "enemy": "wolf",
+        "side": "right",
+        "delay": 0
+       },
+       {
+        "enemy": "jelly",
+        "side": "left",
+        "delay": 600
+       },
+       {
+        "enemy": "jelly",
+        "side": "left",
+        "delay": 900
+       },
+       {
+        "enemy": "bug",
+        "side": "right",
+        "delay": 2000
+       }
+      ],
+      "timeout": 16000
+     }
+    ]
+   ]
+  },
+  {
+   "id": "beetleNest",
+   "name": "甲蟲巢",
+   "scene": "grassland",
+   "kind": "combat",
+   "width": 1700,
+   "bg": "bg_chapter1",
+   "bgGroundY": 528,
+   "tint": 14215360,
+   "waveSets": [
+    [
+     {
+      "spawns": [
+       {
+        "enemy": "bug",
+        "side": "right",
+        "delay": 0
+       },
+       {
+        "enemy": "bug",
+        "side": "left",
+        "delay": 600
+       },
+       {
+        "enemy": "jelly",
+        "side": "right",
+        "delay": 1400
+       }
+      ],
+      "timeout": 14000
+     },
+     {
+      "spawns": [
+       {
+        "enemy": "bug",
+        "side": "right",
+        "delay": 0
+       },
+       {
+        "enemy": "bug",
+        "side": "right",
+        "delay": 400
+       },
+       {
+        "enemy": "bug",
+        "side": "left",
+        "delay": 1200
+       },
+       {
+        "enemy": "jelly",
+        "side": "left",
+        "delay": 2000
+       }
+      ],
+      "timeout": 16000
+     },
+     {
+      "spawns": [
+       {
+        "enemy": "bug",
+        "side": "left",
+        "delay": 0
+       },
+       {
+        "enemy": "bug",
+        "side": "right",
+        "delay": 300
+       },
+       {
+        "enemy": "fireJelly",
+        "side": "right",
+        "delay": 1500
+       },
+       {
+        "enemy": "bug",
+        "side": "left",
+        "delay": 2400
+       }
+      ],
+      "timeout": 18000
+     }
+    ],
+    [
+     {
+      "spawns": [
+       {
+        "enemy": "bug",
+        "side": "left",
+        "delay": 0
+       },
+       {
+        "enemy": "jelly",
+        "side": "right",
+        "delay": 500
+       },
+       {
+        "enemy": "bug",
+        "side": "right",
+        "delay": 1200
+       }
+      ],
+      "timeout": 14000
+     },
+     {
+      "spawns": [
+       {
+        "enemy": "bug",
+        "side": "right",
+        "delay": 0
+       },
+       {
+        "enemy": "bug",
+        "side": "left",
+        "delay": 200
+       },
+       {
+        "enemy": "jelly",
+        "side": "left",
+        "delay": 1400
+       },
+       {
+        "enemy": "jelly",
+        "side": "right",
+        "delay": 1800
+       }
+      ],
+      "timeout": 16000
+     },
+     {
+      "spawns": [
+       {
+        "enemy": "bug",
+        "side": "right",
+        "delay": 0
+       },
+       {
+        "enemy": "bug",
+        "side": "left",
+        "delay": 400
+       },
+       {
+        "enemy": "bug",
+        "side": "right",
+        "delay": 1600
+       },
+       {
+        "enemy": "wolf",
+        "side": "left",
+        "delay": 2600
+       }
+      ],
+      "timeout": 18000
+     }
+    ]
+   ]
+  },
+  {
+   "id": "wolfAmbush",
+   "name": "狼群突襲",
+   "scene": "grassland",
+   "kind": "combat",
+   "width": 2000,
+   "bg": "bg_chapter1",
+   "bgGroundY": 528,
+   "tint": 12109032,
+   "waveSets": [
+    [
+     {
+      "spawns": [
+       {
+        "enemy": "wolf",
+        "side": "right",
+        "delay": 0
+       },
+       {
+        "enemy": "wolf",
+        "side": "left",
+        "delay": 900
+       }
+      ],
+      "timeout": 12000
+     },
+     {
+      "spawns": [
+       {
+        "enemy": "wolf",
+        "side": "right",
+        "delay": 0
+       },
+       {
+        "enemy": "jelly",
+        "side": "left",
+        "delay": 400
+       },
+       {
+        "enemy": "wolf",
+        "side": "left",
+        "delay": 1600
+       },
+       {
+        "enemy": "jelly",
+        "side": "right",
+        "delay": 2000
+       }
+      ],
+      "timeout": 14000
+     },
+     {
+      "spawns": [
+       {
+        "enemy": "nightWolf",
+        "side": "right",
+        "delay": 0
+       },
+       {
+        "enemy": "wolf",
+        "side": "left",
+        "delay": 800
+       },
+       {
+        "enemy": "wolf",
+        "side": "right",
+        "delay": 1800
+       }
+      ],
+      "timeout": 16000
+     }
+    ],
+    [
+     {
+      "spawns": [
+       {
+        "enemy": "wolf",
+        "side": "left",
+        "delay": 0
+       },
+       {
+        "enemy": "jelly",
+        "side": "right",
+        "delay": 600
+       },
+       {
+        "enemy": "wolf",
+        "side": "right",
+        "delay": 1400
+       }
+      ],
+      "timeout": 12000
+     },
+     {
+      "spawns": [
+       {
+        "enemy": "wolf",
+        "side": "right",
+        "delay": 0
+       },
+       {
+        "enemy": "wolf",
+        "side": "right",
+        "delay": 300
+       },
+       {
+        "enemy": "bug",
+        "side": "left",
+        "delay": 1200
+       },
+       {
+        "enemy": "wolf",
+        "side": "left",
+        "delay": 2200
+       }
+      ],
+      "timeout": 14000
+     },
+     {
+      "spawns": [
+       {
+        "enemy": "nightWolf",
+        "side": "left",
+        "delay": 0
+       },
+       {
+        "enemy": "nightWolf",
+        "side": "right",
+        "delay": 1200
+       },
+       {
+        "enemy": "jelly",
+        "side": "left",
+        "delay": 2000
+       }
+      ],
+      "timeout": 16000
+     }
+    ]
+   ]
+  },
+  {
+   "id": "emberField",
+   "name": "餘燼草地",
+   "scene": "grassland",
+   "kind": "combat",
+   "width": 1800,
+   "bg": "bg_chapter1",
+   "bgGroundY": 528,
+   "tint": 16757896,
+   "waveSets": [
+    [
+     {
+      "spawns": [
+       {
+        "enemy": "fireJelly",
+        "side": "right",
+        "delay": 0
+       },
+       {
+        "enemy": "jelly",
+        "side": "left",
+        "delay": 500
+       },
+       {
+        "enemy": "fireJelly",
+        "side": "left",
+        "delay": 1200
+       }
+      ],
+      "timeout": 12000
+     },
+     {
+      "spawns": [
+       {
+        "enemy": "fireJelly",
+        "side": "right",
+        "delay": 0
+       },
+       {
+        "enemy": "fireJelly",
+        "side": "right",
+        "delay": 400
+       },
+       {
+        "enemy": "jelly",
+        "side": "left",
+        "delay": 1000
+       },
+       {
+        "enemy": "bug",
+        "side": "left",
+        "delay": 1800
+       }
+      ],
+      "timeout": 14000
+     },
+     {
+      "spawns": [
+       {
+        "enemy": "fireJelly",
+        "side": "left",
+        "delay": 0
+       },
+       {
+        "enemy": "fireJelly",
+        "side": "right",
+        "delay": 300
+       },
+       {
+        "enemy": "fireJelly",
+        "side": "right",
+        "delay": 600
+       },
+       {
+        "enemy": "wolf",
+        "side": "left",
+        "delay": 2000
+       },
+       {
+        "enemy": "jelly",
+        "side": "right",
+        "delay": 2600
+       }
+      ],
+      "timeout": 16000
+     }
+    ],
+    [
+     {
+      "spawns": [
+       {
+        "enemy": "jelly",
+        "side": "right",
+        "delay": 0
+       },
+       {
+        "enemy": "fireJelly",
+        "side": "left",
+        "delay": 400
+       },
+       {
+        "enemy": "jelly",
+        "side": "left",
+        "delay": 1000
+       },
+       {
+        "enemy": "fireJelly",
+        "side": "right",
+        "delay": 1600
+       }
+      ],
+      "timeout": 12000
+     },
+     {
+      "spawns": [
+       {
+        "enemy": "fireJelly",
+        "side": "left",
+        "delay": 0
+       },
+       {
+        "enemy": "bug",
+        "side": "right",
+        "delay": 500
+       },
+       {
+        "enemy": "fireJelly",
+        "side": "right",
+        "delay": 1200
+       },
+       {
+        "enemy": "fireJelly",
+        "side": "left",
+        "delay": 2200
+       }
+      ],
+      "timeout": 14000
+     },
+     {
+      "spawns": [
+       {
+        "enemy": "fireJelly",
+        "side": "right",
+        "delay": 0
+       },
+       {
+        "enemy": "fireJelly",
+        "side": "left",
+        "delay": 0
+       },
+       {
+        "enemy": "nightWolf",
+        "side": "right",
+        "delay": 1500
+       },
+       {
+        "enemy": "jelly",
+        "side": "left",
+        "delay": 2400
+       }
+      ],
+      "timeout": 16000
+     }
+    ]
+   ]
+  },
+  {
+   "id": "jellyThrone",
+   "name": "果凍王的王座",
+   "scene": "grassland",
+   "kind": "boss",
+   "width": 1600,
+   "bg": "bg_chapter1",
+   "bgGroundY": 528,
+   "tint": 15780056,
+   "waveSets": [
+    [
+     {
+      "spawns": [
+       {
+        "enemy": "jellyKing",
+        "side": "right",
+        "delay": 600
+       }
+      ],
+      "timeout": 0
+     },
+     {
+      "spawns": [
+       {
+        "enemy": "jelly",
+        "side": "left",
+        "delay": 15000
+       },
+       {
+        "enemy": "jelly",
+        "side": "left",
+        "delay": 15400
+       },
+       {
+        "enemy": "fireJelly",
+        "side": "right",
+        "delay": 30000
+       },
+       {
+        "enemy": "fireJelly",
+        "side": "left",
+        "delay": 30400
+       }
+      ],
+      "timeout": 0
+     }
+    ]
+   ]
+  },
+  {
+   "id": "mistTrail",
+   "name": "迷霧小徑",
+   "scene": "mistForest",
+   "kind": "combat",
+   "width": 1800,
+   "bg": "bg_chapter2",
+   "bgGroundY": 546,
+   "waveSets": [
+    [
+     {
+      "spawns": [
+       {
+        "enemy": "bee",
+        "side": "right",
+        "delay": 0
+       },
+       {
+        "enemy": "bee",
+        "side": "right",
+        "delay": 500
+       },
+       {
+        "enemy": "jelly",
+        "side": "left",
+        "delay": 1200
+       }
+      ],
+      "timeout": 12000
+     },
+     {
+      "spawns": [
+       {
+        "enemy": "bee",
+        "side": "right",
+        "delay": 0
+       },
+       {
+        "enemy": "bee",
+        "side": "left",
+        "delay": 400
+       },
+       {
+        "enemy": "flower",
+        "side": "right",
+        "delay": 1200
+       },
+       {
+        "enemy": "bee",
+        "side": "left",
+        "delay": 2000
+       }
+      ],
+      "timeout": 14000
+     },
+     {
+      "spawns": [
+       {
+        "enemy": "flower",
+        "side": "left",
+        "delay": 0
+       },
+       {
+        "enemy": "bee",
+        "side": "right",
+        "delay": 500
+       },
+       {
+        "enemy": "bee",
+        "side": "right",
+        "delay": 800
+       },
+       {
+        "enemy": "mushroom",
+        "side": "left",
+        "delay": 2200
+       }
+      ],
+      "timeout": 16000
+     }
+    ],
+    [
+     {
+      "spawns": [
+       {
+        "enemy": "bee",
+        "side": "left",
+        "delay": 0
+       },
+       {
+        "enemy": "bee",
+        "side": "right",
+        "delay": 400
+       },
+       {
+        "enemy": "bug",
+        "side": "right",
+        "delay": 1200
+       }
+      ],
+      "timeout": 12000
+     },
+     {
+      "spawns": [
+       {
+        "enemy": "flower",
+        "side": "right",
+        "delay": 0
+       },
+       {
+        "enemy": "bee",
+        "side": "left",
+        "delay": 600
+       },
+       {
+        "enemy": "bee",
+        "side": "left",
+        "delay": 900
+       },
+       {
+        "enemy": "bee",
+        "side": "right",
+        "delay": 1800
+       }
+      ],
+      "timeout": 14000
+     },
+     {
+      "spawns": [
+       {
+        "enemy": "mushroom",
+        "side": "right",
+        "delay": 0
+       },
+       {
+        "enemy": "bee",
+        "side": "left",
+        "delay": 400
+       },
+       {
+        "enemy": "bee",
+        "side": "left",
+        "delay": 700
+       },
+       {
+        "enemy": "flower",
+        "side": "right",
+        "delay": 2000
+       }
+      ],
+      "timeout": 16000
+     }
+    ]
+   ]
+  },
+  {
+   "id": "sporeHollow",
+   "name": "孢子窪地",
+   "scene": "mistForest",
+   "kind": "combat",
+   "width": 1700,
+   "bg": "bg_chapter2",
+   "bgGroundY": 546,
+   "tint": 12576472,
+   "waveSets": [
+    [
+     {
+      "spawns": [
+       {
+        "enemy": "mushroom",
+        "side": "right",
+        "delay": 0
+       },
+       {
+        "enemy": "bee",
+        "side": "left",
+        "delay": 600
+       },
+       {
+        "enemy": "mushroom",
+        "side": "left",
+        "delay": 1600
+       }
+      ],
+      "timeout": 14000
+     },
+     {
+      "spawns": [
+       {
+        "enemy": "mushroom",
+        "side": "right",
+        "delay": 0
+       },
+       {
+        "enemy": "mushroom",
+        "side": "left",
+        "delay": 300
+       },
+       {
+        "enemy": "bee",
+        "side": "right",
+        "delay": 1200
+       },
+       {
+        "enemy": "bee",
+        "side": "left",
+        "delay": 1500
+       }
+      ],
+      "timeout": 16000
+     },
+     {
+      "spawns": [
+       {
+        "enemy": "mushroom",
+        "side": "right",
+        "delay": 0
+       },
+       {
+        "enemy": "flower",
+        "side": "left",
+        "delay": 400
+       },
+       {
+        "enemy": "mushroom",
+        "side": "left",
+        "delay": 1600
+       },
+       {
+        "enemy": "bee",
+        "side": "right",
+        "delay": 2400
+       }
+      ],
+      "timeout": 18000
+     }
+    ],
+    [
+     {
+      "spawns": [
+       {
+        "enemy": "mushroom",
+        "side": "left",
+        "delay": 0
+       },
+       {
+        "enemy": "mushroom",
+        "side": "right",
+        "delay": 400
+       },
+       {
+        "enemy": "bee",
+        "side": "right",
+        "delay": 1200
+       }
+      ],
+      "timeout": 14000
+     },
+     {
+      "spawns": [
+       {
+        "enemy": "flower",
+        "side": "right",
+        "delay": 0
+       },
+       {
+        "enemy": "mushroom",
+        "side": "left",
+        "delay": 500
+       },
+       {
+        "enemy": "mushroom",
+        "side": "right",
+        "delay": 1400
+       },
+       {
+        "enemy": "bee",
+        "side": "left",
+        "delay": 2200
+       }
+      ],
+      "timeout": 16000
+     },
+     {
+      "spawns": [
+       {
+        "enemy": "mushroom",
+        "side": "right",
+        "delay": 0
+       },
+       {
+        "enemy": "mushroom",
+        "side": "left",
+        "delay": 0
+       },
+       {
+        "enemy": "bee",
+        "side": "right",
+        "delay": 1200
+       },
+       {
+        "enemy": "bee",
+        "side": "left",
+        "delay": 1500
+       },
+       {
+        "enemy": "flower",
+        "side": "right",
+        "delay": 2600
+       }
+      ],
+      "timeout": 18000
+     }
+    ]
+   ]
+  },
+  {
+   "id": "thornGarden",
+   "name": "荊棘花園",
+   "scene": "mistForest",
+   "kind": "combat",
+   "width": 2000,
+   "bg": "bg_chapter2",
+   "bgGroundY": 546,
+   "tint": 14205160,
+   "waveSets": [
+    [
+     {
+      "spawns": [
+       {
+        "enemy": "flower",
+        "side": "right",
+        "delay": 0
+       },
+       {
+        "enemy": "flower",
+        "side": "left",
+        "delay": 0
+       },
+       {
+        "enemy": "bee",
+        "side": "right",
+        "delay": 1000
+       }
+      ],
+      "timeout": 14000
+     },
+     {
+      "spawns": [
+       {
+        "enemy": "flower",
+        "side": "right",
+        "delay": 0
+       },
+       {
+        "enemy": "bee",
+        "side": "left",
+        "delay": 500
+       },
+       {
+        "enemy": "bee",
+        "side": "left",
+        "delay": 800
+       },
+       {
+        "enemy": "mushroom",
+        "side": "right",
+        "delay": 1800
+       }
+      ],
+      "timeout": 16000
+     },
+     {
+      "spawns": [
+       {
+        "enemy": "flower",
+        "side": "left",
+        "delay": 0
+       },
+       {
+        "enemy": "flower",
+        "side": "right",
+        "delay": 300
+       },
+       {
+        "enemy": "bee",
+        "side": "right",
+        "delay": 1200
+       },
+       {
+        "enemy": "bee",
+        "side": "left",
+        "delay": 1500
+       },
+       {
+        "enemy": "nightWolf",
+        "side": "right",
+        "delay": 2600
+       }
+      ],
+      "timeout": 18000
+     }
+    ],
+    [
+     {
+      "spawns": [
+       {
+        "enemy": "flower",
+        "side": "left",
+        "delay": 0
+       },
+       {
+        "enemy": "bee",
+        "side": "right",
+        "delay": 400
+       },
+       {
+        "enemy": "bee",
+        "side": "right",
+        "delay": 700
+       }
+      ],
+      "timeout": 14000
+     },
+     {
+      "spawns": [
+       {
+        "enemy": "flower",
+        "side": "right",
+        "delay": 0
+       },
+       {
+        "enemy": "flower",
+        "side": "left",
+        "delay": 400
+       },
+       {
+        "enemy": "mushroom",
+        "side": "left",
+        "delay": 1400
+       },
+       {
+        "enemy": "bee",
+        "side": "right",
+        "delay": 2000
+       }
+      ],
+      "timeout": 16000
+     },
+     {
+      "spawns": [
+       {
+        "enemy": "flower",
+        "side": "right",
+        "delay": 0
+       },
+       {
+        "enemy": "bee",
+        "side": "left",
+        "delay": 300
+       },
+       {
+        "enemy": "bee",
+        "side": "left",
+        "delay": 600
+       },
+       {
+        "enemy": "mushroom",
+        "side": "right",
+        "delay": 1600
+       },
+       {
+        "enemy": "nightWolf",
+        "side": "left",
+        "delay": 2600
+       }
+      ],
+      "timeout": 18000
+     }
+    ]
+   ]
+  },
+  {
+   "id": "wolfDen",
+   "name": "夜狼巢穴",
+   "scene": "mistForest",
+   "kind": "combat",
+   "width": 2000,
+   "bg": "bg_chapter2",
+   "bgGroundY": 546,
+   "tint": 10135760,
+   "waveSets": [
+    [
+     {
+      "spawns": [
+       {
+        "enemy": "nightWolf",
+        "side": "right",
+        "delay": 0
+       },
+       {
+        "enemy": "bee",
+        "side": "left",
+        "delay": 600
+       },
+       {
+        "enemy": "nightWolf",
+        "side": "left",
+        "delay": 1400
+       }
+      ],
+      "timeout": 12000
+     },
+     {
+      "spawns": [
+       {
+        "enemy": "nightWolf",
+        "side": "right",
+        "delay": 0
+       },
+       {
+        "enemy": "nightWolf",
+        "side": "left",
+        "delay": 300
+       },
+       {
+        "enemy": "mushroom",
+        "side": "right",
+        "delay": 1500
+       },
+       {
+        "enemy": "bee",
+        "side": "left",
+        "delay": 2200
+       }
+      ],
+      "timeout": 14000
+     },
+     {
+      "spawns": [
+       {
+        "enemy": "nightWolf",
+        "side": "right",
+        "delay": 0
+       },
+       {
+        "enemy": "nightWolf",
+        "side": "right",
+        "delay": 400
+       },
+       {
+        "enemy": "nightWolf",
+        "side": "left",
+        "delay": 800
+       },
+       {
+        "enemy": "flower",
+        "side": "left",
+        "delay": 2000
+       }
+      ],
+      "timeout": 16000
+     }
+    ],
+    [
+     {
+      "spawns": [
+       {
+        "enemy": "nightWolf",
+        "side": "left",
+        "delay": 0
+       },
+       {
+        "enemy": "nightWolf",
+        "side": "right",
+        "delay": 800
+       },
+       {
+        "enemy": "bee",
+        "side": "right",
+        "delay": 1600
+       }
+      ],
+      "timeout": 12000
+     },
+     {
+      "spawns": [
+       {
+        "enemy": "mushroom",
+        "side": "right",
+        "delay": 0
+       },
+       {
+        "enemy": "nightWolf",
+        "side": "left",
+        "delay": 500
+       },
+       {
+        "enemy": "nightWolf",
+        "side": "right",
+        "delay": 1300
+       },
+       {
+        "enemy": "bee",
+        "side": "left",
+        "delay": 2000
+       }
+      ],
+      "timeout": 14000
+     },
+     {
+      "spawns": [
+       {
+        "enemy": "nightWolf",
+        "side": "right",
+        "delay": 0
+       },
+       {
+        "enemy": "nightWolf",
+        "side": "left",
+        "delay": 300
+       },
+       {
+        "enemy": "bee",
+        "side": "right",
+        "delay": 1000
+       },
+       {
+        "enemy": "bee",
+        "side": "left",
+        "delay": 1300
+       },
+       {
+        "enemy": "nightWolf",
+        "side": "right",
+        "delay": 2400
+       }
+      ],
+      "timeout": 16000
+     }
+    ]
+   ]
+  },
+  {
+   "id": "heartOfTheWood",
+   "name": "古樹之心",
+   "scene": "mistForest",
+   "kind": "boss",
+   "width": 1600,
+   "bg": "bg_chapter2",
+   "bgGroundY": 546,
+   "tint": 11058376,
+   "waveSets": [
+    [
+     {
+      "spawns": [
+       {
+        "enemy": "treant",
+        "side": "right",
+        "delay": 800
+       }
+      ],
+      "timeout": 0
+     },
+     {
+      "spawns": [
+       {
+        "enemy": "bee",
+        "side": "left",
+        "delay": 15000
+       },
+       {
+        "enemy": "bee",
+        "side": "left",
+        "delay": 15300
+       },
+       {
+        "enemy": "flower",
+        "side": "left",
+        "delay": 30000
+       },
+       {
+        "enemy": "bee",
+        "side": "right",
+        "delay": 45000
+       },
+       {
+        "enemy": "bee",
+        "side": "right",
+        "delay": 45300
+       }
+      ],
+      "timeout": 0
+     }
+    ]
+   ]
+  }
+ ],
+ "pool": [
+  "meadow",
+  "beetleNest",
+  "wolfAmbush",
+  "emberField"
+ ],
+ "boss": "jellyThrone",
+ "scenes": [
+  {
+   "id": "grassland",
+   "name": "王都草原",
+   "pool": [
+    "meadow",
+    "beetleNest",
+    "wolfAmbush",
+    "emberField"
+   ],
+   "boss": "jellyThrone"
+  },
+  {
+   "id": "mistForest",
+   "name": "迷霧森林",
+   "pool": [
+    "mistTrail",
+    "sporeHollow",
+    "thornGarden",
+    "wolfDen"
+   ],
+   "boss": "heartOfTheWood"
+  }
+ ],
+ "sceneOrder": [
+  "grassland",
+  "mistForest"
+ ]
+}

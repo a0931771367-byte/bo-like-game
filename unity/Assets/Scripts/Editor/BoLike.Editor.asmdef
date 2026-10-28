@@ -1,0 +1,13 @@
+{
+    "name": "BoLike.Editor",
+    "rootNamespace": "BoLike.Editor",
+    "references": [
+        "BoLike.Runtime",
+        "Unity.RenderPipelines.Universal.Runtime",
+        "Unity.RenderPipelines.Universal.2D.Runtime",
+        "Unity.RenderPipelines.Core.Runtime"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ]
+}

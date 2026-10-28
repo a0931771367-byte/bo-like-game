@@ -1,0 +1,38 @@
+[
+ {
+  "classId": "swordsman",
+  "idle": 4,
+  "walk": 6,
+  "attack": 4
+ },
+ {
+  "classId": "mage",
+  "idle": 4,
+  "walk": 6,
+  "attack": 4
+ },
+ {
+  "classId": "merchant",
+  "idle": 4,
+  "walk": 6,
+  "attack": 4
+ },
+ {
+  "classId": "acolyte",
+  "idle": 3,
+  "walk": 6,
+  "attack": 4
+ },
+ {
+  "classId": "thief",
+  "idle": 4,
+  "walk": 6,
+  "attack": 4
+ },
+ {
+  "classId": "archer",
+  "idle": 4,
+  "walk": 6,
+  "attack": 4
+ }
+]
