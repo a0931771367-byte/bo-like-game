@@ -1,6 +1,8 @@
 using System.IO;
 using UnityEditor;
 using UnityEditor.Build;
+using UnityEditor.SceneManagement;
+using UnityEngine.SceneManagement;
 using UnityEngine;
 using UnityEngine.Rendering;
 using UnityEngine.Rendering.Universal;
@@ -19,9 +21,12 @@ namespace BoLike.Editor
         const string RendererPath = SettingsDir + "/Renderer2D.asset";
         const string PipelinePath = SettingsDir + "/URP-2D.asset";
 
+        const string ScenePath = "Assets/Scenes/Main.unity";
+
         static ProjectSetup()
         {
             if (GraphicsSettings.defaultRenderPipeline == null) EditorApplication.delayCall += Run;
+            else if (!File.Exists(ScenePath)) EditorApplication.delayCall += SetupScene;
         }
 
         [MenuItem("BoLike/Setup Project")]
@@ -29,6 +34,7 @@ namespace BoLike.Editor
         {
             SetupRenderPipeline();
             SetupPlayer();
+            SetupScene();
             AssetDatabase.SaveAssets();
             Debug.Log("BoLike: project setup done (URP 2D renderer, iOS landscape player settings).");
         }
@@ -63,6 +69,24 @@ namespace BoLike.Editor
             QualitySettings.SetQualityLevel(current, false);
         }
 
+        /// <summary>The one scene: an empty GameObject with Bootstrap, which builds everything else at runtime.</summary>
+        [MenuItem("BoLike/Create Main Scene")]
+        public static void SetupScene()
+        {
+            if (EditorApplication.isPlayingOrWillChangePlaymode) return;
+            if (!File.Exists(ScenePath))
+            {
+                Directory.CreateDirectory("Assets/Scenes");
+                var scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
+                var go = new GameObject("Bootstrap");
+                go.AddComponent<BoLike.Game.Bootstrap>();
+                EditorSceneManager.SaveScene(scene, ScenePath);
+            }
+            EditorBuildSettings.scenes = new[] { new EditorBuildSettingsScene(ScenePath, true) };
+            if (SceneManager.GetActiveScene().path != ScenePath) EditorSceneManager.OpenScene(ScenePath);
+            Debug.Log("BoLike: Main scene ready at " + ScenePath);
+        }
+
         static void SetupPlayer()
         {
             PlayerSettings.companyName = "Pocket Adventurers";
@@ -82,6 +106,10 @@ namespace BoLike.Editor
             PlayerSettings.iOS.deferSystemGesturesMode = UnityEngine.iOS.SystemGestureDeferMode.All;
             PlayerSettings.SetScriptingBackend(NamedBuildTarget.iOS, ScriptingImplementation.IL2CPP);
             PlayerSettings.SetArchitecture(NamedBuildTarget.iOS, 1); // arm64
+            PlayerSettings.bundleVersion = "0.1.0";
+            PlayerSettings.iOS.buildNumber = "1";
+            // "Data Not Collected" privacy label: no analytics, no ads, no network calls.
+            EditorSettings.defaultBehaviorMode = EditorBehaviorMode.Mode2D;
         }
     }
 }

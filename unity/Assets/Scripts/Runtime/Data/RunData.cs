@@ -6,7 +6,7 @@ namespace BoLike.Data
     // Roguelite run data, mirrors the run types in src/data/types.ts, perks.ts, rooms.ts and meta.ts.
 
     public enum PerkRarity { Common, Rare, Epic }
-    public enum MultTarget { MaxHp, Atk, Matk, Move, Aspd, Cooldown, SpCost, SpRegen, Knock, PotionHeal }
+    public enum MultTarget { MaxHp, Atk, Matk, Move, Aspd, Cooldown, SpCost, SpRegen, Knock, PotionHeal, SkillPower, Stardust }
     public enum PerkEffectKind { Mult, Crit, SkillLvAll, OnKillHeal, OnKillAoe, RoomClearHeal, Potion, Revive, ComboFinisherAoe, ProjectileCount, Pierce }
     public enum RoomKind { Combat, Boss }
     public enum UnlockKind { Class, StartPotion, RareChance, StartPerk }
@@ -66,6 +66,26 @@ namespace BoLike.Data
         /// <summary>Combat rooms a run draws from, without repeats.</summary>
         public List<string> pool;
         public string boss;
+        /// <summary>Scene tables (grassland, mistForest …); the beta only runs the first in <see cref="sceneOrder"/>.</summary>
+        public List<SceneDef> scenes;
+        public List<string> sceneOrder;
+    }
+
+    public class SceneDef
+    {
+        public string id;
+        public string name;
+        public List<string> pool;
+        public string boss;
+    }
+
+    public class BossLine { public string enter; public string die; }
+
+    /// <summary>UI copy exported from src/data/strings.ts.</summary>
+    public class StringTable
+    {
+        public Dictionary<string, string> strings;
+        public Dictionary<string, BossLine> bossLines;
     }
 
     public class UnlockDef

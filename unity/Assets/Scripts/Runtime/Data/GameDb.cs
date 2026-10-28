@@ -28,6 +28,7 @@ namespace BoLike.Data
         static Dictionary<string, RoomDef> roomById;
         static RoomTable roomTable;
         static MetaTable meta;
+        static StringTable stringTable;
 
         public static IReadOnlyList<ClassDef> Classes { get { Load(); return classes; } }
         public static IEnumerable<EnemyDef> Enemies { get { Load(); return enemyById.Values; } }
@@ -40,6 +41,19 @@ namespace BoLike.Data
         public static RunRules Rules { get { Load(); return meta.rules; } }
         public static IReadOnlyList<UnlockDef> Unlocks { get { Load(); return meta.unlocks; } }
         public static IReadOnlyList<string> StartingClasses { get { Load(); return meta.startingClasses; } }
+        public static IReadOnlyList<SceneDef> Scenes { get { Load(); return roomTable.scenes; } }
+
+        /// <summary>UI copy by key; returns the key itself when missing so a typo is visible, never a crash.</summary>
+        public static string Str(string key)
+        {
+            Load();
+            return stringTable?.strings != null && stringTable.strings.TryGetValue(key, out var v) ? v : key;
+        }
+        public static BossLine BossLines(string enemyId)
+        {
+            Load();
+            return stringTable?.bossLines != null && stringTable.bossLines.TryGetValue(enemyId, out var v) ? v : null;
+        }
 
         public static PerkDef Perk(string id) { Load(); return perkById[id]; }
         public static RoomDef Room(string id) { Load(); return roomById[id]; }
@@ -65,6 +79,8 @@ namespace BoLike.Data
             roomTable = Read<RoomTable>("rooms");
             roomById = roomTable.rooms.ToDictionary(r => r.id);
             meta = Read<MetaTable>("meta");
+            var strAsset = Resources.Load<TextAsset>("Data/strings");
+            stringTable = strAsset != null ? Parse<StringTable>(strAsset.text) : new StringTable();
             loaded = true;
         }
 

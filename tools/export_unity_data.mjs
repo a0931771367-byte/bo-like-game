@@ -23,7 +23,8 @@ await build({
       export { STORY } from './src/data/story';
       export { ANIMS } from './src/data/anims';
       export { PERKS } from './src/data/perks';
-      export { ROOMS, ROOM_POOL, BOSS_ROOM } from './src/data/rooms';
+      export { ROOMS, ROOM_POOL, BOSS_ROOM, SCENES, SCENE_ORDER } from './src/data/rooms';
+      export { STRINGS, BOSS_LINES } from './src/data/strings';
       export { RUN_RULES, UNLOCKS, STARTING_CLASSES } from './src/data/meta';
       export { derive, expToNext, elementMult, MAX_LEVEL } from './src/systems/Stats';
       export { newProgress } from './src/systems/Save';`,
@@ -53,7 +54,11 @@ write(OUT, 'enemies.json', Object.values(D.ENEMIES));
 write(OUT, 'stages.json', Object.values(D.STAGES));
 write(OUT, 'story.json', Object.entries(D.STORY).map(([stageId, s]) => ({ stageId, ...s })));
 write(OUT, 'perks.json', D.PERKS);
-write(OUT, 'rooms.json', { rooms: Object.values(D.ROOMS), pool: D.ROOM_POOL, boss: D.BOSS_ROOM });
+write(OUT, 'rooms.json', {
+  rooms: Object.values(D.ROOMS), pool: D.ROOM_POOL, boss: D.BOSS_ROOM,
+  scenes: Object.entries(D.SCENES).map(([id, s]) => ({ id, ...s })), sceneOrder: D.SCENE_ORDER,
+});
+write(OUT, 'strings.json', { strings: D.STRINGS, bossLines: D.BOSS_LINES });
 write(OUT, 'meta.json', { rules: D.RUN_RULES, unlocks: D.UNLOCKS, startingClasses: D.STARTING_CLASSES });
 write(OUT, 'anims.json', Object.entries(D.ANIMS).map(([classId, a]) => ({ classId, ...a })));
 

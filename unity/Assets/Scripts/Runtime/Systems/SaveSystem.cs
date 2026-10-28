@@ -50,6 +50,7 @@ namespace BoLike.Systems
         public List<string> unlocks = new();
         public int runsPlayed;
         public int bestRoom;
+        public bool bossCleared;
 
         public ClassProgress ProgressFor(ClassDef cls)
         {
@@ -70,7 +71,33 @@ namespace BoLike.Systems
 
         public static SaveData Current { get; private set; }
 
-        public static SaveData Load() => Current = LoadFrom(PathOnDisk) ?? new SaveData();
+        /// <summary>
+        /// Loads the save. When a file exists but cannot be read (corrupt, or written by a newer build the
+        /// player downgraded from via TestFlight), it is kept as save.unreadable-&lt;utc&gt;.json before a fresh
+        /// save takes its place, so progress is never silently thrown away.
+        /// </summary>
+        public static SaveData Load()
+        {
+            var s = LoadFrom(PathOnDisk);
+            if (s == null) PreserveUnreadable(PathOnDisk);
+            return Current = s ?? new SaveData();
+        }
+
+        public static void PreserveUnreadable(string path)
+        {
+            string stamp = DateTime.UtcNow.ToString("yyyyMMdd-HHmmss");
+            foreach (var p in new[] { path, path + ".bak" })
+            {
+                try
+                {
+                    if (!File.Exists(p)) continue;
+                    string keep = Path.Combine(Path.GetDirectoryName(path), $"save.unreadable-{stamp}{(p.EndsWith(".bak") ? "-bak" : "")}.json");
+                    File.Copy(p, keep, true);
+                    Debug.LogWarning($"Save at {p} unreadable; copy kept at {keep}");
+                }
+                catch (Exception e) { Debug.LogWarning($"Could not preserve unreadable save {p}: {e.Message}"); }
+            }
+        }
 
         public static void Save() => WriteTo(PathOnDisk, Current ??= new SaveData());
 
@@ -105,8 +132,20 @@ namespace BoLike.Systems
             s.potions ??= new();
             s.cleared ??= new();
             s.unlocks ??= new();
+            foreach (var kv in s.classes)
+            {
+                if (kv.Value == null) continue;
+                kv.Value.skillLv ??= new();
+                if (kv.Value.stats == null && GameDbHasClass(kv.Key)) kv.Value.stats = GameDb.Class(kv.Key).baseStats.Clone();
+            }
             s.version = SaveData.CurrentVersion; // v1 -> v2: new fields keep their defaults
             return s;
+        }
+
+        static bool GameDbHasClass(string id)
+        {
+            foreach (var c in GameDb.Classes) if (c.id == id) return true;
+            return false;
         }
 
         /// <summary>Same format as the Phaser build's export code: base64 of the UTF-8 JSON.</summary>
@@ -115,6 +154,7 @@ namespace BoLike.Systems
 
         public static SaveData ImportCode(string code)
         {
+            if (string.IsNullOrWhiteSpace(code)) return null;
             try { return Parse(Encoding.UTF8.GetString(Convert.FromBase64String(code.Trim()))); }
             catch (FormatException) { return null; }
             catch (JsonException) { return null; }

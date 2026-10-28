@@ -383,7 +383,7 @@
  },
  {
   "id": "merchant",
-  "name": "商人",
+  "name": "機關師",
   "role": "重擊・花金幣換傷害",
   "color": 13208107,
   "accent": 15917493,
@@ -447,10 +447,10 @@
   "skills": [
    {
     "id": "mammonite",
-    "name": "金幣重拳",
-    "short": "重拳",
+    "name": "齒輪重錘",
+    "short": "重錘",
     "ref": "Mammonite",
-    "desc": "消耗金幣的超高傷害一擊",
+    "desc": "消耗金幣驅動的超高傷害一錘",
     "type": "melee",
     "maxLv": 5,
     "sp": [
@@ -477,10 +477,10 @@
    },
    {
     "id": "cartrev",
-    "name": "推車迴旋",
-    "short": "推車",
+    "name": "機關迴旋",
+    "short": "迴旋",
     "ref": "Cart Revolution",
-    "desc": "推車橫掃周圍敵人並擊退",
+    "desc": "機械臂橫掃周圍敵人並擊退",
     "type": "aoe",
     "maxLv": 5,
     "sp": [
@@ -503,10 +503,10 @@
    },
    {
     "id": "loudex",
-    "name": "大聲喝采",
-    "short": "喝采",
+    "name": "超頻",
+    "short": "超頻",
     "ref": "Loud Exclamation",
-    "desc": "暫時提升攻擊力",
+    "desc": "機關超頻，暫時提升攻擊力",
     "type": "buff",
     "maxLv": 5,
     "sp": [
@@ -546,8 +546,8 @@
    },
    {
     "id": "discount",
-    "name": "精明經營",
-    "short": "經營",
+    "name": "拾荒專家",
+    "short": "拾荒",
     "ref": "Discount / Overcharge",
     "desc": "被動：敵人掉落更多金幣",
     "type": "passive",
@@ -575,7 +575,7 @@
  },
  {
   "id": "acolyte",
-  "name": "補師",
+  "name": "祭司",
   "role": "自補・增益・剋不死系",
   "color": 15261896,
   "accent": 7321599,
@@ -793,7 +793,7 @@
  },
  {
   "id": "thief",
-  "name": "盜賊",
+  "name": "刺客",
   "role": "高速連擊・毒・閃避",
   "color": 4165466,
   "accent": 12187080,
@@ -998,7 +998,7 @@
  },
  {
   "id": "archer",
-  "name": "弓箭手",
+  "name": "遊俠",
   "role": "遠程物理・範圍箭雨",
   "color": 6986298,
   "accent": 15127434,

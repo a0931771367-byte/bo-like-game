@@ -78,5 +78,39 @@ namespace BoLike.Tests
             var s = new SaveData { stardust = 9 };
             Assert.AreEqual(9, SaveSystem.ImportCode(SaveSystem.ExportCode(s)).stardust);
         }
+
+        [Test]
+        public void FutureVersionSaveIsNotOverwritten()
+        {
+            string path = Path.Combine(dir, "save.json");
+            File.WriteAllText(path, "{\"version\":99,\"stardust\":777}");
+            Assert.IsNull(SaveSystem.LoadFrom(path));
+            SaveSystem.PreserveUnreadable(path);
+            var kept = Directory.GetFiles(dir, "save.unreadable-*.json");
+            Assert.AreEqual(1, kept.Length);
+            StringAssert.Contains("777", File.ReadAllText(kept[0]));
+        }
+
+        [Test]
+        public void CorruptMainAndBackupArePreserved()
+        {
+            string path = Path.Combine(dir, "save.json");
+            File.WriteAllText(path, "{ broken");
+            File.WriteAllText(path + ".bak", "also broken");
+            Assert.IsNull(SaveSystem.LoadFrom(path));
+            SaveSystem.PreserveUnreadable(path);
+            Assert.AreEqual(2, Directory.GetFiles(dir, "save.unreadable-*.json").Length);
+        }
+
+        [Test]
+        public void NullAndPartialInputsDoNotThrow()
+        {
+            Assert.IsNull(SaveSystem.ImportCode(null));
+            Assert.IsNull(SaveSystem.ImportCode("   "));
+            var s = SaveSystem.Parse("{\"version\":2,\"classes\":{\"mage\":{\"level\":3}}}");
+            Assert.NotNull(s.classes["mage"].skillLv);
+            Assert.NotNull(s.classes["mage"].stats);
+            Assert.AreEqual(GameDb.Class("mage").baseStats.@int, s.classes["mage"].stats.@int);
+        }
     }
 }
