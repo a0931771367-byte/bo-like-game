@@ -17,7 +17,7 @@ export class TitleScene extends Phaser.Scene {
     art.setScale(Math.max(W / art.width, H / art.height));
     this.add.rectangle(W / 2, H / 2, W, H, 0x0b0d14, 0.35);
 
-    this.add.text(W / 2, 90, '劍與魔法亂鬥', { fontFamily: FONT, fontSize: '72px', fontStyle: 'bold', color: '#ffe9a8', stroke: '#2a1a40', strokeThickness: 10 }).setOrigin(0.5);
+    this.add.text(W / 2, 90, '口袋冒險團', { fontFamily: FONT, fontSize: '72px', fontStyle: 'bold', color: '#ffe9a8', stroke: '#2a1a40', strokeThickness: 10 }).setOrigin(0.5);
     this.add.text(W / 2, 150, '原型版 v0.1  ·  暫定名稱', { fontFamily: FONT, fontSize: '20px', color: '#cfc8e8' }).setOrigin(0.5);
     this.add.text(W / 2, 200, '選擇職業', { fontFamily: FONT, fontSize: '26px', color: '#ffffff' }).setOrigin(0.5);
 
