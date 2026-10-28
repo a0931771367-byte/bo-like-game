@@ -86,6 +86,8 @@ namespace BoLike.Game
                 x += 220;
             }
             ShowUnlockShop(layer, save);
+            if (Debug.isDebugBuild || Application.isEditor)
+                UiKit.Button(layer, 0, -12, 150, 32, "種子開局", 0x3a3a4a, () => ShowSeedPanel(layer, unlocked), 14, UiKit.BottomCenter, new Vector2(0.5f, 0));
             UiKit.Text(layer, -16, -12, $"v{Application.version} ({BuildInfo.Number}) {BuildInfo.Commit}", 12, 0x9aa0b4, UiKit.BottomRight, UiKit.BottomRight, TextAnchor.LowerRight, false, 1);
             UiKit.Text(layer, 16, -12, TouchControls.IsTouchDevice ? "點選職業開始" : "點選職業開始 · 鍵盤 WASD 移動 J 攻擊 K 跳 L 防禦 UIOP 技能", 12, 0x9aa0b4, UiKit.BottomLeft, UiKit.BottomLeft, TextAnchor.LowerLeft, false, 1);
         }
@@ -115,6 +117,38 @@ namespace BoLike.Game
                 UiKit.Text(btn.transform, 0, 48, u.desc, 10, 0xe0e0e0, UiKit.TopCenter, UiKit.TopCenter, TextAnchor.UpperCenter, false, 1);
                 i++;
             }
+        }
+
+        /// <summary>Debug/QA: start a run from a seed code so a reported run can be replayed (editor and development builds).</summary>
+        void ShowSeedPanel(RectTransform layer, System.Collections.Generic.List<string> classes)
+        {
+            var dim = UiKit.Dim(layer, 0.75f);
+            var panel = dim.transform;
+            UiKit.Text(panel, 0, 200, "輸入 8 碼種子碼", 24, 0xfff4de, UiKit.TopCenter, UiKit.TopCenter, TextAnchor.UpperCenter, true);
+            var box = UiKit.Rect(panel, 0, 250, 320, 56, 0xffffff, 0.95f, UiKit.TopCenter, UiKit.TopCenter);
+            box.raycastTarget = true;
+            var text = UiKit.Text(box.transform, 12, 0, "", 28, 0x111111, UiKit.TopLeft, UiKit.TopLeft, TextAnchor.MiddleLeft, true, 0);
+            var textRt = text.rectTransform; textRt.anchorMin = Vector2.zero; textRt.anchorMax = Vector2.one; textRt.offsetMin = new Vector2(12, 0); textRt.offsetMax = new Vector2(-12, 0);
+            var field = box.gameObject.AddComponent<UnityEngine.UI.InputField>();
+            field.textComponent = text;
+            field.characterLimit = 8;
+            field.contentType = UnityEngine.UI.InputField.ContentType.Alphanumeric;
+            field.text = SaveSystem.Current.lastSeedCode ?? "";
+            float x = -(classes.Count * 170 - 10) / 2f;
+            foreach (var id in classes)
+            {
+                var cid = id;
+                UiKit.Button(panel, x, 330, 160, 50, GameDb.Class(id).name, 0x2f6fb5, () =>
+                {
+                    var code = field.text.Trim();
+                    if (code.Length == 0) return;
+                    Destroy(title);
+                    GameController.Launch(cid, Rng.CodeToSeed(code));
+                }, 20, UiKit.TopCenter);
+                x += 170;
+            }
+            UiKit.Button(panel, 0, 400, 160, 44, "取消", 0x7a2a2a, () => Destroy(dim.gameObject), 18, UiKit.TopCenter);
+            field.ActivateInputField();
         }
 
         void StartRun(string classId)

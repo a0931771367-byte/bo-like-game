@@ -58,6 +58,7 @@ namespace BoLike.Game
             Application.targetFrameRate = 60;
             save = SaveSystem.Current ?? SaveSystem.Load();
             run = RunState.New(classId, save, seedOverride == 0 ? null : seedOverride);
+            save.lastSeedCode = run.SeedCode;
             world = new World { Rng = run.rng, Inv = run.inv, Mods = run.mods };
             worldRoot = new GameObject("World").transform;
 
@@ -104,7 +105,7 @@ namespace BoLike.Game
         {
             run.roomIndex = index;
             room = GameDb.Room(run.CurrentRoomId);
-            waves = room.waveSets[run.rng.Range(0, room.waveSets.Count)];
+            waves = room.waveSets[System.Math.Min(run.CurrentWaveSet, room.waveSets.Count - 1)];
             waveIndex = 0;
             pendingSpawns = 0;
             roomCleared = doorOpen = transitioning = false;

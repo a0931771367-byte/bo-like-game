@@ -13,7 +13,12 @@ namespace BoLike.Game
     public class RunState
     {
         public ulong seed;
+        /// <summary>Combat randomness (damage rolls, spawn y, enemy AI). Separate streams keep room order,
+        /// wave sets and perk offers identical for the same seed no matter how the fight went (QA #9).</summary>
         public Rng rng;
+        public Rng perkRng;
+        /// <summary>Wave set index per room slot, drawn up front from the seed.</summary>
+        public readonly List<int> waveSetByRoom = new();
         public string classId;
         public readonly List<string> roomOrder = new();
         public int roomIndex = -1;
@@ -31,19 +36,24 @@ namespace BoLike.Game
         public bool InBossRoom => roomIndex >= Rules.combatRooms;
         public string CurrentRoomId => InBossRoom ? GameDb.BossRoom : roomOrder[roomIndex];
         public int CurrentSlot => roomIndex;
+        public int CurrentWaveSet => roomIndex < waveSetByRoom.Count ? waveSetByRoom[roomIndex] : 0;
 
         public static RunState New(string classId, SaveData save, ulong? seed = null)
         {
             var r = new RunState { seed = seed ?? Rng.NewSeed(), classId = classId };
-            r.rng = new Rng(r.seed);
+            var roomRng = new Rng(r.seed ^ 0x526F6F6DUL);
+            r.perkRng = new Rng(r.seed ^ 0x5065726BUL);
+            r.rng = new Rng(r.seed ^ 0x436F6D62UL);
             var pool = new List<string>(GameDb.RoomPool);
-            // Fisher–Yates with the run rng, then take the first combatRooms entries.
+            // Fisher–Yates with the room rng, then take the first combatRooms entries.
             for (int i = pool.Count - 1; i > 0; i--)
             {
-                int j = r.rng.Range(0, i + 1);
+                int j = roomRng.Range(0, i + 1);
                 (pool[i], pool[j]) = (pool[j], pool[i]);
             }
             for (int i = 0; i < r.Rules.combatRooms && i < pool.Count; i++) r.roomOrder.Add(pool[i]);
+            foreach (var id in r.roomOrder) r.waveSetByRoom.Add(roomRng.Range(0, System.Math.Max(1, GameDb.Room(id).waveSets.Count)));
+            r.waveSetByRoom.Add(roomRng.Range(0, System.Math.Max(1, GameDb.Room(GameDb.BossRoom).waveSets.Count)));
             r.inv.gold = save.gold;
             r.inv.red = r.Rules.startPotions.red + UnlockValue(save, UnlockKind.StartPotion);
             r.inv.blue = r.Rules.startPotions.blue;
@@ -80,7 +90,7 @@ namespace BoLike.Game
             {
                 float total = 0;
                 foreach (var p in candidates) total += Weight(p, weights, rareBonus);
-                float roll = rng.Value * total;
+                float roll = perkRng.Value * total;
                 PerkDef pick = candidates[candidates.Count - 1];
                 foreach (var p in candidates)
                 {
@@ -104,7 +114,9 @@ namespace BoLike.Game
         {
             perks.Add(p);
             perkStacks[p.id] = (perkStacks.TryGetValue(p.id, out var n) ? n : 0) + 1;
+            bool reviveUsed = mods.reviveUsed; // one phoenix per run, even after more perks rebuild the mods (QA #10)
             mods = RunMods.From(perks);
+            mods.reviveUsed = reviveUsed;
             foreach (var e in p.effects)
                 if (e.kind == PerkEffectKind.Potion) { inv.red += e.red; inv.blue += e.blue; }
         }
