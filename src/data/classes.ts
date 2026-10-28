@@ -55,7 +55,7 @@ export const CLASSES: ClassDef[] = [
     ],
   },
   {
-    id: 'merchant', name: '商人', role: '重擊・花金幣換傷害', color: 0xc98a2b, accent: 0xf2e1b5, weapon: 'axe', playable: true,
+    id: 'merchant', name: '機關師', role: '重擊・花金幣換傷害', color: 0xc98a2b, accent: 0xf2e1b5, weapon: 'axe', playable: true,
     hpBase: 140, hpPerLv: 16, spBase: 35, spPerLv: 3, weaponAtk: 22,
     baseStats: { str: 6, agi: 2, vit: 5, int: 1, dex: 3, luk: 4 },
     combo: [
@@ -65,22 +65,22 @@ export const CLASSES: ClassDef[] = [
     ],
     air: hit(1.4, 105, 80, 180, 140, 180, 0, 380),
     skills: [
-      { id: 'mammonite', name: '金幣重拳', short: '重拳', ref: 'Mammonite', desc: '消耗金幣的超高傷害一擊', type: 'melee', maxLv: 5,
+      { id: 'mammonite', name: '齒輪重錘', short: '重錘', ref: 'Mammonite', desc: '消耗金幣驅動的超高傷害一錘', type: 'melee', maxLv: 5,
         sp: [5, 0], cooldown: 2600, cast: 260, power: [3.0, 0.6], element: 'neutral', magic: false, color: 0xffd34d,
         range: 130, knock: 360, launch: 300, stun: 500, goldCost: [10, 10] },
-      { id: 'cartrev', name: '推車迴旋', short: '推車', ref: 'Cart Revolution', desc: '推車橫掃周圍敵人並擊退', type: 'aoe', maxLv: 5,
+      { id: 'cartrev', name: '機關迴旋', short: '迴旋', ref: 'Cart Revolution', desc: '機械臂橫掃周圍敵人並擊退', type: 'aoe', maxLv: 5,
         sp: [12, 1], cooldown: 5000, cast: 300, power: [1.5, 0.3], element: 'neutral', magic: false, color: 0xc98a2b,
         radius: 160, knock: 520, launch: 0, stun: 600 },
-      { id: 'loudex', name: '大聲喝采', short: '喝采', ref: 'Loud Exclamation', desc: '暫時提升攻擊力', type: 'buff', maxLv: 5,
+      { id: 'loudex', name: '超頻', short: '超頻', ref: 'Loud Exclamation', desc: '機關超頻，暫時提升攻擊力', type: 'buff', maxLv: 5,
         sp: [8, 0], cooldown: 14000, cast: 200, power: [0, 0], element: 'neutral', magic: false, color: 0xff9f43,
         duration: [8000, 1500], buff: (L) => ({ atkMult: 1.15 + 0.05 * L }) },
-      { id: 'discount', name: '精明經營', short: '經營', ref: 'Discount / Overcharge', desc: '被動：敵人掉落更多金幣', type: 'passive', maxLv: 5,
+      { id: 'discount', name: '拾荒專家', short: '拾荒', ref: 'Discount / Overcharge', desc: '被動：敵人掉落更多金幣', type: 'passive', maxLv: 5,
         sp: [0, 0], cooldown: 0, cast: 0, power: [0, 0], element: 'neutral', magic: false, color: 0xf2e1b5,
         passive: 'goldFind', passiveValue: [0.2, 0.1] },
     ],
   },
   {
-    id: 'acolyte', name: '補師', role: '自補・增益・剋不死系', color: 0xe8e0c8, accent: 0x6fb7ff, weapon: 'mace', playable: true,
+    id: 'acolyte', name: '祭司', role: '自補・增益・剋不死系', color: 0xe8e0c8, accent: 0x6fb7ff, weapon: 'mace', playable: true,
     hpBase: 125, hpPerLv: 13, spBase: 55, spPerLv: 6, weaponAtk: 13,
     baseStats: { str: 3, agi: 3, vit: 4, int: 6, dex: 4, luk: 1 },
     combo: [
@@ -105,7 +105,7 @@ export const CLASSES: ClassDef[] = [
     ],
   },
   {
-    id: 'thief', name: '盜賊', role: '高速連擊・毒・閃避', color: 0x3f8f5a, accent: 0xb9f5c8, weapon: 'dagger', playable: true,
+    id: 'thief', name: '刺客', role: '高速連擊・毒・閃避', color: 0x3f8f5a, accent: 0xb9f5c8, weapon: 'dagger', playable: true,
     hpBase: 120, hpPerLv: 13, spBase: 30, spPerLv: 3, weaponAtk: 14,
     baseStats: { str: 4, agi: 7, vit: 3, int: 1, dex: 4, luk: 2 },
     combo: [
@@ -131,7 +131,7 @@ export const CLASSES: ClassDef[] = [
     ],
   },
   {
-    id: 'archer', name: '弓箭手', role: '遠程物理・範圍箭雨', color: 0x6a9a3a, accent: 0xe6d38a, weapon: 'bow', playable: true, ranged: true,
+    id: 'archer', name: '遊俠', role: '遠程物理・範圍箭雨', color: 0x6a9a3a, accent: 0xe6d38a, weapon: 'bow', playable: true, ranged: true,
     hpBase: 115, hpPerLv: 12, spBase: 35, spPerLv: 4, weaponAtk: 17,
     baseStats: { str: 2, agi: 5, vit: 3, int: 2, dex: 8, luk: 1 },
     combo: [
