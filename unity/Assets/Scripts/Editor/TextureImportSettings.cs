@@ -5,7 +5,7 @@ namespace BoLike.Editor
 {
     /// <summary>
     /// Import settings for the game's art, applied automatically so the repo needs no hand-edited .meta files:
-    /// sprites at 100 px per unit, no mipmaps, bilinear, full-rect mesh (needed for tiling), with the pivot at the
+    /// sprites at 100 px per unit, mipmapped, trilinear, high-quality compression (ASTC 4x4 on iOS), full-rect mesh (needed for tiling), with the pivot at the
     /// feet for characters, the centre for icons and UI, and the top-left for backgrounds.
     /// Matches departments/art/unity-art-import-spec.md.
     /// </summary>
@@ -25,11 +25,22 @@ namespace BoLike.Editor
             imp.textureType = TextureImporterType.Sprite;
             imp.spriteImportMode = SpriteImportMode.Single;
             imp.spritePixelsPerUnit = 100;
-            imp.mipmapEnabled = false;
+            // Mipmaps + trilinear keep edges smooth when the editor Game view (or a small phone) shows art below 1:1.
+            imp.mipmapEnabled = true;
+            imp.mipmapFilter = TextureImporterMipFilter.KaiserFilter;
             imp.alphaIsTransparency = true;
-            imp.filterMode = FilterMode.Bilinear;
+            imp.filterMode = FilterMode.Trilinear;
             imp.wrapMode = TextureWrapMode.Clamp;
             imp.maxTextureSize = bg ? 4096 : 1024;
+            // High-quality compression: ASTC 4x4 on iOS is visually lossless for this art; characters' edges stay clean.
+            imp.textureCompression = TextureImporterCompression.CompressedHQ;
+            imp.crunchedCompression = false;
+            var ios = imp.GetPlatformTextureSettings("iPhone");
+            ios.overridden = true;
+            ios.format = TextureImporterFormat.ASTC_4x4;
+            ios.maxTextureSize = imp.maxTextureSize;
+            ios.compressionQuality = 100;
+            imp.SetPlatformTextureSettings(ios);
 
             var s = new TextureImporterSettings();
             imp.ReadTextureSettings(s);

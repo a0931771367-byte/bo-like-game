@@ -24,3 +24,9 @@ Assets/Resources/Audio/music/*.wav
 Assets/Resources/Audio/music/*.wav.meta
 Assets/Resources/Audio/amb/*.wav
 Assets/Resources/Audio/amb/*.wav.meta
+
+# Written by BoLike/Build iOS; the title shows them, the repo does not track them
+Assets/Resources/build-number.txt
+Assets/Resources/build-number.txt.meta
+Assets/Resources/build-commit.txt
+Assets/Resources/build-commit.txt.meta
