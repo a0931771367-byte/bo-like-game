@@ -1,0 +1,1203 @@
+[
+ {
+  "id": "swordsman",
+  "name": "劍士",
+  "role": "近戰・耐打・新手友善",
+  "color": 4881361,
+  "accent": 14212584,
+  "weapon": "sword",
+  "playable": true,
+  "hpBase": 150,
+  "hpPerLv": 18,
+  "spBase": 30,
+  "spPerLv": 3,
+  "weaponAtk": 18,
+  "baseStats": {
+   "str": 6,
+   "agi": 3,
+   "vit": 6,
+   "int": 1,
+   "dex": 3,
+   "luk": 1
+  },
+  "combo": [
+   {
+    "power": 1,
+    "range": 105,
+    "startup": 90,
+    "active": 90,
+    "recovery": 160,
+    "knock": 60,
+    "launch": 0,
+    "stun": 320
+   },
+   {
+    "power": 1,
+    "range": 105,
+    "startup": 80,
+    "active": 90,
+    "recovery": 170,
+    "knock": 60,
+    "launch": 0,
+    "stun": 320
+   },
+   {
+    "power": 1.7,
+    "range": 125,
+    "startup": 140,
+    "active": 110,
+    "recovery": 300,
+    "knock": 380,
+    "launch": 480,
+    "stun": 500
+   }
+  ],
+  "air": {
+   "power": 1.2,
+   "range": 100,
+   "startup": 60,
+   "active": 180,
+   "recovery": 120,
+   "knock": 160,
+   "launch": 0,
+   "stun": 360
+  },
+  "skills": [
+   {
+    "id": "bash",
+    "name": "裂甲斬",
+    "short": "裂甲",
+    "ref": "Bash",
+    "desc": "強力單體斬擊，高等級機率暈眩",
+    "type": "melee",
+    "maxLv": 5,
+    "sp": [
+     8,
+     1
+    ],
+    "cooldown": 1400,
+    "cast": 180,
+    "power": [
+     2.2,
+     0.45
+    ],
+    "element": "neutral",
+    "magic": false,
+    "color": 16765773,
+    "range": 130,
+    "knock": 260,
+    "stun": 600,
+    "stunChance": [
+     0,
+     0.08
+    ]
+   },
+   {
+    "id": "magnum",
+    "name": "烈焰踏",
+    "short": "烈焰",
+    "ref": "Magnum Break",
+    "desc": "周圍火屬性爆炸，擊飛敵人",
+    "type": "aoe",
+    "maxLv": 5,
+    "sp": [
+     15,
+     1
+    ],
+    "cooldown": 6000,
+    "cast": 260,
+    "power": [
+     1.6,
+     0.25
+    ],
+    "element": "fire",
+    "magic": false,
+    "color": 16738859,
+    "radius": 170,
+    "knock": 480,
+    "launch": 520,
+    "stun": 500
+   },
+   {
+    "id": "provoke",
+    "name": "戰吼",
+    "short": "戰吼",
+    "ref": "Provoke",
+    "desc": "降低周圍敵人防禦 8 秒",
+    "type": "debuff",
+    "maxLv": 5,
+    "sp": [
+     6,
+     0
+    ],
+    "cooldown": 9000,
+    "cast": 200,
+    "power": [
+     0,
+     0
+    ],
+    "element": "neutral",
+    "magic": false,
+    "color": 16731501,
+    "radius": 340,
+    "duration": [
+     8000,
+     0
+    ],
+    "defDown": [
+     0.3,
+     0.07
+    ]
+   },
+   {
+    "id": "endure",
+    "name": "不屈",
+    "short": "不屈",
+    "ref": "Endure",
+    "desc": "一段時間內受擊不硬直",
+    "type": "buff",
+    "maxLv": 5,
+    "sp": [
+     10,
+     0
+    ],
+    "cooldown": 16000,
+    "cast": 150,
+    "power": [
+     0,
+     0
+    ],
+    "element": "neutral",
+    "magic": false,
+    "color": 10215773,
+    "duration": [
+     5000,
+     1000
+    ],
+    "buffByLevel": [
+     {
+      "endure": true
+     },
+     {
+      "endure": true
+     },
+     {
+      "endure": true
+     },
+     {
+      "endure": true
+     },
+     {
+      "endure": true
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "id": "mage",
+  "name": "法師",
+  "role": "遠程屬性魔法・脆皮高傷",
+  "color": 9064401,
+  "accent": 15979371,
+  "weapon": "staff",
+  "playable": true,
+  "hpBase": 110,
+  "hpPerLv": 11,
+  "spBase": 60,
+  "spPerLv": 7,
+  "weaponAtk": 9,
+  "baseStats": {
+   "str": 1,
+   "agi": 3,
+   "vit": 3,
+   "int": 8,
+   "dex": 6,
+   "luk": 1
+  },
+  "combo": [
+   {
+    "power": 0.8,
+    "range": 90,
+    "startup": 100,
+    "active": 90,
+    "recovery": 180,
+    "knock": 50,
+    "launch": 0,
+    "stun": 320
+   },
+   {
+    "power": 0.8,
+    "range": 90,
+    "startup": 100,
+    "active": 90,
+    "recovery": 200,
+    "knock": 50,
+    "launch": 0,
+    "stun": 320
+   },
+   {
+    "power": 1.2,
+    "range": 110,
+    "startup": 150,
+    "active": 100,
+    "recovery": 320,
+    "knock": 320,
+    "launch": 380,
+    "stun": 450
+   }
+  ],
+  "air": {
+   "power": 0.9,
+   "range": 90,
+   "startup": 70,
+   "active": 160,
+   "recovery": 140,
+   "knock": 140,
+   "launch": 0,
+   "stun": 320
+  },
+  "skills": [
+   {
+    "id": "firebolt",
+    "name": "火球術",
+    "short": "火球",
+    "ref": "Fire Bolt",
+    "desc": "連發火屬性魔彈，等級越高發數越多",
+    "type": "projectile",
+    "maxLv": 5,
+    "sp": [
+     8,
+     2
+    ],
+    "cooldown": 1300,
+    "cast": 320,
+    "power": [
+     1.05,
+     0.05
+    ],
+    "element": "fire",
+    "magic": true,
+    "color": 16743214,
+    "count": [
+     2,
+     1
+    ],
+    "speed": 760,
+    "knock": 120,
+    "stun": 300
+   },
+   {
+    "id": "coldbolt",
+    "name": "冰矛術",
+    "short": "冰矛",
+    "ref": "Cold Bolt / Frost Diver",
+    "desc": "水屬性冰矛，機率凍結敵人",
+    "type": "projectile",
+    "maxLv": 5,
+    "sp": [
+     12,
+     2
+    ],
+    "cooldown": 2200,
+    "cast": 360,
+    "power": [
+     1.3,
+     0.15
+    ],
+    "element": "water",
+    "magic": true,
+    "color": 7328767,
+    "count": [
+     1,
+     0.5
+    ],
+    "speed": 640,
+    "knock": 80,
+    "stun": 350,
+    "freezeChance": [
+     0.3,
+     0.1
+    ]
+   },
+   {
+    "id": "lightning",
+    "name": "雷擊術",
+    "short": "雷擊",
+    "ref": "Lightning Bolt / Thunderstorm",
+    "desc": "在前方降下多道落雷",
+    "type": "strikes",
+    "maxLv": 5,
+    "sp": [
+     24,
+     3
+    ],
+    "cooldown": 7000,
+    "cast": 520,
+    "power": [
+     1,
+     0.12
+    ],
+    "element": "wind",
+    "magic": true,
+    "color": 16773754,
+    "count": [
+     4,
+     1
+    ],
+    "range": 460,
+    "radius": 90,
+    "knock": 160,
+    "stun": 450
+   },
+   {
+    "id": "firewall",
+    "name": "火牆",
+    "short": "火牆",
+    "ref": "Fire Wall",
+    "desc": "在前方立起火牆，阻擋並灼燒敵人",
+    "type": "wall",
+    "maxLv": 5,
+    "sp": [
+     20,
+     2
+    ],
+    "cooldown": 9000,
+    "cast": 380,
+    "power": [
+     0.55,
+     0.08
+    ],
+    "element": "fire",
+    "magic": true,
+    "color": 16731935,
+    "duration": [
+     4000,
+     600
+    ],
+    "range": 150,
+    "knock": 340,
+    "stun": 300
+   }
+  ]
+ },
+ {
+  "id": "merchant",
+  "name": "商人",
+  "role": "重擊・花金幣換傷害",
+  "color": 13208107,
+  "accent": 15917493,
+  "weapon": "axe",
+  "playable": true,
+  "hpBase": 140,
+  "hpPerLv": 16,
+  "spBase": 35,
+  "spPerLv": 3,
+  "weaponAtk": 22,
+  "baseStats": {
+   "str": 6,
+   "agi": 2,
+   "vit": 5,
+   "int": 1,
+   "dex": 3,
+   "luk": 4
+  },
+  "combo": [
+   {
+    "power": 1.1,
+    "range": 110,
+    "startup": 120,
+    "active": 100,
+    "recovery": 200,
+    "knock": 80,
+    "launch": 0,
+    "stun": 320
+   },
+   {
+    "power": 1.1,
+    "range": 110,
+    "startup": 110,
+    "active": 100,
+    "recovery": 220,
+    "knock": 80,
+    "launch": 0,
+    "stun": 320
+   },
+   {
+    "power": 2,
+    "range": 130,
+    "startup": 200,
+    "active": 120,
+    "recovery": 360,
+    "knock": 420,
+    "launch": 520,
+    "stun": 550
+   }
+  ],
+  "air": {
+   "power": 1.4,
+   "range": 105,
+   "startup": 80,
+   "active": 180,
+   "recovery": 140,
+   "knock": 180,
+   "launch": 0,
+   "stun": 380
+  },
+  "skills": [
+   {
+    "id": "mammonite",
+    "name": "金幣重拳",
+    "short": "重拳",
+    "ref": "Mammonite",
+    "desc": "消耗金幣的超高傷害一擊",
+    "type": "melee",
+    "maxLv": 5,
+    "sp": [
+     5,
+     0
+    ],
+    "cooldown": 2600,
+    "cast": 260,
+    "power": [
+     3,
+     0.6
+    ],
+    "element": "neutral",
+    "magic": false,
+    "color": 16765773,
+    "range": 130,
+    "knock": 360,
+    "launch": 300,
+    "stun": 500,
+    "goldCost": [
+     10,
+     10
+    ]
+   },
+   {
+    "id": "cartrev",
+    "name": "推車迴旋",
+    "short": "推車",
+    "ref": "Cart Revolution",
+    "desc": "推車橫掃周圍敵人並擊退",
+    "type": "aoe",
+    "maxLv": 5,
+    "sp": [
+     12,
+     1
+    ],
+    "cooldown": 5000,
+    "cast": 300,
+    "power": [
+     1.5,
+     0.3
+    ],
+    "element": "neutral",
+    "magic": false,
+    "color": 13208107,
+    "radius": 160,
+    "knock": 520,
+    "launch": 0,
+    "stun": 600
+   },
+   {
+    "id": "loudex",
+    "name": "大聲喝采",
+    "short": "喝采",
+    "ref": "Loud Exclamation",
+    "desc": "暫時提升攻擊力",
+    "type": "buff",
+    "maxLv": 5,
+    "sp": [
+     8,
+     0
+    ],
+    "cooldown": 14000,
+    "cast": 200,
+    "power": [
+     0,
+     0
+    ],
+    "element": "neutral",
+    "magic": false,
+    "color": 16752451,
+    "duration": [
+     8000,
+     1500
+    ],
+    "buffByLevel": [
+     {
+      "atkMult": 1.2
+     },
+     {
+      "atkMult": 1.25
+     },
+     {
+      "atkMult": 1.2999999999999998
+     },
+     {
+      "atkMult": 1.3499999999999999
+     },
+     {
+      "atkMult": 1.4
+     }
+    ]
+   },
+   {
+    "id": "discount",
+    "name": "精明經營",
+    "short": "經營",
+    "ref": "Discount / Overcharge",
+    "desc": "被動：敵人掉落更多金幣",
+    "type": "passive",
+    "maxLv": 5,
+    "sp": [
+     0,
+     0
+    ],
+    "cooldown": 0,
+    "cast": 0,
+    "power": [
+     0,
+     0
+    ],
+    "element": "neutral",
+    "magic": false,
+    "color": 15917493,
+    "passive": "goldFind",
+    "passiveValue": [
+     0.2,
+     0.1
+    ]
+   }
+  ]
+ },
+ {
+  "id": "acolyte",
+  "name": "補師",
+  "role": "自補・增益・剋不死系",
+  "color": 15261896,
+  "accent": 7321599,
+  "weapon": "mace",
+  "playable": true,
+  "hpBase": 125,
+  "hpPerLv": 13,
+  "spBase": 55,
+  "spPerLv": 6,
+  "weaponAtk": 13,
+  "baseStats": {
+   "str": 3,
+   "agi": 3,
+   "vit": 4,
+   "int": 6,
+   "dex": 4,
+   "luk": 1
+  },
+  "combo": [
+   {
+    "power": 0.9,
+    "range": 100,
+    "startup": 100,
+    "active": 90,
+    "recovery": 180,
+    "knock": 60,
+    "launch": 0,
+    "stun": 320
+   },
+   {
+    "power": 0.9,
+    "range": 100,
+    "startup": 100,
+    "active": 90,
+    "recovery": 190,
+    "knock": 60,
+    "launch": 0,
+    "stun": 320
+   },
+   {
+    "power": 1.4,
+    "range": 115,
+    "startup": 150,
+    "active": 100,
+    "recovery": 320,
+    "knock": 340,
+    "launch": 420,
+    "stun": 480
+   }
+  ],
+  "air": {
+   "power": 1,
+   "range": 95,
+   "startup": 70,
+   "active": 170,
+   "recovery": 130,
+   "knock": 150,
+   "launch": 0,
+   "stun": 340
+  },
+  "skills": [
+   {
+    "id": "heal",
+    "name": "治癒術",
+    "short": "治癒",
+    "ref": "Heal",
+    "desc": "恢復自身 HP，對不死系造成聖傷害",
+    "type": "heal",
+    "maxLv": 5,
+    "sp": [
+     14,
+     2
+    ],
+    "cooldown": 4000,
+    "cast": 400,
+    "power": [
+     1.2,
+     0.3
+    ],
+    "element": "holy",
+    "magic": true,
+    "color": 11989642,
+    "radius": 150,
+    "heal": [
+     0.18,
+     0.05
+    ]
+   },
+   {
+    "id": "holylight",
+    "name": "聖光彈",
+    "short": "聖光",
+    "ref": "Holy Light",
+    "desc": "聖屬性魔法彈",
+    "type": "projectile",
+    "maxLv": 5,
+    "sp": [
+     10,
+     1
+    ],
+    "cooldown": 1500,
+    "cast": 300,
+    "power": [
+     1.5,
+     0.25
+    ],
+    "element": "holy",
+    "magic": true,
+    "color": 16774320,
+    "count": [
+     1,
+     0
+    ],
+    "speed": 700,
+    "knock": 140,
+    "stun": 350
+   },
+   {
+    "id": "blessing",
+    "name": "祝福",
+    "short": "祝福",
+    "ref": "Blessing / Increase AGI",
+    "desc": "暫時提升全屬性與移動速度",
+    "type": "buff",
+    "maxLv": 5,
+    "sp": [
+     18,
+     2
+    ],
+    "cooldown": 18000,
+    "cast": 350,
+    "power": [
+     0,
+     0
+    ],
+    "element": "holy",
+    "magic": true,
+    "color": 7321599,
+    "duration": [
+     12000,
+     2000
+    ],
+    "buffByLevel": [
+     {
+      "allStats": 3,
+      "moveMult": 1.1300000000000001,
+      "aspdMult": 1.08
+     },
+     {
+      "allStats": 4,
+      "moveMult": 1.1600000000000001,
+      "aspdMult": 1.11
+     },
+     {
+      "allStats": 5,
+      "moveMult": 1.1900000000000002,
+      "aspdMult": 1.1400000000000001
+     },
+     {
+      "allStats": 6,
+      "moveMult": 1.2200000000000002,
+      "aspdMult": 1.17
+     },
+     {
+      "allStats": 7,
+      "moveMult": 1.25,
+      "aspdMult": 1.2
+     }
+    ]
+   },
+   {
+    "id": "pneuma",
+    "name": "守護結界",
+    "short": "結界",
+    "ref": "Pneuma",
+    "desc": "結界吸收接下來的數次攻擊",
+    "type": "buff",
+    "maxLv": 5,
+    "sp": [
+     12,
+     1
+    ],
+    "cooldown": 15000,
+    "cast": 250,
+    "power": [
+     0,
+     0
+    ],
+    "element": "holy",
+    "magic": true,
+    "color": 13625599,
+    "duration": [
+     8000,
+     0
+    ],
+    "buffByLevel": [
+     {
+      "shieldHits": 2
+     },
+     {
+      "shieldHits": 3
+     },
+     {
+      "shieldHits": 4
+     },
+     {
+      "shieldHits": 5
+     },
+     {
+      "shieldHits": 6
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "id": "thief",
+  "name": "盜賊",
+  "role": "高速連擊・毒・閃避",
+  "color": 4165466,
+  "accent": 12187080,
+  "weapon": "dagger",
+  "playable": true,
+  "hpBase": 120,
+  "hpPerLv": 13,
+  "spBase": 30,
+  "spPerLv": 3,
+  "weaponAtk": 14,
+  "baseStats": {
+   "str": 4,
+   "agi": 7,
+   "vit": 3,
+   "int": 1,
+   "dex": 4,
+   "luk": 2
+  },
+  "combo": [
+   {
+    "power": 0.75,
+    "range": 95,
+    "startup": 60,
+    "active": 70,
+    "recovery": 110,
+    "knock": 40,
+    "launch": 0,
+    "stun": 320
+   },
+   {
+    "power": 0.75,
+    "range": 95,
+    "startup": 60,
+    "active": 70,
+    "recovery": 110,
+    "knock": 40,
+    "launch": 0,
+    "stun": 320
+   },
+   {
+    "power": 0.75,
+    "range": 95,
+    "startup": 60,
+    "active": 70,
+    "recovery": 120,
+    "knock": 40,
+    "launch": 0,
+    "stun": 320
+   },
+   {
+    "power": 1.3,
+    "range": 110,
+    "startup": 100,
+    "active": 90,
+    "recovery": 260,
+    "knock": 340,
+    "launch": 420,
+    "stun": 450
+   }
+  ],
+  "air": {
+   "power": 1,
+   "range": 95,
+   "startup": 50,
+   "active": 160,
+   "recovery": 110,
+   "knock": 140,
+   "launch": 0,
+   "stun": 320
+  },
+  "skills": [
+   {
+    "id": "doubleattack",
+    "name": "影刃連擊",
+    "short": "影刃",
+    "ref": "Double Attack",
+    "desc": "被動：普攻有機率命中兩次",
+    "type": "passive",
+    "maxLv": 5,
+    "sp": [
+     0,
+     0
+    ],
+    "cooldown": 0,
+    "cast": 0,
+    "power": [
+     0,
+     0
+    ],
+    "element": "neutral",
+    "magic": false,
+    "color": 12187080,
+    "passive": "doubleAttack",
+    "passiveValue": [
+     0.2,
+     0.1
+    ]
+   },
+   {
+    "id": "envenom",
+    "name": "毒牙",
+    "short": "毒牙",
+    "ref": "Envenom",
+    "desc": "毒屬性攻擊並持續扣血",
+    "type": "melee",
+    "maxLv": 5,
+    "sp": [
+     8,
+     1
+    ],
+    "cooldown": 2000,
+    "cast": 150,
+    "power": [
+     1.6,
+     0.3
+    ],
+    "element": "poison",
+    "magic": false,
+    "color": 10181046,
+    "range": 120,
+    "knock": 200,
+    "stun": 400,
+    "poison": [
+     6,
+     3
+    ]
+   },
+   {
+    "id": "hiding",
+    "name": "潛影",
+    "short": "潛影",
+    "ref": "Hiding",
+    "desc": "短時間隱身，敵人失去目標",
+    "type": "buff",
+    "maxLv": 5,
+    "sp": [
+     10,
+     0
+    ],
+    "cooldown": 12000,
+    "cast": 120,
+    "power": [
+     0,
+     0
+    ],
+    "element": "neutral",
+    "magic": false,
+    "color": 4165466,
+    "duration": [
+     2500,
+     500
+    ],
+    "buffByLevel": [
+     {
+      "hidden": true
+     },
+     {
+      "hidden": true
+     },
+     {
+      "hidden": true
+     },
+     {
+      "hidden": true
+     },
+     {
+      "hidden": true
+     }
+    ]
+   },
+   {
+    "id": "backslide",
+    "name": "飛影後跳",
+    "short": "後跳",
+    "ref": "Back Slide",
+    "desc": "向後瞬移拉開距離，期間無敵",
+    "type": "dash",
+    "maxLv": 5,
+    "sp": [
+     5,
+     0
+    ],
+    "cooldown": 3000,
+    "cast": 60,
+    "power": [
+     0,
+     0
+    ],
+    "element": "neutral",
+    "magic": false,
+    "color": 12187080,
+    "dashDistance": [
+     220,
+     30
+    ],
+    "duration": [
+     260,
+     0
+    ]
+   }
+  ]
+ },
+ {
+  "id": "archer",
+  "name": "弓箭手",
+  "role": "遠程物理・範圍箭雨",
+  "color": 6986298,
+  "accent": 15127434,
+  "weapon": "bow",
+  "playable": true,
+  "ranged": true,
+  "hpBase": 115,
+  "hpPerLv": 12,
+  "spBase": 35,
+  "spPerLv": 4,
+  "weaponAtk": 17,
+  "baseStats": {
+   "str": 2,
+   "agi": 5,
+   "vit": 3,
+   "int": 2,
+   "dex": 8,
+   "luk": 1
+  },
+  "combo": [
+   {
+    "power": 0.9,
+    "range": 700,
+    "startup": 120,
+    "active": 60,
+    "recovery": 200,
+    "knock": 90,
+    "launch": 0,
+    "stun": 320
+   },
+   {
+    "power": 0.9,
+    "range": 700,
+    "startup": 120,
+    "active": 60,
+    "recovery": 200,
+    "knock": 90,
+    "launch": 0,
+    "stun": 320
+   },
+   {
+    "power": 1.3,
+    "range": 700,
+    "startup": 160,
+    "active": 60,
+    "recovery": 320,
+    "knock": 260,
+    "launch": 0,
+    "stun": 450
+   }
+  ],
+  "air": {
+   "power": 1,
+   "range": 700,
+   "startup": 80,
+   "active": 60,
+   "recovery": 150,
+   "knock": 120,
+   "launch": 0,
+   "stun": 340
+  },
+  "skills": [
+   {
+    "id": "doublestrafe",
+    "name": "雙矢",
+    "short": "雙矢",
+    "ref": "Double Strafe",
+    "desc": "連射兩箭的高傷害單體",
+    "type": "projectile",
+    "maxLv": 5,
+    "sp": [
+     10,
+     1
+    ],
+    "cooldown": 1600,
+    "cast": 220,
+    "power": [
+     1.4,
+     0.2
+    ],
+    "element": "neutral",
+    "magic": false,
+    "color": 15127434,
+    "count": [
+     2,
+     0
+    ],
+    "speed": 900,
+    "knock": 120,
+    "stun": 350
+   },
+   {
+    "id": "arrowshower",
+    "name": "箭雨",
+    "short": "箭雨",
+    "ref": "Arrow Shower",
+    "desc": "前方範圍降下箭雨",
+    "type": "strikes",
+    "maxLv": 5,
+    "sp": [
+     16,
+     2
+    ],
+    "cooldown": 6000,
+    "cast": 450,
+    "power": [
+     0.8,
+     0.1
+    ],
+    "element": "neutral",
+    "magic": false,
+    "color": 15127434,
+    "count": [
+     5,
+     1
+    ],
+    "range": 400,
+    "radius": 80,
+    "knock": 200,
+    "stun": 400
+   },
+   {
+    "id": "concentration",
+    "name": "鷹眼專注",
+    "short": "專注",
+    "ref": "Improve Concentration",
+    "desc": "暫時提升敏捷與靈巧",
+    "type": "buff",
+    "maxLv": 5,
+    "sp": [
+     12,
+     1
+    ],
+    "cooldown": 16000,
+    "cast": 250,
+    "power": [
+     0,
+     0
+    ],
+    "element": "neutral",
+    "magic": false,
+    "color": 10215773,
+    "duration": [
+     10000,
+     2000
+    ],
+    "buffByLevel": [
+     {
+      "aspdMult": 1.1400000000000001,
+      "atkMult": 1.08
+     },
+     {
+      "aspdMult": 1.1800000000000002,
+      "atkMult": 1.11
+     },
+     {
+      "aspdMult": 1.2200000000000002,
+      "atkMult": 1.1400000000000001
+     },
+     {
+      "aspdMult": 1.26,
+      "atkMult": 1.17
+     },
+     {
+      "aspdMult": 1.3,
+      "atkMult": 1.2
+     }
+    ]
+   },
+   {
+    "id": "chargearrow",
+    "name": "擊退箭",
+    "short": "擊退",
+    "ref": "Charge Arrow",
+    "desc": "射出強力擊退的一箭",
+    "type": "projectile",
+    "maxLv": 5,
+    "sp": [
+     8,
+     1
+    ],
+    "cooldown": 3500,
+    "cast": 280,
+    "power": [
+     1.2,
+     0.2
+    ],
+    "element": "neutral",
+    "magic": false,
+    "color": 16777215,
+    "count": [
+     1,
+     0
+    ],
+    "speed": 1000,
+    "knock": 650,
+    "launch": 400,
+    "stun": 600
+   }
+  ]
+ }
+]

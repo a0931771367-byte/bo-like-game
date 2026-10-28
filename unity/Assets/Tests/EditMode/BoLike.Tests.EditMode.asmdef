@@ -1,0 +1,20 @@
+{
+    "name": "BoLike.Tests.EditMode",
+    "rootNamespace": "BoLike.Tests",
+    "references": [
+        "BoLike.Runtime",
+        "UnityEngine.TestRunner",
+        "UnityEditor.TestRunner"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "overrideReferences": true,
+    "precompiledReferences": [
+        "nunit.framework.dll",
+        "Newtonsoft.Json.dll"
+    ],
+    "defineConstraints": [
+        "UNITY_INCLUDE_TESTS"
+    ]
+}

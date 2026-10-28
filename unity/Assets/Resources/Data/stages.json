@@ -1,0 +1,917 @@
+[
+ {
+  "id": "1-1",
+  "chapter": "第 1 章",
+  "name": "王都郊外草原",
+  "desc": "果凍怪與野狼出沒的草原，適合熟悉操作。",
+  "width": 4200,
+  "bg": "bg_chapter1",
+  "bgGroundY": 528,
+  "waves": [
+   {
+    "triggerX": 500,
+    "spawns": [
+     {
+      "enemy": "jelly",
+      "side": "right",
+      "delay": 0
+     },
+     {
+      "enemy": "jelly",
+      "side": "right",
+      "delay": 400
+     },
+     {
+      "enemy": "jelly",
+      "side": "left",
+      "delay": 1200
+     }
+    ]
+   },
+   {
+    "triggerX": 1500,
+    "spawns": [
+     {
+      "enemy": "jelly",
+      "side": "right",
+      "delay": 0
+     },
+     {
+      "enemy": "bug",
+      "side": "right",
+      "delay": 300
+     },
+     {
+      "enemy": "jelly",
+      "side": "left",
+      "delay": 900
+     },
+     {
+      "enemy": "bug",
+      "side": "left",
+      "delay": 2500
+     }
+    ]
+   },
+   {
+    "triggerX": 2500,
+    "spawns": [
+     {
+      "enemy": "wolf",
+      "side": "right",
+      "delay": 0
+     },
+     {
+      "enemy": "jelly",
+      "side": "left",
+      "delay": 400
+     },
+     {
+      "enemy": "wolf",
+      "side": "left",
+      "delay": 1800
+     },
+     {
+      "enemy": "jelly",
+      "side": "right",
+      "delay": 2400
+     },
+     {
+      "enemy": "bug",
+      "side": "right",
+      "delay": 3200
+     }
+    ]
+   },
+   {
+    "triggerX": 3500,
+    "spawns": [
+     {
+      "enemy": "jellyKing",
+      "side": "right",
+      "delay": 600
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "id": "1-2",
+  "chapter": "第 1 章",
+  "name": "黃昏林道",
+  "desc": "夕陽下的林道，火焰果凍與鐵甲蟲成群出現。",
+  "width": 4800,
+  "bg": "bg_chapter1",
+  "bgGroundY": 528,
+  "tint": 16757896,
+  "waves": [
+   {
+    "triggerX": 500,
+    "spawns": [
+     {
+      "enemy": "jelly",
+      "side": "right",
+      "delay": 0
+     },
+     {
+      "enemy": "fireJelly",
+      "side": "right",
+      "delay": 500
+     },
+     {
+      "enemy": "jelly",
+      "side": "left",
+      "delay": 1000
+     },
+     {
+      "enemy": "fireJelly",
+      "side": "left",
+      "delay": 1800
+     }
+    ]
+   },
+   {
+    "triggerX": 1400,
+    "spawns": [
+     {
+      "enemy": "ironBug",
+      "side": "right",
+      "delay": 0
+     },
+     {
+      "enemy": "jelly",
+      "side": "right",
+      "delay": 600
+     },
+     {
+      "enemy": "bug",
+      "side": "left",
+      "delay": 1200
+     },
+     {
+      "enemy": "fireJelly",
+      "side": "right",
+      "delay": 2600
+     },
+     {
+      "enemy": "fireJelly",
+      "side": "left",
+      "delay": 3000
+     }
+    ]
+   },
+   {
+    "triggerX": 2400,
+    "spawns": [
+     {
+      "enemy": "wolf",
+      "side": "right",
+      "delay": 0
+     },
+     {
+      "enemy": "wolf",
+      "side": "left",
+      "delay": 300
+     },
+     {
+      "enemy": "ironBug",
+      "side": "right",
+      "delay": 1500
+     },
+     {
+      "enemy": "fireJelly",
+      "side": "left",
+      "delay": 2200
+     },
+     {
+      "enemy": "jelly",
+      "side": "right",
+      "delay": 2800
+     }
+    ]
+   },
+   {
+    "triggerX": 3400,
+    "spawns": [
+     {
+      "enemy": "ironBug",
+      "side": "right",
+      "delay": 0
+     },
+     {
+      "enemy": "ironBug",
+      "side": "left",
+      "delay": 200
+     },
+     {
+      "enemy": "fireJelly",
+      "side": "right",
+      "delay": 900
+     },
+     {
+      "enemy": "fireJelly",
+      "side": "right",
+      "delay": 1200
+     },
+     {
+      "enemy": "wolf",
+      "side": "left",
+      "delay": 2400
+     },
+     {
+      "enemy": "bug",
+      "side": "right",
+      "delay": 3000
+     }
+    ]
+   },
+   {
+    "triggerX": 4200,
+    "spawns": [
+     {
+      "enemy": "jellyKing",
+      "side": "right",
+      "delay": 400
+     },
+     {
+      "enemy": "fireJelly",
+      "side": "left",
+      "delay": 3000
+     },
+     {
+      "enemy": "fireJelly",
+      "side": "left",
+      "delay": 3400
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "id": "1-3",
+  "chapter": "第 1 章",
+  "name": "月夜狼嚎",
+  "desc": "夜狼群的地盤，深處有銀牙狼王鎮守。",
+  "width": 5200,
+  "bg": "bg_chapter1",
+  "bgGroundY": 528,
+  "tint": 8028364,
+  "waves": [
+   {
+    "triggerX": 500,
+    "spawns": [
+     {
+      "enemy": "wolf",
+      "side": "right",
+      "delay": 0
+     },
+     {
+      "enemy": "jelly",
+      "side": "left",
+      "delay": 400
+     },
+     {
+      "enemy": "wolf",
+      "side": "left",
+      "delay": 1400
+     },
+     {
+      "enemy": "nightWolf",
+      "side": "right",
+      "delay": 2400
+     }
+    ]
+   },
+   {
+    "triggerX": 1400,
+    "spawns": [
+     {
+      "enemy": "nightWolf",
+      "side": "right",
+      "delay": 0
+     },
+     {
+      "enemy": "ironBug",
+      "side": "left",
+      "delay": 400
+     },
+     {
+      "enemy": "fireJelly",
+      "side": "right",
+      "delay": 1200
+     },
+     {
+      "enemy": "nightWolf",
+      "side": "left",
+      "delay": 2000
+     },
+     {
+      "enemy": "bug",
+      "side": "right",
+      "delay": 2800
+     }
+    ]
+   },
+   {
+    "triggerX": 2400,
+    "spawns": [
+     {
+      "enemy": "nightWolf",
+      "side": "right",
+      "delay": 0
+     },
+     {
+      "enemy": "nightWolf",
+      "side": "left",
+      "delay": 300
+     },
+     {
+      "enemy": "ironBug",
+      "side": "right",
+      "delay": 1600
+     },
+     {
+      "enemy": "ironBug",
+      "side": "left",
+      "delay": 1800
+     },
+     {
+      "enemy": "fireJelly",
+      "side": "right",
+      "delay": 2600
+     },
+     {
+      "enemy": "jelly",
+      "side": "left",
+      "delay": 3000
+     }
+    ]
+   },
+   {
+    "triggerX": 3400,
+    "spawns": [
+     {
+      "enemy": "wolf",
+      "side": "right",
+      "delay": 0
+     },
+     {
+      "enemy": "nightWolf",
+      "side": "right",
+      "delay": 400
+     },
+     {
+      "enemy": "nightWolf",
+      "side": "left",
+      "delay": 800
+     },
+     {
+      "enemy": "fireJelly",
+      "side": "left",
+      "delay": 1600
+     },
+     {
+      "enemy": "fireJelly",
+      "side": "right",
+      "delay": 2000
+     },
+     {
+      "enemy": "ironBug",
+      "side": "left",
+      "delay": 3000
+     }
+    ]
+   },
+   {
+    "triggerX": 4500,
+    "spawns": [
+     {
+      "enemy": "wolfLord",
+      "side": "right",
+      "delay": 600
+     },
+     {
+      "enemy": "nightWolf",
+      "side": "left",
+      "delay": 6000
+     },
+     {
+      "enemy": "nightWolf",
+      "side": "left",
+      "delay": 12000
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "id": "2-1",
+  "chapter": "第 2 章",
+  "name": "迷霧森林入口",
+  "desc": "紫霧籠罩的林間，蜜蜂與食人花埋伏其中。",
+  "width": 4800,
+  "bg": "bg_chapter2",
+  "bgGroundY": 546,
+  "waves": [
+   {
+    "triggerX": 500,
+    "spawns": [
+     {
+      "enemy": "bee",
+      "side": "right",
+      "delay": 0
+     },
+     {
+      "enemy": "bee",
+      "side": "right",
+      "delay": 600
+     },
+     {
+      "enemy": "jelly",
+      "side": "left",
+      "delay": 1200
+     },
+     {
+      "enemy": "bee",
+      "side": "left",
+      "delay": 2000
+     }
+    ]
+   },
+   {
+    "triggerX": 1400,
+    "spawns": [
+     {
+      "enemy": "flower",
+      "side": "right",
+      "delay": 0
+     },
+     {
+      "enemy": "bee",
+      "side": "right",
+      "delay": 800
+     },
+     {
+      "enemy": "bee",
+      "side": "left",
+      "delay": 1200
+     },
+     {
+      "enemy": "bug",
+      "side": "left",
+      "delay": 2000
+     },
+     {
+      "enemy": "bee",
+      "side": "right",
+      "delay": 3000
+     }
+    ]
+   },
+   {
+    "triggerX": 2400,
+    "spawns": [
+     {
+      "enemy": "flower",
+      "side": "right",
+      "delay": 0
+     },
+     {
+      "enemy": "flower",
+      "side": "left",
+      "delay": 300
+     },
+     {
+      "enemy": "bee",
+      "side": "right",
+      "delay": 1200
+     },
+     {
+      "enemy": "bee",
+      "side": "right",
+      "delay": 1500
+     },
+     {
+      "enemy": "wolf",
+      "side": "left",
+      "delay": 2400
+     }
+    ]
+   },
+   {
+    "triggerX": 3400,
+    "spawns": [
+     {
+      "enemy": "mushroom",
+      "side": "right",
+      "delay": 0
+     },
+     {
+      "enemy": "bee",
+      "side": "right",
+      "delay": 700
+     },
+     {
+      "enemy": "bee",
+      "side": "left",
+      "delay": 1000
+     },
+     {
+      "enemy": "flower",
+      "side": "left",
+      "delay": 1800
+     },
+     {
+      "enemy": "bee",
+      "side": "right",
+      "delay": 2800
+     },
+     {
+      "enemy": "bee",
+      "side": "left",
+      "delay": 3200
+     }
+    ]
+   },
+   {
+    "triggerX": 4200,
+    "spawns": [
+     {
+      "enemy": "mushroom",
+      "side": "right",
+      "delay": 0
+     },
+     {
+      "enemy": "mushroom",
+      "side": "left",
+      "delay": 400
+     },
+     {
+      "enemy": "flower",
+      "side": "right",
+      "delay": 1200
+     },
+     {
+      "enemy": "bee",
+      "side": "right",
+      "delay": 2000
+     },
+     {
+      "enemy": "bee",
+      "side": "left",
+      "delay": 2400
+     },
+     {
+      "enemy": "bee",
+      "side": "right",
+      "delay": 2800
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "id": "2-2",
+  "chapter": "第 2 章",
+  "name": "毒蘑菇窪地",
+  "desc": "潮濕的窪地長滿毒蘑菇，霧氣越來越濃。",
+  "width": 5200,
+  "bg": "bg_chapter2",
+  "bgGroundY": 546,
+  "tint": 12576472,
+  "waves": [
+   {
+    "triggerX": 500,
+    "spawns": [
+     {
+      "enemy": "mushroom",
+      "side": "right",
+      "delay": 0
+     },
+     {
+      "enemy": "bee",
+      "side": "left",
+      "delay": 500
+     },
+     {
+      "enemy": "mushroom",
+      "side": "left",
+      "delay": 1400
+     },
+     {
+      "enemy": "bee",
+      "side": "right",
+      "delay": 2000
+     }
+    ]
+   },
+   {
+    "triggerX": 1400,
+    "spawns": [
+     {
+      "enemy": "flower",
+      "side": "right",
+      "delay": 0
+     },
+     {
+      "enemy": "mushroom",
+      "side": "right",
+      "delay": 600
+     },
+     {
+      "enemy": "bee",
+      "side": "left",
+      "delay": 1000
+     },
+     {
+      "enemy": "bee",
+      "side": "left",
+      "delay": 1300
+     },
+     {
+      "enemy": "mushroom",
+      "side": "left",
+      "delay": 2400
+     }
+    ]
+   },
+   {
+    "triggerX": 2400,
+    "spawns": [
+     {
+      "enemy": "mushroom",
+      "side": "right",
+      "delay": 0
+     },
+     {
+      "enemy": "mushroom",
+      "side": "right",
+      "delay": 300
+     },
+     {
+      "enemy": "flower",
+      "side": "left",
+      "delay": 800
+     },
+     {
+      "enemy": "bee",
+      "side": "right",
+      "delay": 1600
+     },
+     {
+      "enemy": "bee",
+      "side": "left",
+      "delay": 2000
+     },
+     {
+      "enemy": "ironBug",
+      "side": "right",
+      "delay": 2800
+     }
+    ]
+   },
+   {
+    "triggerX": 3400,
+    "spawns": [
+     {
+      "enemy": "flower",
+      "side": "right",
+      "delay": 0
+     },
+     {
+      "enemy": "flower",
+      "side": "right",
+      "delay": 400
+     },
+     {
+      "enemy": "mushroom",
+      "side": "left",
+      "delay": 1000
+     },
+     {
+      "enemy": "bee",
+      "side": "right",
+      "delay": 1800
+     },
+     {
+      "enemy": "bee",
+      "side": "right",
+      "delay": 2100
+     },
+     {
+      "enemy": "bee",
+      "side": "left",
+      "delay": 2400
+     },
+     {
+      "enemy": "mushroom",
+      "side": "right",
+      "delay": 3200
+     }
+    ]
+   },
+   {
+    "triggerX": 4500,
+    "spawns": [
+     {
+      "enemy": "mushroom",
+      "side": "right",
+      "delay": 0
+     },
+     {
+      "enemy": "mushroom",
+      "side": "left",
+      "delay": 0
+     },
+     {
+      "enemy": "mushroom",
+      "side": "right",
+      "delay": 1200
+     },
+     {
+      "enemy": "flower",
+      "side": "left",
+      "delay": 1600
+     },
+     {
+      "enemy": "bee",
+      "side": "right",
+      "delay": 2400
+     },
+     {
+      "enemy": "bee",
+      "side": "left",
+      "delay": 2800
+     },
+     {
+      "enemy": "bee",
+      "side": "right",
+      "delay": 3200
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "id": "2-3",
+  "chapter": "第 2 章",
+  "name": "古樹之心",
+  "desc": "森林深處的巨木正在發出紫光，樹精母體在此等待。",
+  "width": 5600,
+  "bg": "bg_chapter2",
+  "bgGroundY": 546,
+  "tint": 11058376,
+  "waves": [
+   {
+    "triggerX": 500,
+    "spawns": [
+     {
+      "enemy": "bee",
+      "side": "right",
+      "delay": 0
+     },
+     {
+      "enemy": "bee",
+      "side": "right",
+      "delay": 300
+     },
+     {
+      "enemy": "flower",
+      "side": "left",
+      "delay": 800
+     },
+     {
+      "enemy": "mushroom",
+      "side": "right",
+      "delay": 1600
+     }
+    ]
+   },
+   {
+    "triggerX": 1500,
+    "spawns": [
+     {
+      "enemy": "mushroom",
+      "side": "right",
+      "delay": 0
+     },
+     {
+      "enemy": "flower",
+      "side": "right",
+      "delay": 400
+     },
+     {
+      "enemy": "bee",
+      "side": "left",
+      "delay": 900
+     },
+     {
+      "enemy": "bee",
+      "side": "left",
+      "delay": 1200
+     },
+     {
+      "enemy": "nightWolf",
+      "side": "right",
+      "delay": 2200
+     }
+    ]
+   },
+   {
+    "triggerX": 2500,
+    "spawns": [
+     {
+      "enemy": "flower",
+      "side": "right",
+      "delay": 0
+     },
+     {
+      "enemy": "flower",
+      "side": "left",
+      "delay": 200
+     },
+     {
+      "enemy": "mushroom",
+      "side": "right",
+      "delay": 1000
+     },
+     {
+      "enemy": "mushroom",
+      "side": "left",
+      "delay": 1300
+     },
+     {
+      "enemy": "bee",
+      "side": "right",
+      "delay": 2200
+     },
+     {
+      "enemy": "bee",
+      "side": "right",
+      "delay": 2500
+     }
+    ]
+   },
+   {
+    "triggerX": 3600,
+    "spawns": [
+     {
+      "enemy": "nightWolf",
+      "side": "right",
+      "delay": 0
+     },
+     {
+      "enemy": "nightWolf",
+      "side": "left",
+      "delay": 300
+     },
+     {
+      "enemy": "mushroom",
+      "side": "right",
+      "delay": 1200
+     },
+     {
+      "enemy": "bee",
+      "side": "left",
+      "delay": 1800
+     },
+     {
+      "enemy": "bee",
+      "side": "right",
+      "delay": 2200
+     },
+     {
+      "enemy": "flower",
+      "side": "left",
+      "delay": 2800
+     }
+    ]
+   },
+   {
+    "triggerX": 4800,
+    "spawns": [
+     {
+      "enemy": "treant",
+      "side": "right",
+      "delay": 800
+     },
+     {
+      "enemy": "bee",
+      "side": "left",
+      "delay": 8000
+     },
+     {
+      "enemy": "bee",
+      "side": "left",
+      "delay": 8300
+     },
+     {
+      "enemy": "flower",
+      "side": "left",
+      "delay": 16000
+     }
+    ]
+   }
+  ]
+ }
+]

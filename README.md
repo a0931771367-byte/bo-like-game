@@ -20,3 +20,5 @@ npm run build    # 產出 dist/
 - `src/systems/` 輸入、數值公式、存檔
 - `src/scenes/` 標題、加點、戰鬥、結算畫面
 - `src/ui/` HUD、觸控按鍵、特效
+- `unity/` Unity 版（iOS），見 `unity/README.md`
+- `tools/export_unity_data.mjs` 把 `src/data` 匯出成 Unity 用的 JSON

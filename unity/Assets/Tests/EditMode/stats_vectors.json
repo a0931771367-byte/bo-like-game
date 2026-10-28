@@ -1,0 +1,1027 @@
+{
+ "maxLevel": 50,
+ "expToNext": [
+  28,
+  87,
+  171,
+  275,
+  398,
+  538,
+  694,
+  865,
+  1051,
+  1250,
+  1463,
+  1689,
+  1928,
+  2179,
+  2441,
+  2716,
+  3001,
+  3298,
+  3606,
+  3925,
+  4254,
+  4593,
+  4943,
+  5302,
+  5672,
+  6051,
+  6440,
+  6838,
+  7246,
+  7663,
+  8089,
+  8524,
+  8968,
+  9421,
+  9882,
+  10352,
+  10831,
+  11318,
+  11814,
+  12318,
+  12830,
+  13351,
+  13879,
+  14416,
+  14960,
+  15513,
+  16073,
+  16642,
+  17217,
+  17801
+ ],
+ "elementMult": [
+  {
+   "atk": "neutral",
+   "def": "neutral",
+   "mult": 1
+  },
+  {
+   "atk": "neutral",
+   "def": "fire",
+   "mult": 1
+  },
+  {
+   "atk": "neutral",
+   "def": "water",
+   "mult": 1
+  },
+  {
+   "atk": "neutral",
+   "def": "wind",
+   "mult": 1
+  },
+  {
+   "atk": "neutral",
+   "def": "earth",
+   "mult": 1
+  },
+  {
+   "atk": "neutral",
+   "def": "holy",
+   "mult": 1
+  },
+  {
+   "atk": "neutral",
+   "def": "dark",
+   "mult": 1
+  },
+  {
+   "atk": "neutral",
+   "def": "poison",
+   "mult": 1
+  },
+  {
+   "atk": "fire",
+   "def": "neutral",
+   "mult": 1
+  },
+  {
+   "atk": "fire",
+   "def": "fire",
+   "mult": 0.5
+  },
+  {
+   "atk": "fire",
+   "def": "water",
+   "mult": 0.75
+  },
+  {
+   "atk": "fire",
+   "def": "wind",
+   "mult": 1
+  },
+  {
+   "atk": "fire",
+   "def": "earth",
+   "mult": 1.5
+  },
+  {
+   "atk": "fire",
+   "def": "holy",
+   "mult": 1
+  },
+  {
+   "atk": "fire",
+   "def": "dark",
+   "mult": 1
+  },
+  {
+   "atk": "fire",
+   "def": "poison",
+   "mult": 1
+  },
+  {
+   "atk": "water",
+   "def": "neutral",
+   "mult": 1
+  },
+  {
+   "atk": "water",
+   "def": "fire",
+   "mult": 1.5
+  },
+  {
+   "atk": "water",
+   "def": "water",
+   "mult": 0.5
+  },
+  {
+   "atk": "water",
+   "def": "wind",
+   "mult": 0.75
+  },
+  {
+   "atk": "water",
+   "def": "earth",
+   "mult": 1
+  },
+  {
+   "atk": "water",
+   "def": "holy",
+   "mult": 1
+  },
+  {
+   "atk": "water",
+   "def": "dark",
+   "mult": 1
+  },
+  {
+   "atk": "water",
+   "def": "poison",
+   "mult": 1
+  },
+  {
+   "atk": "wind",
+   "def": "neutral",
+   "mult": 1
+  },
+  {
+   "atk": "wind",
+   "def": "fire",
+   "mult": 1
+  },
+  {
+   "atk": "wind",
+   "def": "water",
+   "mult": 1.5
+  },
+  {
+   "atk": "wind",
+   "def": "wind",
+   "mult": 0.5
+  },
+  {
+   "atk": "wind",
+   "def": "earth",
+   "mult": 0.75
+  },
+  {
+   "atk": "wind",
+   "def": "holy",
+   "mult": 1
+  },
+  {
+   "atk": "wind",
+   "def": "dark",
+   "mult": 1
+  },
+  {
+   "atk": "wind",
+   "def": "poison",
+   "mult": 1
+  },
+  {
+   "atk": "earth",
+   "def": "neutral",
+   "mult": 1
+  },
+  {
+   "atk": "earth",
+   "def": "fire",
+   "mult": 0.75
+  },
+  {
+   "atk": "earth",
+   "def": "water",
+   "mult": 1
+  },
+  {
+   "atk": "earth",
+   "def": "wind",
+   "mult": 1.5
+  },
+  {
+   "atk": "earth",
+   "def": "earth",
+   "mult": 0.5
+  },
+  {
+   "atk": "earth",
+   "def": "holy",
+   "mult": 1
+  },
+  {
+   "atk": "earth",
+   "def": "dark",
+   "mult": 1
+  },
+  {
+   "atk": "earth",
+   "def": "poison",
+   "mult": 1
+  },
+  {
+   "atk": "holy",
+   "def": "neutral",
+   "mult": 1
+  },
+  {
+   "atk": "holy",
+   "def": "fire",
+   "mult": 1
+  },
+  {
+   "atk": "holy",
+   "def": "water",
+   "mult": 1
+  },
+  {
+   "atk": "holy",
+   "def": "wind",
+   "mult": 1
+  },
+  {
+   "atk": "holy",
+   "def": "earth",
+   "mult": 1
+  },
+  {
+   "atk": "holy",
+   "def": "holy",
+   "mult": 0.5
+  },
+  {
+   "atk": "holy",
+   "def": "dark",
+   "mult": 1.75
+  },
+  {
+   "atk": "holy",
+   "def": "poison",
+   "mult": 1
+  },
+  {
+   "atk": "dark",
+   "def": "neutral",
+   "mult": 1
+  },
+  {
+   "atk": "dark",
+   "def": "fire",
+   "mult": 1
+  },
+  {
+   "atk": "dark",
+   "def": "water",
+   "mult": 1
+  },
+  {
+   "atk": "dark",
+   "def": "wind",
+   "mult": 1
+  },
+  {
+   "atk": "dark",
+   "def": "earth",
+   "mult": 1
+  },
+  {
+   "atk": "dark",
+   "def": "holy",
+   "mult": 1.75
+  },
+  {
+   "atk": "dark",
+   "def": "dark",
+   "mult": 0.5
+  },
+  {
+   "atk": "dark",
+   "def": "poison",
+   "mult": 1
+  },
+  {
+   "atk": "poison",
+   "def": "neutral",
+   "mult": 1
+  },
+  {
+   "atk": "poison",
+   "def": "fire",
+   "mult": 1
+  },
+  {
+   "atk": "poison",
+   "def": "water",
+   "mult": 1
+  },
+  {
+   "atk": "poison",
+   "def": "wind",
+   "mult": 1
+  },
+  {
+   "atk": "poison",
+   "def": "earth",
+   "mult": 1
+  },
+  {
+   "atk": "poison",
+   "def": "holy",
+   "mult": 1
+  },
+  {
+   "atk": "poison",
+   "def": "dark",
+   "mult": 1
+  },
+  {
+   "atk": "poison",
+   "def": "poison",
+   "mult": 0.5
+  }
+ ],
+ "derived": [
+  {
+   "classId": "swordsman",
+   "level": 1,
+   "stats": {
+    "str": 9,
+    "agi": 7,
+    "vit": 11,
+    "int": 7,
+    "dex": 10,
+    "luk": 9
+   },
+   "expected": {
+    "maxHp": 282,
+    "maxSp": 58,
+    "atk": 41,
+    "matk": 24,
+    "def": 11,
+    "mdef": 5,
+    "crit": 4.15,
+    "flee": 4.85,
+    "aspd": 1.114,
+    "move": 238.4,
+    "castMult": 0.88,
+    "spRegen": 2.26,
+    "hpRegen": 1.3199999999999998
+   }
+  },
+  {
+   "classId": "swordsman",
+   "level": 7,
+   "stats": {
+    "str": 10,
+    "agi": 14,
+    "vit": 7,
+    "int": 9,
+    "dex": 18,
+    "luk": 6
+   },
+   "expected": {
+    "maxHp": 342,
+    "maxSp": 84,
+    "atk": 52,
+    "matk": 38,
+    "def": 10,
+    "mdef": 5,
+    "crit": 3.0999999999999996,
+    "flee": 7.9,
+    "aspd": 1.222,
+    "move": 246.8,
+    "castMult": 0.784,
+    "spRegen": 2.62,
+    "hpRegen": 0.84
+   }
+  },
+  {
+   "classId": "swordsman",
+   "level": 23,
+   "stats": {
+    "str": 7,
+    "agi": 10,
+    "vit": 19,
+    "int": 3,
+    "dex": 11,
+    "luk": 15
+   },
+   "expected": {
+    "maxHp": 774,
+    "maxSp": 108,
+    "atk": 61,
+    "matk": 32,
+    "def": 30,
+    "mdef": 5,
+    "crit": 6.25,
+    "flee": 7.25,
+    "aspd": 1.153,
+    "move": 242,
+    "castMult": 0.868,
+    "spRegen": 1.54,
+    "hpRegen": 2.28
+   }
+  },
+  {
+   "classId": "swordsman",
+   "level": 50,
+   "stats": {
+    "str": 20,
+    "agi": 16,
+    "vit": 18,
+    "int": 12,
+    "dex": 13,
+    "luk": 10
+   },
+   "expected": {
+    "maxHp": 1248,
+    "maxSp": 225,
+    "atk": 114,
+    "matk": 93,
+    "def": 43,
+    "mdef": 10,
+    "crit": 4.5,
+    "flee": 9.5,
+    "aspd": 1.2309999999999999,
+    "move": 249.2,
+    "castMult": 0.844,
+    "spRegen": 3.16,
+    "hpRegen": 2.16
+   }
+  },
+  {
+   "classId": "mage",
+   "level": 1,
+   "stats": {
+    "str": 4,
+    "agi": 7,
+    "vit": 8,
+    "int": 14,
+    "dex": 13,
+    "luk": 9
+   },
+   "expected": {
+    "maxHp": 206,
+    "maxSp": 116,
+    "atk": 23,
+    "matk": 52,
+    "def": 8,
+    "mdef": 9,
+    "crit": 4.15,
+    "flee": 4.85,
+    "aspd": 1.123,
+    "move": 238.4,
+    "castMult": 0.844,
+    "spRegen": 3.52,
+    "hpRegen": 0.96
+   }
+  },
+  {
+   "classId": "mage",
+   "level": 7,
+   "stats": {
+    "str": 5,
+    "agi": 14,
+    "vit": 4,
+    "int": 16,
+    "dex": 21,
+    "luk": 6
+   },
+   "expected": {
+    "maxHp": 224,
+    "maxSp": 166,
+    "atk": 34,
+    "matk": 67,
+    "def": 7,
+    "mdef": 9,
+    "crit": 3.0999999999999996,
+    "flee": 7.9,
+    "aspd": 1.2309999999999999,
+    "move": 246.8,
+    "castMult": 0.748,
+    "spRegen": 3.88,
+    "hpRegen": 0.48
+   }
+  },
+  {
+   "classId": "mage",
+   "level": 23,
+   "stats": {
+    "str": 2,
+    "agi": 10,
+    "vit": 16,
+    "int": 10,
+    "dex": 14,
+    "luk": 15
+   },
+   "expected": {
+    "maxHp": 544,
+    "maxSp": 254,
+    "atk": 43,
+    "matk": 58,
+    "def": 27,
+    "mdef": 9,
+    "crit": 6.25,
+    "flee": 7.25,
+    "aspd": 1.1620000000000001,
+    "move": 242,
+    "castMult": 0.832,
+    "spRegen": 2.8,
+    "hpRegen": 1.92
+   }
+  },
+  {
+   "classId": "mage",
+   "level": 50,
+   "stats": {
+    "str": 15,
+    "agi": 16,
+    "vit": 15,
+    "int": 19,
+    "dex": 16,
+    "luk": 10
+   },
+   "expected": {
+    "maxHp": 829,
+    "maxSp": 479,
+    "atk": 96,
+    "matk": 125,
+    "def": 40,
+    "mdef": 12,
+    "crit": 4.5,
+    "flee": 9.5,
+    "aspd": 1.24,
+    "move": 249.2,
+    "castMult": 0.808,
+    "spRegen": 4.42,
+    "hpRegen": 1.7999999999999998
+   }
+  },
+  {
+   "classId": "merchant",
+   "level": 1,
+   "stats": {
+    "str": 9,
+    "agi": 6,
+    "vit": 10,
+    "int": 7,
+    "dex": 10,
+    "luk": 12
+   },
+   "expected": {
+    "maxHp": 260,
+    "maxSp": 63,
+    "atk": 46,
+    "matk": 24,
+    "def": 10,
+    "mdef": 5,
+    "crit": 5.199999999999999,
+    "flee": 4.8,
+    "aspd": 1.102,
+    "move": 237.2,
+    "castMult": 0.88,
+    "spRegen": 2.26,
+    "hpRegen": 1.2
+   }
+  },
+  {
+   "classId": "merchant",
+   "level": 7,
+   "stats": {
+    "str": 10,
+    "agi": 13,
+    "vit": 6,
+    "int": 9,
+    "dex": 18,
+    "luk": 9
+   },
+   "expected": {
+    "maxHp": 308,
+    "maxSp": 89,
+    "atk": 56,
+    "matk": 38,
+    "def": 9,
+    "mdef": 5,
+    "crit": 4.15,
+    "flee": 7.85,
+    "aspd": 1.21,
+    "move": 245.6,
+    "castMult": 0.784,
+    "spRegen": 2.62,
+    "hpRegen": 0.72
+   }
+  },
+  {
+   "classId": "merchant",
+   "level": 23,
+   "stats": {
+    "str": 7,
+    "agi": 9,
+    "vit": 18,
+    "int": 3,
+    "dex": 11,
+    "luk": 18
+   },
+   "expected": {
+    "maxHp": 708,
+    "maxSp": 113,
+    "atk": 65,
+    "matk": 32,
+    "def": 29,
+    "mdef": 5,
+    "crit": 7.3,
+    "flee": 7.199999999999999,
+    "aspd": 1.141,
+    "move": 240.8,
+    "castMult": 0.868,
+    "spRegen": 1.54,
+    "hpRegen": 2.16
+   }
+  },
+  {
+   "classId": "merchant",
+   "level": 50,
+   "stats": {
+    "str": 20,
+    "agi": 15,
+    "vit": 17,
+    "int": 12,
+    "dex": 13,
+    "luk": 13
+   },
+   "expected": {
+    "maxHp": 1128,
+    "maxSp": 230,
+    "atk": 118,
+    "matk": 93,
+    "def": 42,
+    "mdef": 10,
+    "crit": 5.55,
+    "flee": 9.45,
+    "aspd": 1.2189999999999999,
+    "move": 248,
+    "castMult": 0.844,
+    "spRegen": 3.16,
+    "hpRegen": 2.04
+   }
+  },
+  {
+   "classId": "acolyte",
+   "level": 1,
+   "stats": {
+    "str": 6,
+    "agi": 7,
+    "vit": 9,
+    "int": 12,
+    "dex": 11,
+    "luk": 9
+   },
+   "expected": {
+    "maxHp": 233,
+    "maxSp": 103,
+    "atk": 30,
+    "matk": 44,
+    "def": 9,
+    "mdef": 8,
+    "crit": 4.15,
+    "flee": 4.85,
+    "aspd": 1.117,
+    "move": 238.4,
+    "castMult": 0.868,
+    "spRegen": 3.16,
+    "hpRegen": 1.08
+   }
+  },
+  {
+   "classId": "acolyte",
+   "level": 7,
+   "stats": {
+    "str": 7,
+    "agi": 14,
+    "vit": 5,
+    "int": 14,
+    "dex": 19,
+    "luk": 6
+   },
+   "expected": {
+    "maxHp": 263,
+    "maxSp": 147,
+    "atk": 41,
+    "matk": 58,
+    "def": 8,
+    "mdef": 8,
+    "crit": 3.0999999999999996,
+    "flee": 7.9,
+    "aspd": 1.2249999999999999,
+    "move": 246.8,
+    "castMult": 0.772,
+    "spRegen": 3.52,
+    "hpRegen": 0.6
+   }
+  },
+  {
+   "classId": "acolyte",
+   "level": 23,
+   "stats": {
+    "str": 4,
+    "agi": 10,
+    "vit": 17,
+    "int": 8,
+    "dex": 12,
+    "luk": 15
+   },
+   "expected": {
+    "maxHp": 615,
+    "maxSp": 219,
+    "atk": 51,
+    "matk": 50,
+    "def": 28,
+    "mdef": 8,
+    "crit": 6.25,
+    "flee": 7.25,
+    "aspd": 1.1560000000000001,
+    "move": 242,
+    "castMult": 0.856,
+    "spRegen": 2.44,
+    "hpRegen": 2.04
+   }
+  },
+  {
+   "classId": "acolyte",
+   "level": 50,
+   "stats": {
+    "str": 17,
+    "agi": 16,
+    "vit": 16,
+    "int": 17,
+    "dex": 14,
+    "luk": 10
+   },
+   "expected": {
+    "maxHp": 954,
+    "maxSp": 417,
+    "atk": 103,
+    "matk": 115,
+    "def": 41,
+    "mdef": 12,
+    "crit": 4.5,
+    "flee": 9.5,
+    "aspd": 1.234,
+    "move": 249.2,
+    "castMult": 0.832,
+    "spRegen": 4.0600000000000005,
+    "hpRegen": 1.92
+   }
+  },
+  {
+   "classId": "thief",
+   "level": 1,
+   "stats": {
+    "str": 7,
+    "agi": 11,
+    "vit": 8,
+    "int": 7,
+    "dex": 11,
+    "luk": 10
+   },
+   "expected": {
+    "maxHp": 216,
+    "maxSp": 58,
+    "atk": 34,
+    "matk": 24,
+    "def": 8,
+    "mdef": 5,
+    "crit": 4.5,
+    "flee": 7,
+    "aspd": 1.165,
+    "move": 243.2,
+    "castMult": 0.868,
+    "spRegen": 2.26,
+    "hpRegen": 0.96
+   }
+  },
+  {
+   "classId": "thief",
+   "level": 7,
+   "stats": {
+    "str": 8,
+    "agi": 18,
+    "vit": 4,
+    "int": 9,
+    "dex": 19,
+    "luk": 7
+   },
+   "expected": {
+    "maxHp": 246,
+    "maxSp": 84,
+    "atk": 44,
+    "matk": 38,
+    "def": 7,
+    "mdef": 5,
+    "crit": 3.4499999999999997,
+    "flee": 10.05,
+    "aspd": 1.273,
+    "move": 251.6,
+    "castMult": 0.772,
+    "spRegen": 2.62,
+    "hpRegen": 0.48
+   }
+  },
+  {
+   "classId": "thief",
+   "level": 23,
+   "stats": {
+    "str": 5,
+    "agi": 14,
+    "vit": 16,
+    "int": 3,
+    "dex": 12,
+    "luk": 16
+   },
+   "expected": {
+    "maxHp": 598,
+    "maxSp": 108,
+    "atk": 54,
+    "matk": 32,
+    "def": 27,
+    "mdef": 5,
+    "crit": 6.6,
+    "flee": 9.4,
+    "aspd": 1.204,
+    "move": 246.8,
+    "castMult": 0.856,
+    "spRegen": 1.54,
+    "hpRegen": 1.92
+   }
+  },
+  {
+   "classId": "thief",
+   "level": 50,
+   "stats": {
+    "str": 18,
+    "agi": 20,
+    "vit": 15,
+    "int": 12,
+    "dex": 14,
+    "luk": 11
+   },
+   "expected": {
+    "maxHp": 937,
+    "maxSp": 225,
+    "atk": 106,
+    "matk": 93,
+    "def": 40,
+    "mdef": 9,
+    "crit": 4.85,
+    "flee": 11.65,
+    "aspd": 1.282,
+    "move": 254,
+    "castMult": 0.832,
+    "spRegen": 3.16,
+    "hpRegen": 1.7999999999999998
+   }
+  },
+  {
+   "classId": "archer",
+   "level": 1,
+   "stats": {
+    "str": 5,
+    "agi": 9,
+    "vit": 8,
+    "int": 8,
+    "dex": 15,
+    "luk": 9
+   },
+   "expected": {
+    "maxHp": 211,
+    "maxSp": 67,
+    "atk": 34,
+    "matk": 28,
+    "def": 8,
+    "mdef": 6,
+    "crit": 4.15,
+    "flee": 5.85,
+    "aspd": 1.153,
+    "move": 240.8,
+    "castMult": 0.8200000000000001,
+    "spRegen": 2.44,
+    "hpRegen": 0.96
+   }
+  },
+  {
+   "classId": "archer",
+   "level": 7,
+   "stats": {
+    "str": 6,
+    "agi": 16,
+    "vit": 4,
+    "int": 10,
+    "dex": 23,
+    "luk": 6
+   },
+   "expected": {
+    "maxHp": 235,
+    "maxSp": 99,
+    "atk": 44,
+    "matk": 42,
+    "def": 7,
+    "mdef": 6,
+    "crit": 3.0999999999999996,
+    "flee": 8.9,
+    "aspd": 1.261,
+    "move": 249.2,
+    "castMult": 0.724,
+    "spRegen": 2.8,
+    "hpRegen": 0.48
+   }
+  },
+  {
+   "classId": "archer",
+   "level": 23,
+   "stats": {
+    "str": 3,
+    "agi": 12,
+    "vit": 16,
+    "int": 4,
+    "dex": 16,
+    "luk": 15
+   },
+   "expected": {
+    "maxHp": 571,
+    "maxSp": 139,
+    "atk": 54,
+    "matk": 35,
+    "def": 27,
+    "mdef": 6,
+    "crit": 6.25,
+    "flee": 8.25,
+    "aspd": 1.1920000000000002,
+    "move": 244.4,
+    "castMult": 0.808,
+    "spRegen": 1.72,
+    "hpRegen": 1.92
+   }
+  },
+  {
+   "classId": "archer",
+   "level": 50,
+   "stats": {
+    "str": 16,
+    "agi": 18,
+    "vit": 15,
+    "int": 13,
+    "dex": 18,
+    "luk": 10
+   },
+   "expected": {
+    "maxHp": 883,
+    "maxSp": 283,
+    "atk": 107,
+    "matk": 97,
+    "def": 40,
+    "mdef": 9,
+    "crit": 4.5,
+    "flee": 10.5,
+    "aspd": 1.27,
+    "move": 251.6,
+    "castMult": 0.784,
+    "spRegen": 3.34,
+    "hpRegen": 1.7999999999999998
+   }
+  }
+ ]
+}
