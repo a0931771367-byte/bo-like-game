@@ -1,6 +1,6 @@
-# 劍與魔法亂鬥（暫名）
+# 口袋冒險團 Pocket Adventurers
 
-以 Ragnarok Battle Offline 玩法為藍本的單機 2D 橫向動作遊戲原型。電腦瀏覽器與手機瀏覽器（橫式）皆可遊玩。
+Q 版橫向動作 RPG，六種職業、一次買斷。本倉庫為網頁版原型（Phaser），正式版以 Unity 製作並上架 iOS。電腦瀏覽器與手機瀏覽器（橫式）皆可遊玩。
 
 - 引擎：Phaser 3 + TypeScript + Vite
 - 試玩：推上 `main` 後由 GitHub Actions 自動部署到 GitHub Pages
