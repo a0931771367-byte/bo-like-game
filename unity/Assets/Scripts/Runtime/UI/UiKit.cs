@@ -134,7 +134,7 @@ namespace BoLike.UI
             colors.pressedColor = new Color(0.7f, 0.7f, 0.7f, 1);
             btn.colors = colors;
             Text(img.transform, 0, 0, label, size, 0xffffff, Center, Center, TextAnchor.MiddleCenter, true);
-            if (onClick != null) btn.onClick.AddListener(() => onClick());
+            btn.onClick.AddListener(() => { BoLike.Game.AudioManager.Instance.Play("select"); onClick?.Invoke(); });
             return btn;
         }
 

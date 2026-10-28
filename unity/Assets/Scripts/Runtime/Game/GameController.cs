@@ -71,6 +71,7 @@ namespace BoLike.Game
             if (isTouch) touch = TouchControls.Create(world);
             fx = new FxSystem(worldRoot, cam, hud, world) { views = views };
             world.Fx = fx;
+            world.Sfx = AudioManager.Instance;
             overlayCanvas = UiKit.Canvas("Overlay", 30);
             overlayCanvas.transform.SetParent(transform, false);
 
@@ -88,6 +89,8 @@ namespace BoLike.Game
 
             GameInput.Enable();
             run.startedAt = 0;
+            AudioManager.Instance.PlayMusic("field");
+            AudioManager.Instance.PlayAmbience("amb_ch1_grassland", 0.35f);
             EnterRoom(0);
         }
 
@@ -167,6 +170,7 @@ namespace BoLike.Game
                         fx.Banner($"{def.name} 出現！", 0xffb3c6, 56);
                         cam.Shake(0.3f, 0.01f);
                         world.Sfx.Play("bossAppear");
+                        AudioManager.Instance.PlayMusic("boss", 0.3f);
                     }
                 });
             }
@@ -202,6 +206,7 @@ namespace BoLike.Game
                 if (!save.bossCleared) { reward += run.Rules.stardust.firstClearBonus; save.bossCleared = true; }
                 AddStardust(reward);
                 fx.Banner("RUN CLEAR!", Colors.Crit, 72);
+                AudioManager.Instance.StopMusic(1.5f);
                 world.Sfx.Play("clear");
                 finished = true;
                 world.Delay(2200, () => ShowResult(true));
@@ -300,6 +305,7 @@ namespace BoLike.Game
             save.gold = run.inv.gold;
             SaveSystem.Save();
             fx.Banner("你倒下了…", 0xff8080, 64);
+            AudioManager.Instance.StopMusic(1.0f);
             world.Sfx.Play("lose");
             world.Delay(1400, () => ShowResult(false));
         }

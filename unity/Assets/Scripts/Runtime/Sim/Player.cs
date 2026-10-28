@@ -22,6 +22,7 @@ namespace BoLike.Sim
     /// </summary>
     public class Player : Fighter
     {
+        float nextStepAt;
         const float JumpV = 680f;
         const float DodgeMsDefault = 260f;
         const float DodgeSpeedDefault = 640f;
@@ -168,6 +169,11 @@ namespace BoLike.Sim
                 case FighterState.Idle:
                 case FighterState.Walk:
                     FreeMove();
+                    if (state == FighterState.Walk && grounded && world.Now >= nextStepAt)
+                    {
+                        world.Sfx.Play("step");
+                        nextStepAt = world.Now + 280;
+                    }
                     break;
                 case FighterState.Guard:
                     vx = vy = 0;

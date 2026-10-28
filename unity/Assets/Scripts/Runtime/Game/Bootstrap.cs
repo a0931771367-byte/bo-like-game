@@ -25,6 +25,7 @@ namespace BoLike.Game
             Screen.sleepTimeout = SleepTimeout.NeverSleep;
             SaveSystem.Load();
             GameDb.Load();
+            AudioManager.Instance.transform.SetParent(transform, false); // survives ToTitle()'s root sweep
             ShowTitle();
         }
 
@@ -37,6 +38,8 @@ namespace BoLike.Game
 
         void ShowTitle()
         {
+            AudioManager.Instance.PlayMusic("title");
+            AudioManager.Instance.StopAmbience();
             var save = SaveSystem.Current;
             canvas = UiKit.Canvas("Title", 5);
             canvas.transform.SetParent(transform, false);
