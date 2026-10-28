@@ -37,7 +37,7 @@ export const UNLOCKS: UnlockDef[] = [
   { id: 'extraPotion', name: '旅行藥袋', desc: '每局開始多 1 瓶紅藥水', cost: 40, kind: 'startPotion', value: 1 },
   { id: 'classMage', name: '法師加入', desc: '解鎖職業：法師', cost: 80, kind: 'class', value: 'mage' },
   { id: 'luckyStar', name: '幸運星', desc: '稀有與史詩強化出現率提高', cost: 100, kind: 'rareChance', value: 0.1 },
-  { id: 'classArcher', name: '弓箭手加入', desc: '解鎖職業：弓箭手', cost: 120, kind: 'class', value: 'archer' },
+  { id: 'classArcher', name: '遊俠加入', desc: '解鎖職業：遊俠', cost: 120, kind: 'class', value: 'archer' },
   { id: 'veteran', name: '老練冒險者', desc: '每局開始時先選一個強化', cost: 160, kind: 'startPerk', value: 1 },
 ];
 

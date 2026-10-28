@@ -55,7 +55,7 @@ export const CLASSES: ClassDef[] = [
     ],
   },
   {
-    id: 'merchant', name: '商人', role: '重擊・花金幣換傷害', color: 0xc98a2b, accent: 0xf2e1b5, weapon: 'axe', playable: true,
+    id: 'merchant', name: '機關師', role: '重擊・花金幣換傷害', color: 0xc98a2b, accent: 0xf2e1b5, weapon: 'axe', playable: true,
     hpBase: 140, hpPerLv: 16, spBase: 35, spPerLv: 3, weaponAtk: 22,
     baseStats: { str: 6, agi: 2, vit: 5, int: 1, dex: 3, luk: 4 },
     combo: [
@@ -80,7 +80,7 @@ export const CLASSES: ClassDef[] = [
     ],
   },
   {
-    id: 'acolyte', name: '補師', role: '自補・增益・剋不死系', color: 0xe8e0c8, accent: 0x6fb7ff, weapon: 'mace', playable: true,
+    id: 'acolyte', name: '祭司', role: '自補・增益・剋不死系', color: 0xe8e0c8, accent: 0x6fb7ff, weapon: 'mace', playable: true,
     hpBase: 125, hpPerLv: 13, spBase: 55, spPerLv: 6, weaponAtk: 13,
     baseStats: { str: 3, agi: 3, vit: 4, int: 6, dex: 4, luk: 1 },
     combo: [
@@ -105,7 +105,7 @@ export const CLASSES: ClassDef[] = [
     ],
   },
   {
-    id: 'thief', name: '盜賊', role: '高速連擊・毒・閃避', color: 0x3f8f5a, accent: 0xb9f5c8, weapon: 'dagger', playable: true,
+    id: 'thief', name: '刺客', role: '高速連擊・毒・閃避', color: 0x3f8f5a, accent: 0xb9f5c8, weapon: 'dagger', playable: true,
     hpBase: 120, hpPerLv: 13, spBase: 30, spPerLv: 3, weaponAtk: 14,
     baseStats: { str: 4, agi: 7, vit: 3, int: 1, dex: 4, luk: 2 },
     combo: [
@@ -131,7 +131,7 @@ export const CLASSES: ClassDef[] = [
     ],
   },
   {
-    id: 'archer', name: '弓箭手', role: '遠程物理・範圍箭雨', color: 0x6a9a3a, accent: 0xe6d38a, weapon: 'bow', playable: true, ranged: true,
+    id: 'archer', name: '遊俠', role: '遠程物理・範圍箭雨', color: 0x6a9a3a, accent: 0xe6d38a, weapon: 'bow', playable: true, ranged: true,
     hpBase: 115, hpPerLv: 12, spBase: 35, spPerLv: 4, weaponAtk: 17,
     baseStats: { str: 2, agi: 5, vit: 3, int: 2, dex: 8, luk: 1 },
     combo: [
