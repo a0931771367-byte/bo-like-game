@@ -34,6 +34,7 @@ namespace BoLike.UI
             var go = new GameObject("EventSystem");
             go.AddComponent<EventSystem>();
             go.AddComponent<InputSystemUIInputModule>();
+            Object.DontDestroyOnLoad(go);
         }
 
         public static Canvas Canvas(string name, int sortOrder)

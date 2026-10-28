@@ -25,6 +25,7 @@ namespace BoLike.Game
             Screen.sleepTimeout = SleepTimeout.NeverSleep;
             SaveSystem.Load();
             GameDb.Load();
+            UiKit.EnsureEventSystem(); // UI buttons need one on every platform, not only touch devices
             AudioManager.Instance.transform.SetParent(transform, false); // survives ToTitle()'s root sweep
             // A always-on camera so the title (pure UI) still has something rendering; the game camera draws on top.
             var camGo = new GameObject("TitleCamera");
