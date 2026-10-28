@@ -18,3 +18,9 @@
 *.pdb.meta
 *.mdb.meta
 crashlytics-build.properties
+
+# Source WAVs for music/ambience live in pocket-squad-audio; the repo keeps MP3s
+Assets/Resources/Audio/music/*.wav
+Assets/Resources/Audio/music/*.wav.meta
+Assets/Resources/Audio/amb/*.wav
+Assets/Resources/Audio/amb/*.wav.meta
