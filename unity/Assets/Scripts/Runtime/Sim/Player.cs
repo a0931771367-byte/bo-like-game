@@ -22,7 +22,7 @@ namespace BoLike.Sim
     /// </summary>
     public class Player : Fighter
     {
-        float nextStepAt;
+        double nextStepAt;
         const float JumpV = 680f;
         const float DodgeMsDefault = 260f;
         const float DodgeSpeedDefault = 640f;
