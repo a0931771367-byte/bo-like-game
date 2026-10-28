@@ -185,7 +185,7 @@ namespace BoLike.Game
             it.tick = (o, k) => { var c = o.sr.color; c.a = 0.45f * (1 - k); o.sr.color = c; };
         }
 
-        public System.Collections.Generic.Dictionary<Fighter, FighterView> views = new();
+        [System.NonSerialized] public System.Collections.Generic.Dictionary<Fighter, FighterView> views = new();
 
         public void Flash(float alpha = 0.8f, float ms = 260f) => hud.ScreenFlash(alpha, ms / 1000f);
 

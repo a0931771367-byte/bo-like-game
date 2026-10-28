@@ -11,7 +11,7 @@ namespace BoLike.Game
     /// </summary>
     public class FighterView : MonoBehaviour
     {
-        public Fighter fighter;
+        [System.NonSerialized] public Fighter fighter;
         Transform view;
         SpriteRenderer body, shadow, hpBg, hpBar, aura;
         MaterialPropertyBlock mpb;

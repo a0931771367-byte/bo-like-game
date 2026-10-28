@@ -403,7 +403,7 @@ namespace BoLike.Game
             Destroy(cam.gameObject);
             Destroy(hud.gameObject);
             if (touch != null) Destroy(touch.gameObject);
-            Start(cls);
+            Launch(cls);
         }
 
         void OnApplicationPause(bool pauseStatus)

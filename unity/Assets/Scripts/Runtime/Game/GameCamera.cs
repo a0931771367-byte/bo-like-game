@@ -11,7 +11,7 @@ namespace BoLike.Game
     public class GameCamera : MonoBehaviour
     {
         public Camera cam;
-        public World world;
+        [System.NonSerialized] public World world;
         float followOffset = -150f;
         float centerX;
         float shakeTime, shakeDuration, shakeAmp;

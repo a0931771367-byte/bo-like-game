@@ -342,7 +342,7 @@ namespace BoLike.Sim
             if (h.source == world.Player) world.RegisterHit();
             world.Sfx.Play(h.crit ? "crit" : h.launch > 0 ? "hitHeavy" : "hit");
             int color = h.crit ? Colors.Crit : h.mult > 1 ? 0xff9f43 : h.mult < 1 ? 0xa0a0ff : Colors.White;
-            fx.Number(x, y - h - 30 - z, h.crit ? $"{h.damage}!" : $"{h.damage}", color, h.crit || h.mult > 1);
+            fx.Number(x, y - this.h - 30 - z, h.crit ? $"{h.damage}!" : $"{h.damage}", color, h.crit || h.mult > 1);
             fx.Spark(x, y - this.h / 2 - z, Colors.White, h.launch > 0 ? 1.5f : 1f);
             Flash(Colors.White, 70);
             if (h.poison.HasValue)
