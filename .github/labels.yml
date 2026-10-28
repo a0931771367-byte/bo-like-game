@@ -1,0 +1,26 @@
+# Issue 標籤定義。改這個檔推上 main 後，sync-labels 工作流程會自動建立 / 更新標籤（不會刪除既有標籤）。
+- { name: "type:bug",        color: "d73a4a", description: "功能錯誤" }
+- { name: "type:crash",      color: "b60205", description: "閃退" }
+- { name: "type:perf",       color: "fbca04", description: "效能：掉幀、發燙、載入慢" }
+- { name: "type:ux",         color: "c5def5", description: "操作或介面不順" }
+- { name: "type:text",       color: "c5def5", description: "文字、翻譯、排版" }
+- { name: "sev:1-blocker",   color: "b60205", description: "閃退、壞檔、卡關無法繼續" }
+- { name: "sev:2-major",     color: "d93f0b", description: "功能錯但可以繞過" }
+- { name: "sev:3-minor",     color: "fbca04", description: "表現瑕疵" }
+- { name: "sev:4-trivial",   color: "fef2c0", description: "幾乎不影響" }
+- { name: "area:combat",     color: "1d76db", description: "戰鬥、敵人、判定" }
+- { name: "area:skill",      color: "1d76db", description: "技能" }
+- { name: "area:progression",color: "1d76db", description: "星塵、解鎖、局外成長" }
+- { name: "area:run",        color: "1d76db", description: "一局流程：房間、波次、Boss、結算" }
+- { name: "area:upgrade",    color: "1d76db", description: "三選一強化" }
+- { name: "area:feel",       color: "1d76db", description: "手感：觸控、打擊感" }
+- { name: "area:save",       color: "1d76db", description: "存讀檔" }
+- { name: "area:ui",         color: "1d76db", description: "介面、安全區" }
+- { name: "area:audio",      color: "1d76db", description: "音樂音效" }
+- { name: "area:review",     color: "1d76db", description: "App Store / TestFlight 審核" }
+- { name: "platform:ios",    color: "5319e7", description: "Unity iOS 版" }
+- { name: "platform:web",    color: "5319e7", description: "Phaser 網頁版" }
+- { name: "source:beta",     color: "0e8a16", description: "封測玩家回報" }
+- { name: "status:needs-repro",         color: "ededed", description: "還無法重現" }
+- { name: "status:confirmed",           color: "ededed", description: "QA 已重現" }
+- { name: "status:fixed-pending-verify",color: "ededed", description: "已修，等 QA 在新建置驗證" }
