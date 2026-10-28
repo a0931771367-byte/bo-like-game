@@ -54,7 +54,7 @@ namespace BoLike.Systems
 
         public ClassProgress ProgressFor(ClassDef cls)
         {
-            if (!classes.TryGetValue(cls.id, out var p)) classes[cls.id] = p = ClassProgress.New(cls);
+            if (!classes.TryGetValue(cls.id, out var p) || p == null) classes[cls.id] = p = ClassProgress.New(cls);
             return p;
         }
     }
@@ -132,9 +132,10 @@ namespace BoLike.Systems
             s.potions ??= new();
             s.cleared ??= new();
             s.unlocks ??= new();
+            // A null entry (hand-edited or truncated file) is dropped so ProgressFor rebuilds it instead of returning null.
+            foreach (var k in s.classes.Where(kv => kv.Value == null).Select(kv => kv.Key).ToList()) s.classes.Remove(k);
             foreach (var kv in s.classes)
             {
-                if (kv.Value == null) continue;
                 kv.Value.skillLv ??= new();
                 if (kv.Value.stats == null && GameDbHasClass(kv.Key)) kv.Value.stats = GameDb.Class(kv.Key).baseStats.Clone();
             }
