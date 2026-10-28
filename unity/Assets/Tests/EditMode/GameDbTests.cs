@@ -52,5 +52,49 @@ namespace BoLike.Tests
             Assert.AreEqual(0x4a7bd1, GameDb.Class("swordsman").color);
             Assert.AreEqual(0xff8a5a, GameDb.Enemy("fireJelly").tint);
         }
+
+        [Test]
+        public void RunDataLoads()
+        {
+            Assert.AreEqual(15, GameDb.Perks.Count);
+            Assert.AreEqual(GameDb.Rules.combatRooms, GameDb.RoomPool.Count);
+            Assert.AreEqual(RoomKind.Boss, GameDb.Room(GameDb.BossRoom).kind);
+            Assert.AreEqual(3, GameDb.Rules.perkChoices);
+            Assert.AreEqual(60f, GameDb.Rules.rarityWeights[PerkRarity.Common]);
+            Assert.AreEqual(1.35f, GameDb.Rules.roomScaling.AtkAt(3), 1e-5);
+            CollectionAssert.Contains(GameDb.StartingClasses, "swordsman");
+        }
+
+        [Test]
+        public void PerkEffectsParse()
+        {
+            var tough = GameDb.Perk("toughBody").effects[0];
+            Assert.AreEqual(PerkEffectKind.Mult, tough.kind);
+            Assert.AreEqual(MultTarget.MaxHp, tough.target);
+            Assert.AreEqual(1.2f, tough.value, 1e-5);
+            var phoenix = GameDb.Perk("phoenix").effects[0];
+            Assert.AreEqual(PerkEffectKind.Revive, phoenix.kind);
+            Assert.AreEqual(1500f, phoenix.invuln);
+            Assert.IsTrue(GameDb.Perk("greatSwing").OfferedTo("swordsman"));
+            Assert.IsFalse(GameDb.Perk("greatSwing").OfferedTo("mage"));
+            Assert.IsTrue(GameDb.Perk("toughBody").OfferedTo("archer"));
+        }
+
+        [Test]
+        public void RoomsAndUnlocksReferenceRealData()
+        {
+            var enemies = GameDb.Enemies.Select(e => e.id).ToHashSet();
+            foreach (var r in GameDb.Rooms)
+                foreach (var sp in r.waveSets.SelectMany(set => set).SelectMany(w => w.spawns))
+                    Assert.IsTrue(enemies.Contains(sp.enemy), $"{r.id}: {sp.enemy}");
+            foreach (var id in GameDb.RoomPool)
+                Assert.AreEqual(RoomKind.Combat, GameDb.Room(id).kind, id);
+            foreach (var u in GameDb.Unlocks.Where(u => u.kind == UnlockKind.Class))
+                Assert.NotNull(GameDb.Class(u.ValueId), u.id);
+            Assert.AreEqual(0.1f, GameDb.Unlocks.First(u => u.kind == UnlockKind.RareChance).ValueNumber, 1e-5);
+            foreach (var p in GameDb.Perks)
+                foreach (var c in p.classes)
+                    Assert.NotNull(GameDb.Class(c), p.id);
+        }
     }
 }

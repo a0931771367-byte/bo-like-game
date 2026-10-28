@@ -22,6 +22,9 @@ await build({
       export { STAGES } from './src/data/stages';
       export { STORY } from './src/data/story';
       export { ANIMS } from './src/data/anims';
+      export { PERKS } from './src/data/perks';
+      export { ROOMS, ROOM_POOL, BOSS_ROOM } from './src/data/rooms';
+      export { RUN_RULES, UNLOCKS, STARTING_CLASSES } from './src/data/meta';
       export { derive, expToNext, elementMult, MAX_LEVEL } from './src/systems/Stats';
       export { newProgress } from './src/systems/Save';`,
     resolveDir: ROOT, loader: 'ts',
@@ -49,6 +52,9 @@ write(OUT, 'classes.json', classes);
 write(OUT, 'enemies.json', Object.values(D.ENEMIES));
 write(OUT, 'stages.json', Object.values(D.STAGES));
 write(OUT, 'story.json', Object.entries(D.STORY).map(([stageId, s]) => ({ stageId, ...s })));
+write(OUT, 'perks.json', D.PERKS);
+write(OUT, 'rooms.json', { rooms: Object.values(D.ROOMS), pool: D.ROOM_POOL, boss: D.BOSS_ROOM });
+write(OUT, 'meta.json', { rules: D.RUN_RULES, unlocks: D.UNLOCKS, startingClasses: D.STARTING_CLASSES });
 write(OUT, 'anims.json', Object.entries(D.ANIMS).map(([classId, a]) => ({ classId, ...a })));
 
 // Reference values from the TypeScript formulas, checked by the Unity EditMode tests.
@@ -68,4 +74,4 @@ write(TEST_OUT, 'stats_vectors.json', {
   elementMult: ELEMENTS.flatMap((a) => ELEMENTS.map((d) => ({ atk: a, def: d, mult: D.elementMult(a, d) }))),
   derived,
 });
-console.log(`exported ${classes.length} classes, ${Object.keys(D.ENEMIES).length} enemies, ${Object.keys(D.STAGES).length} stages`);
+console.log(`exported ${classes.length} classes, ${Object.keys(D.ENEMIES).length} enemies, ${Object.keys(D.STAGES).length} stages, ${D.PERKS.length} perks, ${Object.keys(D.ROOMS).length} rooms, ${D.UNLOCKS.length} unlocks`);

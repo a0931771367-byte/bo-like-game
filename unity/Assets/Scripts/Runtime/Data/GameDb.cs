@@ -23,11 +23,26 @@ namespace BoLike.Data
         static Dictionary<string, StageDef> stageById;
         static Dictionary<string, StageStory> storyById;
         static Dictionary<string, AnimSet> animById;
+        static List<PerkDef> perks;
+        static Dictionary<string, PerkDef> perkById;
+        static Dictionary<string, RoomDef> roomById;
+        static RoomTable roomTable;
+        static MetaTable meta;
 
         public static IReadOnlyList<ClassDef> Classes { get { Load(); return classes; } }
         public static IEnumerable<EnemyDef> Enemies { get { Load(); return enemyById.Values; } }
         public static IEnumerable<StageDef> Stages { get { Load(); return stageById.Values; } }
 
+        public static IReadOnlyList<PerkDef> Perks { get { Load(); return perks; } }
+        public static IEnumerable<RoomDef> Rooms { get { Load(); return roomById.Values; } }
+        public static IReadOnlyList<string> RoomPool { get { Load(); return roomTable.pool; } }
+        public static string BossRoom { get { Load(); return roomTable.boss; } }
+        public static RunRules Rules { get { Load(); return meta.rules; } }
+        public static IReadOnlyList<UnlockDef> Unlocks { get { Load(); return meta.unlocks; } }
+        public static IReadOnlyList<string> StartingClasses { get { Load(); return meta.startingClasses; } }
+
+        public static PerkDef Perk(string id) { Load(); return perkById[id]; }
+        public static RoomDef Room(string id) { Load(); return roomById[id]; }
         public static ClassDef Class(string id) { Load(); return classById[id]; }
         public static EnemyDef Enemy(string id) { Load(); return enemyById[id]; }
         public static StageDef Stage(string id) { Load(); return stageById[id]; }
@@ -45,6 +60,11 @@ namespace BoLike.Data
             stageById = Read<List<StageDef>>("stages").ToDictionary(s => s.id);
             storyById = Read<List<StageStory>>("story").ToDictionary(s => s.stageId);
             animById = Read<List<AnimSet>>("anims").ToDictionary(a => a.classId);
+            perks = Read<List<PerkDef>>("perks");
+            perkById = perks.ToDictionary(p => p.id);
+            roomTable = Read<RoomTable>("rooms");
+            roomById = roomTable.rooms.ToDictionary(r => r.id);
+            meta = Read<MetaTable>("meta");
             loaded = true;
         }
 
