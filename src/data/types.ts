@@ -141,3 +141,79 @@ export interface StageDef {
 }
 
 export const lv = (s: Scaling, level: number) => s[0] + s[1] * (level - 1);
+
+// ---------------------------------------------------------------------------
+// Roguelite run data (口袋冒險團 封測版). Pure data: no functions, so the Unity
+// exporter (tools/export_unity_data.mjs) can emit it as-is.
+// ---------------------------------------------------------------------------
+
+export type PerkRarity = 'common' | 'rare' | 'epic';
+
+/** Multiplicative targets a perk can scale. 1.2 = +20 %. `cooldown` and `spCost` below 1 are reductions. */
+export type MultTarget = 'maxHp' | 'atk' | 'matk' | 'move' | 'aspd' | 'cooldown' | 'spCost' | 'spRegen' | 'knock' | 'potionHeal';
+
+export type PerkEffect =
+  | { kind: 'mult'; target: MultTarget; value: number }
+  /** Flat add to crit chance (percentage points) and/or crit damage multiplier. */
+  | { kind: 'crit'; chanceAdd?: number; damageMultAdd?: number }
+  /** Every learned skill gains this many levels (capped at maxLv). */
+  | { kind: 'skillLvAll'; add: number }
+  /** Heal this fraction of max HP on each kill. */
+  | { kind: 'onKillHeal'; fraction: number }
+  /** Enemies explode on death: neutral physical hit of `power` × ATK in `radius` px. */
+  | { kind: 'onKillAoe'; power: number; radius: number }
+  /** Heal this fraction of max HP when a room is cleared (adds to RUN_RULES.roomClearHeal). */
+  | { kind: 'roomClearHeal'; fraction: number }
+  /** Grant potions immediately. */
+  | { kind: 'potion'; red?: number; blue?: number }
+  /** Once per run: on death, revive with this fraction of max HP and `invuln` ms of invulnerability. */
+  | { kind: 'revive'; fraction: number; invuln: number }
+  /** The last combo hit also deals its damage in a circle of `radius` px. */
+  | { kind: 'comboFinisherAoe'; radius: number }
+  /** Projectile skills and ranged normal attacks fire this many extra projectiles. */
+  | { kind: 'projectileCount'; add: number }
+  /** Projectiles pass through this many extra targets. */
+  | { kind: 'pierce'; add: number };
+
+export interface PerkDef {
+  id: string;
+  name: string;
+  desc: string;
+  rarity: PerkRarity;
+  /** Empty = offered to every class. */
+  classes: string[];
+  /** How many times the same perk may be taken in one run. */
+  maxStacks: number;
+  effects: PerkEffect[];
+}
+
+export type RoomKind = 'combat' | 'boss';
+
+/** A wave starts when the previous wave is cleared (or after `timeout` ms, whichever is first). */
+export interface RoomWaveDef {
+  spawns: SpawnDef[];
+  timeout: number;
+}
+
+export interface RoomDef {
+  id: string;
+  name: string;
+  scene: string;
+  kind: RoomKind;
+  width: number;
+  bg: string;
+  bgGroundY: number;
+  tint?: number;
+  /** The seed picks one wave set per visit; each set is one full room. */
+  waveSets: RoomWaveDef[][];
+}
+
+export interface UnlockDef {
+  id: string;
+  name: string;
+  desc: string;
+  cost: number;
+  /** What the unlock does; `value` meaning depends on `kind`. */
+  kind: 'class' | 'startPotion' | 'rareChance' | 'startPerk';
+  value: string | number;
+}
