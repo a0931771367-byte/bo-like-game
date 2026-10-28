@@ -9,7 +9,6 @@ using UnityEngine;
 
 namespace BoLike.Systems
 {
-    [Serializable]
     public class ClassProgress
     {
         public int level = 1;
@@ -26,7 +25,6 @@ namespace BoLike.Systems
         };
     }
 
-    [Serializable]
     public class Potions
     {
         public int red = 3;
@@ -37,7 +35,6 @@ namespace BoLike.Systems
     /// Version 1 is the Phaser save (same fields, so its export code imports here).
     /// Version 2 adds the Roguelite meta progress.
     /// </summary>
-    [Serializable]
     public class SaveData
     {
         public const int CurrentVersion = 2;

@@ -26,7 +26,6 @@ namespace BoLike.Data
         public float At(int level) => Base + PerLevel * (level - 1);
     }
 
-    [Serializable]
     public class Stats
     {
         public int str, agi, vit, @int, dex, luk;
