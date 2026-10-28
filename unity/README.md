@@ -1,4 +1,4 @@
-# 劍與魔法小隊 Blade & Spell Squad：Unity 版（iOS）
+# 口袋冒險團 Pocket Adventurers：Unity 版（iOS）
 
 Phaser 網頁版的 Unity 移植，目標 iOS App Store。排程與範圍見專案文件 `departments/engineering/unity-two-week-sprint.md`。
 

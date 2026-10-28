@@ -65,10 +65,10 @@ namespace BoLike.Editor
 
         static void SetupPlayer()
         {
-            PlayerSettings.companyName = "Blade & Spell Squad";
-            PlayerSettings.productName = "劍與魔法小隊"; // iOS home-screen name; App Store name: 劍與魔法小隊 Blade & Spell Squad
+            PlayerSettings.companyName = "Pocket Adventurers";
+            PlayerSettings.productName = "口袋冒險團"; // iOS home-screen name; App Store name: 口袋冒險團 Pocket Adventurers
             // Must match the bundle id registered in App Store Connect (sprint D10).
-            PlayerSettings.SetApplicationIdentifier(NamedBuildTarget.iOS, "com.bladespellsquad.game");
+            PlayerSettings.SetApplicationIdentifier(NamedBuildTarget.iOS, "com.pocketadventurers.game");
 
             PlayerSettings.defaultInterfaceOrientation = UIOrientation.AutoRotation;
             PlayerSettings.allowedAutorotateToLandscapeLeft = true;
