@@ -28,7 +28,6 @@ namespace BoLike.Game
             cam.backgroundColor = Colors.Rgb(0x0b0d14);
             cam.clearFlags = CameraClearFlags.SolidColor;
             go.tag = "MainCamera";
-            go.AddComponent<AudioListener>();
             var gc = go.AddComponent<GameCamera>();
             gc.cam = cam;
             gc.world = world;

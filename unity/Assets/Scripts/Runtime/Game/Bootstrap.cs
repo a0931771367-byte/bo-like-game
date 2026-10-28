@@ -26,6 +26,15 @@ namespace BoLike.Game
             SaveSystem.Load();
             GameDb.Load();
             AudioManager.Instance.transform.SetParent(transform, false); // survives ToTitle()'s root sweep
+            // A always-on camera so the title (pure UI) still has something rendering; the game camera draws on top.
+            var camGo = new GameObject("TitleCamera");
+            camGo.transform.SetParent(transform, false);
+            var tc = camGo.AddComponent<Camera>();
+            tc.clearFlags = CameraClearFlags.SolidColor;
+            tc.backgroundColor = Colors.Rgb(0x2b2140);
+            tc.cullingMask = 0;
+            tc.depth = -100;
+            tc.orthographic = true;
             ShowTitle();
         }
 
@@ -44,16 +53,19 @@ namespace BoLike.Game
             canvas = UiKit.Canvas("Title", 5);
             canvas.transform.SetParent(transform, false);
             title = canvas.gameObject;
-            var layer = UiKit.Layer(canvas, "Layer");
-            UiKit.Dim(layer, 1f).color = Colors.Rgb(0x2b2140);
+            // Backdrop covers the whole screen (wider than the 1280×720 design layer on iPhone).
+            UiKit.Dim(canvas.transform, 1f).color = Colors.Rgb(0x2b2140);
             var art = Resources.Load<Texture2D>("Bg/title");
             if (art != null)
             {
-                var img = UiKit.Rect(layer, 0, 0, 10, 10, 0xffffff, 0.55f);
+                var img = UiKit.Rect(canvas.transform, 0, 0, 10, 10, 0xffffff, 0.55f);
                 img.sprite = Sprite.Create(art, new Rect(0, 0, art.width, art.height), new Vector2(0.5f, 0.5f), 100f);
                 var rt = img.rectTransform; rt.anchorMin = Vector2.zero; rt.anchorMax = Vector2.one; rt.offsetMin = rt.offsetMax = Vector2.zero;
                 img.preserveAspect = false;
+                img.gameObject.AddComponent<UnityEngine.UI.AspectRatioFitter>().aspectMode = UnityEngine.UI.AspectRatioFitter.AspectMode.EnvelopeParent;
+                img.GetComponent<UnityEngine.UI.AspectRatioFitter>().aspectRatio = (float)art.width / art.height;
             }
+            var layer = UiKit.Layer(canvas, "Layer");
             UiKit.Text(layer, 0, 90, "口袋冒險團", 64, 0xfff4de, UiKit.TopCenter, UiKit.TopCenter, TextAnchor.UpperCenter, true, 4);
             UiKit.Text(layer, 0, 170, "Pocket Adventurers · 封測版", 20, 0xcfd4e6, UiKit.TopCenter, UiKit.TopCenter, TextAnchor.UpperCenter);
             UiKit.Text(layer, 0, 215, $"✦ 星塵 {save.stardust}", 22, 0xcfe8ff, UiKit.TopCenter, UiKit.TopCenter, TextAnchor.UpperCenter);

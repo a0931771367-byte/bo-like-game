@@ -109,6 +109,7 @@ namespace BoLike.Game
         void Awake()
         {
             instance = this;
+            if (GetComponent<AudioListener>() == null) gameObject.AddComponent<AudioListener>(); // the only listener; 2D audio needs no position
             muted = PlayerPrefs.GetInt(PrefMuted, 0) == 1;
             musicVolume = PlayerPrefs.GetFloat(PrefMusic, 0.8f);
             sfxVolume = PlayerPrefs.GetFloat(PrefSfx, 1f);

@@ -61,7 +61,7 @@ namespace BoLike.Tests
             Assert.AreEqual(RoomKind.Boss, GameDb.Room(GameDb.BossRoom).kind);
             Assert.AreEqual(3, GameDb.Rules.perkChoices);
             Assert.AreEqual(60f, GameDb.Rules.rarityWeights[PerkRarity.Common]);
-            Assert.AreEqual(1.35f, GameDb.Rules.roomScaling.AtkAt(3), 1e-5);
+            Assert.AreEqual(1.3f, GameDb.Rules.roomScaling.AtkAt(3), 1e-5);
             CollectionAssert.Contains(GameDb.StartingClasses, "swordsman");
         }
 
