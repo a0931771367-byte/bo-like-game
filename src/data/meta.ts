@@ -14,9 +14,9 @@ export const RUN_RULES = {
   roomClearHeal: 0.2,
   /** Enemy multipliers by room slot (index 0 = first room). Boss room uses `boss`. */
   roomScaling: {
-    hp: [1.0, 1.2, 1.4, 1.6],
-    atk: [1.0, 1.1, 1.2, 1.35],
-    boss: { hp: 1.0, atk: 1.0 },
+    hp: [1.25, 1.5, 1.75, 2.0],
+    atk: [1.0, 1.1, 1.2, 1.3],
+    boss: { hp: 1.5, atk: 1.0 },
   },
   /** Ms between the door opening and the next room (walk-through transition). */
   roomTransition: 1200,
