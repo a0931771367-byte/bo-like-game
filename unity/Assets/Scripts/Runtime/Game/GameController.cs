@@ -45,9 +45,11 @@ namespace BoLike.Game
         public static GameController Launch(string classId, ulong seed = 0)
         {
             var go = new GameObject("Game");
+            go.SetActive(false); // Awake runs on AddComponent for an active object; set the fields first
             var gc = go.AddComponent<GameController>();
             gc.classId = classId;
             gc.seedOverride = seed;
+            go.SetActive(true);
             return gc;
         }
 
