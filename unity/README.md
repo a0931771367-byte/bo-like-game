@@ -4,8 +4,8 @@ Phaser 網頁版的 Unity 移植，目標 iOS App Store。排程與範圍見專�
 
 ## 第一次打開
 
-1. 安裝 Unity Hub，再裝 **Unity 6.3 LTS**，模組勾選 **iOS Build Support**。
-2. Unity Hub → Add → Add project from disk → 選這個 `unity/` 資料夾，版本選 6.3 LTS。
+1. 安裝 Unity Hub，再裝 **Unity 6**（目前使用 6000.6.7f1；6.3 LTS 以上皆可），模組勾選 **iOS Build Support**。
+2. Unity Hub → Add → Add project from disk → 選這個 `unity/` 資料夾，版本選 6000.6.7f1。
 3. 第一次開啟會：
    - 下載套件（URP、Input System、Cinemachine、Newtonsoft Json、Test Framework）。
    - 跳出「啟用新的 Input System」對話框 → 選 **Yes**，編輯器會重開。
