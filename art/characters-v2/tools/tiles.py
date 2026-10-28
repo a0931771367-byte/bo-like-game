@@ -5,9 +5,9 @@ from PIL import Image
 props_src, tiles_src, out = sys.argv[1], sys.argv[2], sys.argv[3]
 S = 2  # 原圖放大倍率
 
-def load(d, i):
+def load(d, i, s=S):
     im = Image.open(f'{d}/part_{i:02d}.png')
-    return im.resize((im.width * S, im.height * S), Image.LANCZOS)
+    return im.resize((im.width * s, im.height * s), Image.LANCZOS)
 
 def trim(im):
     return im.crop(im.getbbox())
@@ -33,7 +33,7 @@ meta = {}
 props = {0: 'jelly_big', 1: 'jelly_small', 2: 'jelly_mid', 3: 'flower_peach', 4: 'bush_big', 5: 'flower_red', 6: 'flower_blue',
          7: 'bush_small', 8: 'mushroom_green', 9: 'mushroom_lavender', 10: 'mushroom_peach', 11: 'rock', 12: 'grass_tuft'}
 for i, n in props.items():
-    trim(load(props_src, i)).save(f'{out}/props/{n}.png')
+    trim(load(props_src, i, 1)).save(f'{out}/props/{n}.png')
 for i, n, b in ((0, 'ground_grass', 60), (7, 'platform_grass', 60), (9, 'platform_jelly', 60)):
     im, bd = slice9(load(tiles_src, i), b)
     im.save(f'{out}/tiles/{n}.png'); meta[n] = {'size': im.size, 'border_px': bd}
