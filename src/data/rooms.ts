@@ -79,8 +79,86 @@ export const ROOMS: Record<string, RoomDef> = {
       ],
     ],
   },
+
+  // ---- 迷霧森林（正式版第 2 場景，封測不入池；敵人與美術已存在）----
+  mistTrail: {
+    id: 'mistTrail', name: '迷霧小徑', scene: 'mistForest', kind: 'combat', width: 1800, bg: 'bg_chapter2', bgGroundY: 546,
+    waveSets: [
+      [
+        wave(12000, sp('bee', 'right', 0), sp('bee', 'right', 500), sp('jelly', 'left', 1200)),
+        wave(14000, sp('bee', 'right', 0), sp('bee', 'left', 400), sp('flower', 'right', 1200), sp('bee', 'left', 2000)),
+        wave(16000, sp('flower', 'left', 0), sp('bee', 'right', 500), sp('bee', 'right', 800), sp('mushroom', 'left', 2200)),
+      ],
+      [
+        wave(12000, sp('bee', 'left', 0), sp('bee', 'right', 400), sp('bug', 'right', 1200)),
+        wave(14000, sp('flower', 'right', 0), sp('bee', 'left', 600), sp('bee', 'left', 900), sp('bee', 'right', 1800)),
+        wave(16000, sp('mushroom', 'right', 0), sp('bee', 'left', 400), sp('bee', 'left', 700), sp('flower', 'right', 2000)),
+      ],
+    ],
+  },
+  sporeHollow: {
+    id: 'sporeHollow', name: '孢子窪地', scene: 'mistForest', kind: 'combat', width: 1700, bg: 'bg_chapter2', bgGroundY: 546, tint: 0xbfe6d8,
+    waveSets: [
+      [
+        wave(14000, sp('mushroom', 'right', 0), sp('bee', 'left', 600), sp('mushroom', 'left', 1600)),
+        wave(16000, sp('mushroom', 'right', 0), sp('mushroom', 'left', 300), sp('bee', 'right', 1200), sp('bee', 'left', 1500)),
+        wave(18000, sp('mushroom', 'right', 0), sp('flower', 'left', 400), sp('mushroom', 'left', 1600), sp('bee', 'right', 2400)),
+      ],
+      [
+        wave(14000, sp('mushroom', 'left', 0), sp('mushroom', 'right', 400), sp('bee', 'right', 1200)),
+        wave(16000, sp('flower', 'right', 0), sp('mushroom', 'left', 500), sp('mushroom', 'right', 1400), sp('bee', 'left', 2200)),
+        wave(18000, sp('mushroom', 'right', 0), sp('mushroom', 'left', 0), sp('bee', 'right', 1200), sp('bee', 'left', 1500), sp('flower', 'right', 2600)),
+      ],
+    ],
+  },
+  thornGarden: {
+    id: 'thornGarden', name: '荊棘花園', scene: 'mistForest', kind: 'combat', width: 2000, bg: 'bg_chapter2', bgGroundY: 546, tint: 0xd8c0e8,
+    waveSets: [
+      [
+        wave(14000, sp('flower', 'right', 0), sp('flower', 'left', 0), sp('bee', 'right', 1000)),
+        wave(16000, sp('flower', 'right', 0), sp('bee', 'left', 500), sp('bee', 'left', 800), sp('mushroom', 'right', 1800)),
+        wave(18000, sp('flower', 'left', 0), sp('flower', 'right', 300), sp('bee', 'right', 1200), sp('bee', 'left', 1500), sp('nightWolf', 'right', 2600)),
+      ],
+      [
+        wave(14000, sp('flower', 'left', 0), sp('bee', 'right', 400), sp('bee', 'right', 700)),
+        wave(16000, sp('flower', 'right', 0), sp('flower', 'left', 400), sp('mushroom', 'left', 1400), sp('bee', 'right', 2000)),
+        wave(18000, sp('flower', 'right', 0), sp('bee', 'left', 300), sp('bee', 'left', 600), sp('mushroom', 'right', 1600), sp('nightWolf', 'left', 2600)),
+      ],
+    ],
+  },
+  wolfDen: {
+    id: 'wolfDen', name: '夜狼巢穴', scene: 'mistForest', kind: 'combat', width: 2000, bg: 'bg_chapter2', bgGroundY: 546, tint: 0x9aa8d0,
+    waveSets: [
+      [
+        wave(12000, sp('nightWolf', 'right', 0), sp('bee', 'left', 600), sp('nightWolf', 'left', 1400)),
+        wave(14000, sp('nightWolf', 'right', 0), sp('nightWolf', 'left', 300), sp('mushroom', 'right', 1500), sp('bee', 'left', 2200)),
+        wave(16000, sp('nightWolf', 'right', 0), sp('nightWolf', 'right', 400), sp('nightWolf', 'left', 800), sp('flower', 'left', 2000)),
+      ],
+      [
+        wave(12000, sp('nightWolf', 'left', 0), sp('nightWolf', 'right', 800), sp('bee', 'right', 1600)),
+        wave(14000, sp('mushroom', 'right', 0), sp('nightWolf', 'left', 500), sp('nightWolf', 'right', 1300), sp('bee', 'left', 2000)),
+        wave(16000, sp('nightWolf', 'right', 0), sp('nightWolf', 'left', 300), sp('bee', 'right', 1000), sp('bee', 'left', 1300), sp('nightWolf', 'right', 2400)),
+      ],
+    ],
+  },
+  heartOfTheWood: {
+    id: 'heartOfTheWood', name: '古樹之心', scene: 'mistForest', kind: 'boss', width: 1600, bg: 'bg_chapter2', bgGroundY: 546, tint: 0xa8bcc8,
+    waveSets: [
+      [
+        wave(0, sp('treant', 'right', 800)),
+        wave(0, sp('bee', 'left', 15000), sp('bee', 'left', 15300), sp('flower', 'left', 30000), sp('bee', 'right', 45000), sp('bee', 'right', 45300)),
+      ],
+    ],
+  },
 };
 
 /** Combat rooms the seed draws from (4 picked per run, no repeats, random order). */
 export const ROOM_POOL = ['meadow', 'beetleNest', 'wolfAmbush', 'emberField'];
 export const BOSS_ROOM = 'jellyThrone';
+
+/** 正式版：每個場景自己的房間池與 Boss，一局依序走過 SCENE_ORDER（封測只跑第一個）。 */
+export const SCENES: Record<string, { name: string; pool: string[]; boss: string }> = {
+  grassland: { name: '王都草原', pool: ROOM_POOL, boss: BOSS_ROOM },
+  mistForest: { name: '迷霧森林', pool: ['mistTrail', 'sporeHollow', 'thornGarden', 'wolfDen'], boss: 'heartOfTheWood' },
+};
+export const SCENE_ORDER = ['grassland', 'mistForest'];

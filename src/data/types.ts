@@ -150,7 +150,7 @@ export const lv = (s: Scaling, level: number) => s[0] + s[1] * (level - 1);
 export type PerkRarity = 'common' | 'rare' | 'epic';
 
 /** Multiplicative targets a perk can scale. 1.2 = +20 %. `cooldown` and `spCost` below 1 are reductions. */
-export type MultTarget = 'maxHp' | 'atk' | 'matk' | 'move' | 'aspd' | 'cooldown' | 'spCost' | 'spRegen' | 'knock' | 'potionHeal';
+export type MultTarget = 'maxHp' | 'atk' | 'matk' | 'move' | 'aspd' | 'cooldown' | 'spCost' | 'spRegen' | 'knock' | 'potionHeal' | 'skillPower' | 'stardust';
 
 export type PerkEffect =
   | { kind: 'mult'; target: MultTarget; value: number }
@@ -173,7 +173,26 @@ export type PerkEffect =
   /** Projectile skills and ranged normal attacks fire this many extra projectiles. */
   | { kind: 'projectileCount'; add: number }
   /** Projectiles pass through this many extra targets. */
-  | { kind: 'pierce'; add: number };
+  | { kind: 'pierce'; add: number }
+  // ---- v2 kinds (正式版強化池 16–30，封測不實作) ----
+  /** Damage taken while guarding is multiplied by this instead of the default 0.25. */
+  | { kind: 'guardMult'; value: number }
+  /** Dodge gains extra invulnerability (ms) and distance (multiplier). */
+  | { kind: 'dodge'; invulnAdd: number; distanceMult: number }
+  /** For the first `duration` ms of every room, ATK/MATK are multiplied by `mult`. */
+  | { kind: 'roomStartBuff'; duration: number; mult: number }
+  /** The normal combo repeats its second hit once more before the finisher. */
+  | { kind: 'comboExtraHit'; add: number }
+  /** Normal attacks have `chance` (0–1) to apply a status for `duration` ms; `value` is dps for burn/poison. */
+  | { kind: 'onHitStatus'; status: 'freeze' | 'burn' | 'poison'; chance: number; duration: number; value?: number }
+  /** Restore this fraction of max SP on each kill. */
+  | { kind: 'onKillSp'; fraction: number }
+  /** Each kill adds `perKill` to an ATK multiplier (max `max`), reset when the room ends. */
+  | { kind: 'killStackAtk'; perKill: number; max: number }
+  /** Using a skill has `chance` to refund its cooldown. */
+  | { kind: 'cooldownReset'; chance: number }
+  /** A normal attack within `window` ms after a successful guard deals `mult` damage. */
+  | { kind: 'counter'; window: number; mult: number };
 
 export interface PerkDef {
   id: string;
