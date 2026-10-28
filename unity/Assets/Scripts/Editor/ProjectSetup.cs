@@ -65,10 +65,10 @@ namespace BoLike.Editor
 
         static void SetupPlayer()
         {
-            PlayerSettings.companyName = "BoLike";
-            PlayerSettings.productName = "劍與魔法亂鬥";
-            // Placeholder until the App Store Connect bundle id is registered (sprint D10).
-            PlayerSettings.SetApplicationIdentifier(NamedBuildTarget.iOS, "com.bolike.game");
+            PlayerSettings.companyName = "Blade & Spell Squad";
+            PlayerSettings.productName = "劍與魔法小隊"; // iOS home-screen name; App Store name: 劍與魔法小隊 Blade & Spell Squad
+            // Must match the bundle id registered in App Store Connect (sprint D10).
+            PlayerSettings.SetApplicationIdentifier(NamedBuildTarget.iOS, "com.bladespellsquad.game");
 
             PlayerSettings.defaultInterfaceOrientation = UIOrientation.AutoRotation;
             PlayerSettings.allowedAutorotateToLandscapeLeft = true;
