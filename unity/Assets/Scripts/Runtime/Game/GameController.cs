@@ -5,6 +5,7 @@ using BoLike.Sim;
 using BoLike.Systems;
 using BoLike.UI;
 using UnityEngine;
+using UnityEngine.UI;
 using UnityEngine.InputSystem;
 
 namespace BoLike.Game
@@ -339,23 +340,37 @@ namespace BoLike.Game
             if (choices.Count == 0) { OpenDoor(); return; }
             var layer = NewOverlay(0.6f);
             UiKit.Text(layer, 0, 110, "選擇一個強化", 34, 0xfff4de, UiKit.TopCenter, UiKit.TopCenter, TextAnchor.UpperCenter, true);
-            float cardW = 300, gap = 30;
+            // Art department card frames: 360×520 originals with a 56 px 9-slice border; layout from beta-ui/README.md scaled to the card width.
+            float cardW = 300, cardH = 300f * 520 / 360, gap = 30, k = cardW / 360f;
             float startX = -(choices.Count * cardW + (choices.Count - 1) * gap) / 2;
             for (int i = 0; i < choices.Count; i++)
             {
                 var perk = choices[i];
+                string rarityKey = perk.rarity == PerkRarity.Epic ? "epic" : perk.rarity == PerkRarity.Rare ? "rare" : "common";
                 int frame = perk.rarity == PerkRarity.Epic ? 0x8a4fd1 : perk.rarity == PerkRarity.Rare ? 0x2f6fb5 : 0x5c6b7a;
-                var card = UiKit.Rect(layer, startX + i * (cardW + gap), 180, cardW, 340, frame, 0.95f, UiKit.TopCenter);
-                UiKit.Rect(card.transform, 6, 6, cardW - 12, 328, 0x1b1830, 0.95f);
-                string rarity = perk.rarity == PerkRarity.Epic ? "史詩" : perk.rarity == PerkRarity.Rare ? "稀有" : "普通";
-                UiKit.Text(card.transform, 0, 24, rarity, 16, frame == 0x5c6b7a ? 0xcfd4e6 : 0xffffff, UiKit.TopCenter, UiKit.TopCenter, TextAnchor.UpperCenter);
-                UiKit.Text(card.transform, 0, 60, perk.name, 30, 0xfff4de, UiKit.TopCenter, UiKit.TopCenter, TextAnchor.UpperCenter, true);
-                var desc = UiKit.Text(card.transform, 0, 130, perk.desc, 20, 0xffffff, UiKit.TopCenter, UiKit.TopCenter, TextAnchor.UpperCenter);
-                desc.rectTransform.sizeDelta = new Vector2(cardW - 40, 120);
+                var frameSprite = Resources.Load<Sprite>("UI/card_" + rarityKey);
+                Image card;
+                if (frameSprite != null)
+                {
+                    card = UiKit.Sprite(layer, frameSprite, startX + i * (cardW + gap), 140, cardW, cardH, UiKit.TopCenter);
+                    card.type = Image.Type.Sliced;
+                    card.preserveAspect = false;
+                }
+                else
+                {
+                    card = UiKit.Rect(layer, startX + i * (cardW + gap), 140, cardW, cardH, frame, 0.95f, UiKit.TopCenter);
+                    UiKit.Rect(card.transform, 6, 6, cardW - 12, cardH - 12, 0xf3ecdc, 0.95f);
+                }
+                var icon = Resources.Load<Sprite>("Icons/perk_" + perk.id);
+                if (icon != null) UiKit.Sprite(card.transform, icon, 0, 40 * k, 220 * k, 220 * k, UiKit.TopCenter, UiKit.TopCenter);
+                UiKit.Text(card.transform, 0, 280 * k, perk.name, (int)(40 * k), 0x2b2140, UiKit.TopCenter, UiKit.TopCenter, TextAnchor.UpperCenter, true, 0);
+                var desc = UiKit.Text(card.transform, 0, 340 * k, perk.desc, (int)(26 * k), 0x4a4060, UiKit.TopCenter, UiKit.TopCenter, TextAnchor.UpperCenter, false, 0);
+                desc.rectTransform.sizeDelta = new Vector2(260 * k, 130 * k);
                 desc.horizontalOverflow = HorizontalWrapMode.Wrap;
-                if (run.perkStacks.TryGetValue(perk.id, out var n) && n > 0)
-                    UiKit.Text(card.transform, 0, 250, $"已持有 ×{n}", 14, 0xcfd4e6, UiKit.TopCenter, UiKit.TopCenter, TextAnchor.UpperCenter);
-                UiKit.Button(card.transform, 0, -20, 200, 50, $"選擇 ({i + 1})", 0xf28c28, () => PickPerk(perk), 20, new Vector2(0.5f, 0), new Vector2(0.5f, 0));
+                string rarity = perk.rarity == PerkRarity.Epic ? "史詩" : perk.rarity == PerkRarity.Rare ? "稀有" : "普通";
+                string held = run.perkStacks.TryGetValue(perk.id, out var n) && n > 0 ? $"  已持有 ×{n}" : "";
+                UiKit.Text(card.transform, 0, 478 * k, rarity + held, (int)(20 * k), 0x4a4060, UiKit.TopCenter, UiKit.TopCenter, TextAnchor.UpperCenter, false, 0);
+                UiKit.Button(card.transform, 0, -52, 200, 48, $"選擇 ({i + 1})", 0xf28c28, () => PickPerk(perk), 20, new Vector2(0.5f, 0), new Vector2(0.5f, 0));
             }
             perkChoices = choices;
         }

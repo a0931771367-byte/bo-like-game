@@ -69,7 +69,9 @@ namespace BoLike.Game
             var layer = UiKit.Layer(canvas, "Layer");
             UiKit.Text(layer, 0, 90, "口袋冒險團", 64, 0xfff4de, UiKit.TopCenter, UiKit.TopCenter, TextAnchor.UpperCenter, true, 4);
             UiKit.Text(layer, 0, 170, "Pocket Adventurers · 封測版", 20, 0xcfd4e6, UiKit.TopCenter, UiKit.TopCenter, TextAnchor.UpperCenter);
-            UiKit.Text(layer, 0, 215, $"✦ 星塵 {save.stardust}", 22, 0xcfe8ff, UiKit.TopCenter, UiKit.TopCenter, TextAnchor.UpperCenter);
+            var star = Resources.Load<Sprite>("UI/stardust");
+            if (star != null) UiKit.Sprite(layer, star, -52, 210, 32, 32, UiKit.TopCenter, UiKit.TopCenter);
+            UiKit.Text(layer, 14, 215, star != null ? $"星塵 {save.stardust}" : $"✦ 星塵 {save.stardust}", 22, 0xcfe8ff, UiKit.TopCenter, UiKit.TopCenter, TextAnchor.UpperCenter);
 
             var unlocked = new System.Collections.Generic.List<string>(GameDb.StartingClasses);
             foreach (var u in GameDb.Unlocks)
