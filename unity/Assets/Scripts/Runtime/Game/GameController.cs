@@ -116,6 +116,7 @@ namespace BoLike.Game
             roomEnteredAt = world.Now;
             roomLog = new RoomLogEntry { roomId = run.CurrentRoomId, waveSet = run.CurrentWaveSet };
             runLog.rooms.Add(roomLog);
+            CrashLog.Context = $"{classId} seed {run.SeedCode} room {index + 1} {run.CurrentRoomId}/{run.CurrentWaveSet}";
 
             foreach (var e in world.Enemies) if (views.TryGetValue(e, out var v)) Destroy(v.gameObject);
             foreach (var e in world.Enemies) views.Remove(e);
@@ -441,6 +442,7 @@ namespace BoLike.Game
             t.rectTransform.sizeDelta = new Vector2(900, 200);
             UiKit.Button(layer, -130, 480, 240, 60, "再來一局", 0xf28c28, () => Restart(classId), 24, UiKit.TopCenter, UiKit.TopCenter);
             UiKit.Button(layer, 130, 480, 240, 60, "回標題", 0x2f6fb5, () => Bootstrap.ToTitle(), 24, UiKit.TopCenter, UiKit.TopCenter);
+            FeedbackButton(layer, 0, 560);
         }
 
         void ShowPause()
@@ -451,6 +453,21 @@ namespace BoLike.Game
             UiKit.Text(layer, 0, 230, $"種子 {run.SeedCode}   第 {Mathf.Min(run.roomIndex + 1, run.Rules.combatRooms + 1)} 房", 20, 0xcfd4e6, UiKit.TopCenter, UiKit.TopCenter, TextAnchor.UpperCenter);
             UiKit.Button(layer, 0, 320, 260, 60, "繼續", 0xf28c28, ClearOverlay, 24, UiKit.TopCenter, UiKit.TopCenter);
             UiKit.Button(layer, 0, 400, 260, 60, "放棄本局", 0x7a2a2a, () => { run.abandoned = true; finished = true; FinishRunLog("abandon"); ClearOverlay(); ShowResult(false); }, 24, UiKit.TopCenter, UiKit.TopCenter);
+            FeedbackButton(layer, 0, 480);
+        }
+
+        /// <summary>"回報問題" opens the beta feedback form (Resources/feedback-url.txt) with build, class and seed pre-filled; hidden when no URL is configured.</summary>
+        void FeedbackButton(RectTransform layer, float x, float y)
+        {
+            var url = Resources.Load<TextAsset>("feedback-url")?.text.Trim();
+            if (string.IsNullOrEmpty(url)) return;
+            UiKit.Button(layer, x, y, 260, 48, "回報問題", 0x3a3a4a, () =>
+            {
+                string info = $"build {BuildInfo.Number} {classId} seed {run.SeedCode} room {run.roomIndex + 1}";
+                string full = url + (url.Contains("?") ? "&" : "?") + "entry_info=" + System.Uri.EscapeDataString(info);
+                GUIUtility.systemCopyBuffer = info;
+                Application.OpenURL(full);
+            }, 20, UiKit.TopCenter, UiKit.TopCenter);
         }
 
         void Restart(string cls)

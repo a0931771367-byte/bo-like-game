@@ -23,6 +23,7 @@ namespace BoLike.Game
             DontDestroyOnLoad(gameObject);
             Application.targetFrameRate = 60;
             Screen.sleepTimeout = SleepTimeout.NeverSleep;
+            CrashLog.Start(BuildInfo.Number);
             SaveSystem.Load();
             GameDb.Load();
             UiKit.EnsureEventSystem(); // UI buttons need one on every platform, not only touch devices
