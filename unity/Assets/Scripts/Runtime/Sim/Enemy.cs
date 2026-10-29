@@ -343,8 +343,19 @@ namespace BoLike.Sim
         {
             var p = P;
             float pdef = p != null ? (float)p.d.def : 0;
-            int dmg = Math.Max(1, (int)StatFormulas.JsRound((def.atk * atkMult * powerMult - pdef * 0.6) * (0.9 + Rng.NextDouble() * 0.2)));
+            int dmg = Math.Max(1, (int)StatFormulas.JsRound(BaseDamage(def.atk * atkMult, powerMult, pdef, GameDb.Rules.enemyDamage) * (0.9 + Rng.NextDouble() * 0.2)));
             return new HitInfo { damage = dmg, crit = false, mult = 1, element = def.element, dir = dir, knock = knock, launch = launch, stun = stun, source = this };
+        }
+
+        /// <summary>
+        /// Pre-roll enemy damage: a plain atk − def×coef subtraction with a floor of atk × minFraction, so high-DEF
+        /// classes still take pressure late in a run (growth curve v2 E1).
+        /// </summary>
+        public static double BaseDamage(double atk, double powerMult, double def, EnemyDamage rule)
+        {
+            double floor = atk * (rule?.minFraction ?? 0);
+            double raw = atk * powerMult - def * (rule?.defCoef ?? 0.6);
+            return Math.Max(floor, raw);
         }
 
         public override bool TakeHit(HitInfo h)

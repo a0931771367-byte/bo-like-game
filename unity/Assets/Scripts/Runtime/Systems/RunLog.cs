@@ -16,6 +16,10 @@ namespace BoLike.Systems
         public int clearMs;
         public int hpAtClear, maxHp;
         public int potionsLeft;
+        /// <summary>Run level when the room was cleared (0 when it was not).</summary>
+        public int levelAtClear;
+        /// <summary>The perk cards offered after this room, in the order shown; the one taken is <see cref="perk"/>.</summary>
+        public List<string> offered = new();
         public string perk;
     }
 

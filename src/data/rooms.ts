@@ -10,7 +10,7 @@ const wave = (timeout: number, ...spawns: SpawnDef[]): RoomWaveDef => ({ spawns,
  */
 export const ROOMS: Record<string, RoomDef> = {
   meadow: {
-    id: 'meadow', name: '草原小徑', scene: 'grassland', kind: 'combat', width: 1800, bg: 'bg_chapter1', bgGroundY: 528,
+    id: 'meadow', name: '草原小徑', scene: 'grassland', kind: 'combat', width: 1800, bg: 'bg_chapter1', bgGroundY: 420,
     waveSets: [
       [
         wave(12000, sp('jelly', 'right', 0), sp('jelly', 'right', 500), sp('jelly', 'left', 1200)),
@@ -25,7 +25,7 @@ export const ROOMS: Record<string, RoomDef> = {
     ],
   },
   beetleNest: {
-    id: 'beetleNest', name: '甲蟲巢', scene: 'grassland', kind: 'combat', width: 1700, bg: 'bg_chapter1', bgGroundY: 528, tint: 0xd8e8c0,
+    id: 'beetleNest', name: '甲蟲巢', scene: 'grassland', kind: 'combat', width: 1700, bg: 'bg_chapter1', bgGroundY: 420, tint: 0xd8e8c0,
     waveSets: [
       [
         wave(14000, sp('bug', 'right', 0), sp('bug', 'left', 600), sp('jelly', 'right', 1400)),
@@ -40,7 +40,7 @@ export const ROOMS: Record<string, RoomDef> = {
     ],
   },
   wolfAmbush: {
-    id: 'wolfAmbush', name: '狼群突襲', scene: 'grassland', kind: 'combat', width: 2000, bg: 'bg_chapter1', bgGroundY: 528, tint: 0xb8c4e8,
+    id: 'wolfAmbush', name: '狼群突襲', scene: 'grassland', kind: 'combat', width: 2000, bg: 'bg_chapter1', bgGroundY: 420, tint: 0xb8c4e8,
     waveSets: [
       [
         wave(12000, sp('wolf', 'right', 0), sp('wolf', 'left', 900)),
@@ -55,7 +55,7 @@ export const ROOMS: Record<string, RoomDef> = {
     ],
   },
   emberField: {
-    id: 'emberField', name: '餘燼草地', scene: 'grassland', kind: 'combat', width: 1800, bg: 'bg_chapter1', bgGroundY: 528, tint: 0xffb488,
+    id: 'emberField', name: '餘燼草地', scene: 'grassland', kind: 'combat', width: 1800, bg: 'bg_chapter1', bgGroundY: 420, tint: 0xffb488,
     waveSets: [
       [
         wave(12000, sp('fireJelly', 'right', 0), sp('jelly', 'left', 500), sp('fireJelly', 'left', 1200)),
@@ -70,7 +70,7 @@ export const ROOMS: Record<string, RoomDef> = {
     ],
   },
   jellyThrone: {
-    id: 'jellyThrone', name: '果凍王的王座', scene: 'grassland', kind: 'boss', width: 1600, bg: 'bg_chapter1', bgGroundY: 528, tint: 0xf0c8d8,
+    id: 'jellyThrone', name: '果凍王的王座', scene: 'grassland', kind: 'boss', width: 1600, bg: 'bg_chapter1', bgGroundY: 420, tint: 0xf0c8d8,
     waveSets: [
       [
         wave(0, sp('jellyKing', 'right', 600)),
@@ -82,7 +82,7 @@ export const ROOMS: Record<string, RoomDef> = {
 
   // ---- 迷霧森林（正式版第 2 場景，封測不入池；敵人與美術已存在）----
   mistTrail: {
-    id: 'mistTrail', name: '迷霧小徑', scene: 'mistForest', kind: 'combat', width: 1800, bg: 'bg_chapter2', bgGroundY: 546,
+    id: 'mistTrail', name: '迷霧小徑', scene: 'mistForest', kind: 'combat', width: 1800, bg: 'bg_chapter2', bgGroundY: 420,
     waveSets: [
       [
         wave(12000, sp('bee', 'right', 0), sp('bee', 'right', 500), sp('jelly', 'left', 1200)),
@@ -97,7 +97,7 @@ export const ROOMS: Record<string, RoomDef> = {
     ],
   },
   sporeHollow: {
-    id: 'sporeHollow', name: '孢子窪地', scene: 'mistForest', kind: 'combat', width: 1700, bg: 'bg_chapter2', bgGroundY: 546, tint: 0xbfe6d8,
+    id: 'sporeHollow', name: '孢子窪地', scene: 'mistForest', kind: 'combat', width: 1700, bg: 'bg_chapter2', bgGroundY: 420, tint: 0xbfe6d8,
     waveSets: [
       [
         wave(14000, sp('mushroom', 'right', 0), sp('bee', 'left', 600), sp('mushroom', 'left', 1600)),
@@ -112,7 +112,7 @@ export const ROOMS: Record<string, RoomDef> = {
     ],
   },
   thornGarden: {
-    id: 'thornGarden', name: '荊棘花園', scene: 'mistForest', kind: 'combat', width: 2000, bg: 'bg_chapter2', bgGroundY: 546, tint: 0xd8c0e8,
+    id: 'thornGarden', name: '荊棘花園', scene: 'mistForest', kind: 'combat', width: 2000, bg: 'bg_chapter2', bgGroundY: 420, tint: 0xd8c0e8,
     waveSets: [
       [
         wave(14000, sp('flower', 'right', 0), sp('flower', 'left', 0), sp('bee', 'right', 1000)),
@@ -127,7 +127,7 @@ export const ROOMS: Record<string, RoomDef> = {
     ],
   },
   wolfDen: {
-    id: 'wolfDen', name: '夜狼巢穴', scene: 'mistForest', kind: 'combat', width: 2000, bg: 'bg_chapter2', bgGroundY: 546, tint: 0x9aa8d0,
+    id: 'wolfDen', name: '夜狼巢穴', scene: 'mistForest', kind: 'combat', width: 2000, bg: 'bg_chapter2', bgGroundY: 420, tint: 0x9aa8d0,
     waveSets: [
       [
         wave(12000, sp('nightWolf', 'right', 0), sp('bee', 'left', 600), sp('nightWolf', 'left', 1400)),
@@ -142,7 +142,7 @@ export const ROOMS: Record<string, RoomDef> = {
     ],
   },
   heartOfTheWood: {
-    id: 'heartOfTheWood', name: '古樹之心', scene: 'mistForest', kind: 'boss', width: 1600, bg: 'bg_chapter2', bgGroundY: 546, tint: 0xa8bcc8,
+    id: 'heartOfTheWood', name: '古樹之心', scene: 'mistForest', kind: 'boss', width: 1600, bg: 'bg_chapter2', bgGroundY: 420, tint: 0xa8bcc8,
     waveSets: [
       [
         wave(0, sp('treant', 'right', 800)),

@@ -67,27 +67,49 @@ namespace BoLike.Game
                 img.gameObject.AddComponent<UnityEngine.UI.AspectRatioFitter>().aspectMode = UnityEngine.UI.AspectRatioFitter.AspectMode.EnvelopeParent;
                 img.GetComponent<UnityEngine.UI.AspectRatioFitter>().aspectRatio = (float)art.width / art.height;
             }
-            var layer = UiKit.Layer(canvas, "Layer");
+            var layer = titleLayer = UiKit.Layer(canvas, "Layer");
             UiKit.Text(layer, 0, 90, "口袋冒險團", 64, 0xfff4de, UiKit.TopCenter, UiKit.TopCenter, TextAnchor.UpperCenter, true, 4);
             UiKit.Text(layer, 0, 170, "Pocket Adventurers · 封測版", 20, 0xcfd4e6, UiKit.TopCenter, UiKit.TopCenter, TextAnchor.UpperCenter);
             var star = Resources.Load<Sprite>("UI/stardust");
             if (star != null) UiKit.Sprite(layer, star, -52, 210, 32, 32, UiKit.TopCenter, UiKit.TopCenter);
             UiKit.Text(layer, 14, 215, star != null ? $"星塵 {save.stardust}" : $"✦ 星塵 {save.stardust}", 22, 0xcfe8ff, UiKit.TopCenter, UiKit.TopCenter, TextAnchor.UpperCenter);
 
+            // Class row: starting classes plus every class that has a stardust unlock. Locked ones show a lock and the
+            // price (growth curve v2 §5); tapping one buys it when the stardust is there, like the shop button below.
             var unlocked = new System.Collections.Generic.List<string>(GameDb.StartingClasses);
+            var shown = new System.Collections.Generic.List<(string id, UnlockDef unlock)>();
+            foreach (var id in unlocked) shown.Add((id, null));
             foreach (var u in GameDb.Unlocks)
-                if (u.kind == UnlockKind.Class && save.unlocks.Contains(u.id) && !unlocked.Contains(u.ValueId)) unlocked.Add(u.ValueId);
-            float x = -(unlocked.Count * 220 - 20) / 2f;
-            foreach (var id in unlocked)
+            {
+                if (u.kind != UnlockKind.Class || unlocked.Contains(u.ValueId)) continue;
+                if (save.unlocks.Contains(u.id)) { unlocked.Add(u.ValueId); shown.Add((u.ValueId, null)); }
+                else shown.Add((u.ValueId, u));
+            }
+            var lockSprite = Resources.Load<Sprite>("Icons/skill_locked");
+            float x = -(shown.Count * 220 - 20) / 2f;
+            foreach (var (id, lockedBy) in shown)
             {
                 var cls = GameDb.Class(id);
-                var btn = UiKit.Button(layer, x, 290, 200, 220, "", 0x1b1830, () => StartRun(id), 22, UiKit.TopCenter);
+                bool locked = lockedBy != null;
+                var btn = UiKit.Button(layer, x, 290, 200, 220, "", locked ? 0x14121f : 0x1b1830, () =>
+                {
+                    if (!locked) { StartRun(id); return; }
+                    if (save.stardust < lockedBy.cost) { Flash(layer, GameDb.Str("unlock.notEnough")); return; }
+                    Buy(save, lockedBy);
+                }, 22, UiKit.TopCenter);
                 var portrait = SpriteBank.Get($"{id}_front");
-                if (portrait != null) UiKit.Sprite(btn.transform, portrait, 0, 14, 150, 140, UiKit.TopCenter, UiKit.TopCenter);
-                UiKit.Text(btn.transform, 0, 165, cls.name, 24, 0xfff4de, UiKit.TopCenter, UiKit.TopCenter, TextAnchor.UpperCenter, true);
-                UiKit.Text(btn.transform, 0, 195, cls.role, 12, 0xcfd4e6, UiKit.TopCenter, UiKit.TopCenter, TextAnchor.UpperCenter);
+                if (portrait != null)
+                {
+                    var img = UiKit.Sprite(btn.transform, portrait, 0, 14, 150, 140, UiKit.TopCenter, UiKit.TopCenter);
+                    if (locked) img.color = new Color(0.35f, 0.35f, 0.4f, 1f);
+                }
+                if (locked && lockSprite != null) UiKit.Sprite(btn.transform, lockSprite, 0, 50, 72, 72, UiKit.TopCenter, UiKit.TopCenter);
+                UiKit.Text(btn.transform, 0, 165, cls.name, 24, locked ? 0x9aa0b4 : 0xfff4de, UiKit.TopCenter, UiKit.TopCenter, TextAnchor.UpperCenter, true);
+                UiKit.Text(btn.transform, 0, 195, locked ? $"✦ {lockedBy.cost} 解鎖" : cls.role, 12, locked ? 0xffd36b : 0xcfd4e6, UiKit.TopCenter, UiKit.TopCenter, TextAnchor.UpperCenter);
                 x += 220;
             }
+            string nextLine = GameController.NextUnlockLine(save);
+            if (nextLine != null) UiKit.Text(layer, 0, 250, nextLine, 16, 0xffd36b, UiKit.TopCenter, UiKit.TopCenter, TextAnchor.UpperCenter);
             ShowUnlockShop(layer, save);
             if (Debug.isDebugBuild || Application.isEditor)
                 UiKit.Button(layer, 0, -12, 150, 32, "種子開局", 0x3a3a4a, () => ShowSeedPanel(layer, unlocked), 14, UiKit.BottomCenter, new Vector2(0.5f, 0));
@@ -123,18 +145,48 @@ namespace BoLike.Game
                 float bx = -(GameDb.Unlocks.Count * 180 - 20) / 2f + i * 180;
                 var btn = UiKit.Button(layer, bx, y, 160, 70, "", owned ? 0x2f6fb5 : afford ? 0xf28c28 : 0x3a3a4a, () =>
                 {
-                    if (owned || save.stardust < unlock.cost) return;
-                    save.stardust -= unlock.cost;
-                    save.unlocks.Add(unlock.id);
-                    SaveSystem.Save();
-                    Destroy(title);
-                    ShowTitle();
+                    if (owned) return;
+                    if (save.stardust < unlock.cost) { Flash(layer, GameDb.Str("unlock.notEnough")); return; }
+                    Buy(save, unlock);
                 }, 16, UiKit.TopCenter);
                 UiKit.Text(btn.transform, 0, 8, u.name, 16, 0xffffff, UiKit.TopCenter, UiKit.TopCenter, TextAnchor.UpperCenter, true, 1);
                 UiKit.Text(btn.transform, 0, 30, owned ? "已解鎖" : $"✦ {u.cost}", 13, 0xffffff, UiKit.TopCenter, UiKit.TopCenter, TextAnchor.UpperCenter, false, 1);
                 UiKit.Text(btn.transform, 0, 48, u.desc, 10, 0xe0e0e0, UiKit.TopCenter, UiKit.TopCenter, TextAnchor.UpperCenter, false, 1);
                 i++;
             }
+        }
+
+        /// <summary>Spends stardust on an unlock and rebuilds the title with a short purchase flash.</summary>
+        void Buy(SaveData save, UnlockDef unlock)
+        {
+            save.stardust -= unlock.cost;
+            save.unlocks.Add(unlock.id);
+            SaveSystem.Save();
+            AudioManager.Instance.Play("buff");
+            Destroy(title);
+            ShowTitle();
+            Flash(titleLayer, $"已解鎖：{unlock.name}");
+        }
+
+        RectTransform titleLayer;
+
+        Text flashText;
+        float flashUntil;
+
+        /// <summary>One-line notice on the title screen (not enough stardust, purchase done) that fades after a moment.</summary>
+        void Flash(RectTransform layer, string msg)
+        {
+            if (flashText == null || flashText.transform.parent != layer)
+                flashText = UiKit.Text(layer, 0, 622, "", 18, 0xfff2b3, UiKit.TopCenter, UiKit.TopCenter, TextAnchor.UpperCenter, true, 2);
+            flashText.text = msg;
+            UiKit.SetAlpha(flashText, 1);
+            flashUntil = Time.unscaledTime + 2.2f;
+        }
+
+        void Update()
+        {
+            if (flashText != null && flashUntil > 0 && Time.unscaledTime > flashUntil - 0.5f)
+                UiKit.SetAlpha(flashText, Mathf.Clamp01((flashUntil - Time.unscaledTime) / 0.5f));
         }
 
         /// <summary>Debug/QA: start a run from a seed code so a reported run can be replayed (editor and development builds).</summary>
