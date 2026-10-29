@@ -106,8 +106,9 @@ namespace BoLike.Editor
             PlayerSettings.iOS.deferSystemGesturesMode = UnityEngine.iOS.SystemGestureDeferMode.All;
             PlayerSettings.SetScriptingBackend(NamedBuildTarget.iOS, ScriptingImplementation.IL2CPP);
             PlayerSettings.SetArchitecture(NamedBuildTarget.iOS, 1); // arm64
-            PlayerSettings.bundleVersion = "0.1.0";
-            PlayerSettings.iOS.buildNumber = "1";
+            // Only seed these once; BuildIos bumps the build number on every export.
+            if (string.IsNullOrEmpty(PlayerSettings.bundleVersion) || PlayerSettings.bundleVersion == "0.1") PlayerSettings.bundleVersion = "0.1.0";
+            if (string.IsNullOrEmpty(PlayerSettings.iOS.buildNumber) || PlayerSettings.iOS.buildNumber == "0") PlayerSettings.iOS.buildNumber = "1";
             // "Data Not Collected" privacy label: no analytics, no ads, no network calls.
             EditorSettings.defaultBehaviorMode = EditorBehaviorMode.Mode2D;
         }

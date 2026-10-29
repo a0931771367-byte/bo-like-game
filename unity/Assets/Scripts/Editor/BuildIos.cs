@@ -25,6 +25,7 @@ namespace BoLike.Editor
 
             int number = int.TryParse(PlayerSettings.iOS.buildNumber, out var n) ? n + 1 : 1;
             PlayerSettings.iOS.buildNumber = number.ToString();
+            AssetDatabase.SaveAssets();
             string commit = GitShort();
             Directory.CreateDirectory("Assets/Resources");
             File.WriteAllText("Assets/Resources/build-number.txt", number.ToString());
