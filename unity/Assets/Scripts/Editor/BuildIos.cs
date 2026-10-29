@@ -28,13 +28,14 @@ namespace BoLike.Editor
         [MenuItem("BoLike/Build iOS for App Store (no QA entry)")]
         public static void BuildStore() => Build(qa: false);
 
-        public static void Build(bool qa)
+        public static void Build(bool qa, bool interactive = true)
         {
             // Twice now a build went out from code the Mac hadn't pulled yet. Refuse when the branch is behind its remote.
             if (!Application.isBatchMode)
             {
-                int behind = CommitsBehindRemote();
+                int behind = CommitsBehindRemote(interactive);
                 if (behind == int.MaxValue) return;
+                if (behind > 0 && !interactive) { UnityEngine.Debug.LogError($"[BuildIos] aborted: {behind} commits behind origin; pull first"); return; }
                 if (behind > 0 && !EditorUtility.DisplayDialog("程式碼還沒更新",
                         $"GitHub 上還有 {behind} 個新提交沒拉到這台 Mac。\n請等同步完成、Unity 重新編譯後再 Build。\n\n仍要用目前的程式碼建置嗎？", "仍要建置", "取消"))
                     return;
@@ -69,14 +70,14 @@ namespace BoLike.Editor
         }
 
         /// <summary>Commits on the upstream branch that are not local yet (0 when unknown or up to date).</summary>
-        static int CommitsBehindRemote()
+        static int CommitsBehindRemote(bool interactive)
         {
             try
             {
                 var (fetchOk, fetchErr) = Git("fetch --quiet origin", 30000);
                 var (ok, count) = Git("rev-list --count HEAD..@{u}", 5000);
                 UnityEngine.Debug.Log($"[BuildIos] git fetch {(fetchOk ? "ok" : "FAILED: " + fetchErr)}; behind upstream: {(ok ? count : "unknown")}");
-                if (!fetchOk && !EditorUtility.DisplayDialog("無法確認程式碼是否最新",
+                if (!fetchOk && interactive && !EditorUtility.DisplayDialog("無法確認程式碼是否最新",
                         $"git fetch 失敗，無法確認這台 Mac 的程式碼是否已是最新：\n{fetchErr}\n\n仍要建置嗎？", "仍要建置", "取消"))
                     return int.MaxValue;
                 return int.TryParse(count, out var n) ? n : 0;
