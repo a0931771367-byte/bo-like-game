@@ -17,8 +17,18 @@ namespace BoLike.Editor
         const string OutDir = "Builds/iOS";
         const string ScenePath = "Assets/Scenes/Main.unity";
 
+        /// <summary>Scripting define that compiles in the QA-only title entry (seed panel). Never set for store builds.</summary>
+        public const string QaDefine = "BOLIKE_QA";
+
+        /// <summary>Beta / TestFlight build: includes the hidden QA entry (tap the version label five times).</summary>
         [MenuItem("BoLike/Build iOS (Xcode project)")]
-        public static void Build()
+        public static void Build() => Build(qa: true);
+
+        /// <summary>App Store submission build: no hidden entry (App Review guideline 2.3.1 forbids undocumented features).</summary>
+        [MenuItem("BoLike/Build iOS for App Store (no QA entry)")]
+        public static void BuildStore() => Build(qa: false);
+
+        public static void Build(bool qa)
         {
             ProjectSetup.Run();
             if (!File.Exists(ScenePath)) ProjectSetup.SetupScene();
@@ -38,10 +48,11 @@ namespace BoLike.Editor
                 locationPathName = OutDir,
                 target = BuildTarget.iOS,
                 options = BuildOptions.None,
+                extraScriptingDefines = qa ? new[] { QaDefine } : Array.Empty<string>(),
             };
             var report = BuildPipeline.BuildPlayer(options);
             var summary = report.summary;
-            UnityEngine.Debug.Log($"[BuildIos] {summary.result} build {number} ({commit}) → {Path.GetFullPath(OutDir)} " +
+            UnityEngine.Debug.Log($"[BuildIos] {summary.result} build {number} ({commit}) {(qa ? "beta+QA" : "store")} → {Path.GetFullPath(OutDir)} " +
                                   $"{summary.totalSize / (1024 * 1024)} MB, {summary.totalErrors} errors, {summary.totalWarnings} warnings");
             if (summary.result != BuildResult.Succeeded && Application.isBatchMode) EditorApplication.Exit(1);
             else if (!Application.isBatchMode && summary.result == BuildResult.Succeeded)
