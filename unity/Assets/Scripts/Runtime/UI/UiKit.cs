@@ -58,7 +58,11 @@ namespace BoLike.UI
             var go = new GameObject(name, typeof(RectTransform));
             var rt = go.GetComponent<RectTransform>();
             rt.SetParent(canvas.transform, false);
-            rt.anchorMin = Vector2.zero; rt.anchorMax = Vector2.one;
+            // Keep controls and HUD inside the iPhone safe area (notch / home indicator); backgrounds use the canvas root instead.
+            var safe = Screen.safeArea;
+            float sw = Mathf.Max(1, Screen.width), sh = Mathf.Max(1, Screen.height);
+            rt.anchorMin = new Vector2(safe.xMin / sw, safe.yMin / sh);
+            rt.anchorMax = new Vector2(safe.xMax / sw, safe.yMax / sh);
             rt.offsetMin = Vector2.zero; rt.offsetMax = Vector2.zero;
             return rt;
         }
@@ -75,7 +79,7 @@ namespace BoLike.UI
             return rt;
         }
 
-        public static readonly Vector2 TopLeft = new(0, 1), TopRight = new(1, 1), BottomLeft = new(0, 0), BottomRight = new(1, 0), Center = new(0.5f, 0.5f), TopCenter = new(0.5f, 1), MiddleRight = new(1, 0.5f);
+        public static readonly Vector2 TopLeft = new(0, 1), TopRight = new(1, 1), BottomLeft = new(0, 0), BottomRight = new(1, 0), Center = new(0.5f, 0.5f), TopCenter = new(0.5f, 1), BottomCenter = new(0.5f, 0), MiddleRight = new(1, 0.5f);
 
         /// <summary>Solid rectangle. x,y are measured from the anchor corner, downwards positive.</summary>
         public static Image Rect(Transform parent, float x, float y, float w, float h, int color, float alpha = 1f, Vector2? anchor = null, Vector2? pivot = null)

@@ -27,14 +27,20 @@ namespace BoLike.Core
         public float Range(float min, float max) => min + (float)NextDouble() * (max - min);
 
         /// <summary>Fresh seed from the clock for a new run.</summary>
-        public static ulong NewSeed() => (ulong)System.DateTime.UtcNow.Ticks ^ ((ulong)System.Environment.TickCount << 32);
+        /// <summary>Seeds are 40-bit so the 8-char code round-trips exactly (8 × 5 bits).</summary>
+        public const ulong SeedMask = (1UL << 40) - 1;
+        public static ulong NewSeed()
+        {
+            ulong v = ((ulong)System.DateTime.UtcNow.Ticks ^ ((ulong)System.Environment.TickCount << 32)) & SeedMask;
+            return v == 0 ? 1 : v;
+        }
 
         /// <summary>Eight-character code shown to players (Crockford base32, no vowels to mistype).</summary>
         public static string SeedToCode(ulong seed)
         {
             const string A = "0123456789ABCDEFGHJKMNPQRSTVWXYZ";
             var c = new char[8];
-            ulong v = seed ^ (seed >> 40);
+            ulong v = seed & SeedMask;
             for (int i = 7; i >= 0; i--) { c[i] = A[(int)(v & 31)]; v >>= 5; }
             return new string(c);
         }
@@ -49,6 +55,7 @@ namespace BoLike.Core
                 if (i < 0) continue;
                 v = (v << 5) | (ulong)i;
             }
+            v &= SeedMask;
             return v == 0 ? 1 : v;
         }
     }

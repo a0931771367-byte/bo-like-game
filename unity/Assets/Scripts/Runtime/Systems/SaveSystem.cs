@@ -51,6 +51,8 @@ namespace BoLike.Systems
         public int runsPlayed;
         public int bestRoom;
         public bool bossCleared;
+        /// <summary>Seed code of the most recent run (for the debug seed panel and bug reports).</summary>
+        public string lastSeedCode;
 
         public ClassProgress ProgressFor(ClassDef cls)
         {

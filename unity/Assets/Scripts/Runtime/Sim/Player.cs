@@ -216,7 +216,8 @@ namespace BoLike.Sim
                 case FighterState.Cast:
                     vx *= 0.8f;
                     vy = 0;
-                    if (casting != null && stateTime >= casting.cast * d.castMult)
+                    if (casting == null) { SetState(FighterState.Idle); break; } // hit mid-cast under super armor used to strand the player here
+                    if (stateTime >= casting.cast * d.castMult)
                     {
                         var s = casting;
                         casting = null;
@@ -719,7 +720,7 @@ namespace BoLike.Sim
             Flash(0xff4444, 90);
             fx.Shake(90, 0.005f);
             Sfx.Play("hurt");
-            casting = null;
+            if (casting != null) { casting = null; if (state == FighterState.Cast) SetState(FighterState.CastEnd); }
             if (hp <= 0)
             {
                 if (Mods.reviveFraction > 0 && !Mods.reviveUsed)
@@ -744,7 +745,14 @@ namespace BoLike.Sim
                 return true;
             }
             if (Endure) return true;
-            if (h.launch > 0 || Airborne)
+            if (state == FighterState.Knock)
+            {
+                // Already flying: take the damage but don't re-launch, so repeated hits can't juggle the player
+                // across the room. Keep the current momentum and just make sure they still come down.
+                vz = Math.Max(vz, 120);
+                z = Math.Max(z, 1);
+            }
+            else if (h.launch > 0 || Airborne)
             {
                 vz = Math.Max(h.launch, 380);
                 z = Math.Max(z, 1);

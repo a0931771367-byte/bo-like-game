@@ -27,7 +27,8 @@ namespace BoLike.UI
             return t;
         }
 
-        public static bool IsTouchDevice => Application.isMobilePlatform || UnityEngine.InputSystem.Touchscreen.current != null;
+        /// <summary>Also true in the editor so the on-screen controls can be checked with the mouse before a device build.</summary>
+        public static bool IsTouchDevice => Application.isMobilePlatform || UnityEngine.InputSystem.Touchscreen.current != null || Application.isEditor;
 
         void Build()
         {
@@ -37,14 +38,24 @@ namespace BoLike.UI
             layer = UiKit.Layer(canvas, "Layer");
             float H = UiKit.H;
 
-            // Stick: base at bottom-left, knob drags within 60 px.
+            // Floating stick: touch anywhere on the left 45 % of the screen and the stick appears under the finger.
+            var zone = UiKit.Rect(layer, 0, 0, 10, 10, 0xffffff, 0f);
+            var zrt = zone.rectTransform; zrt.anchorMin = Vector2.zero; zrt.anchorMax = new Vector2(0.45f, 1f); zrt.offsetMin = zrt.offsetMax = Vector2.zero;
+            zone.raycastTarget = true;
             var stickBase = Circle(180, -170, 78, 0xffffff, 0.12f, UiKit.BottomLeft);
-            stickBase.raycastTarget = true;
+            stickBase.raycastTarget = false;
             var knob = Circle(0, 0, 38, 0xffffff, 0.35f, UiKit.Center, stickBase.transform);
-            knob.raycastTarget = true;
+            knob.raycastTarget = false;
             var stick = knob.gameObject.AddComponent<OnScreenStick>();
             stick.controlPath = "<Gamepad>/leftStick";
             stick.movementRange = 60;
+            var floating = zone.gameObject.AddComponent<FloatingStickZone>();
+            floating.stick = stick;
+            floating.stickBase = stickBase.rectTransform;
+            floating.layer = layer;
+            floating.restPosition = stickBase.rectTransform.anchoredPosition;
+            floating.restAnchor = stickBase.rectTransform.anchorMin;
+            floating.Init();
 
             // Action buttons (right).
             Button(-110, -110, 60, 0xff6a2b, "攻擊", "<Gamepad>/buttonWest", 22);
@@ -71,12 +82,13 @@ namespace BoLike.UI
                 var btn = b.gameObject.AddComponent<OnScreenButton>();
                 btn.controlPath = paths[i];
             }
-            Button(-40, -40, 22, 0xffffff, "II", "<Gamepad>/start", 12, UiKit.TopRight);
+            Button(-40, 40, 22, 0xffffff, "II", "<Gamepad>/start", 12, UiKit.TopRight);
         }
 
         Image Circle(float x, float y, float r, int color, float alpha, Vector2 anchor, Transform parent = null)
         {
-            var img = UiKit.Rect(parent ?? layer, x, -y, r * 2, r * 2, color, alpha, anchor, UiKit.Center);
+            // Same convention as UiKit.Rect: y grows downwards, so bottom-anchored controls pass a negative y.
+            var img = UiKit.Rect(parent ?? layer, x, y, r * 2, r * 2, color, alpha, anchor, UiKit.Center);
             img.sprite = Game.SpriteBank.Circle;
             img.raycastTarget = false;
             return img;
@@ -89,6 +101,64 @@ namespace BoLike.UI
             UiKit.Text(img.transform, 0, 0, label, size, 0xffffff, UiKit.Center, UiKit.Center, TextAnchor.MiddleCenter, true);
             var btn = img.gameObject.AddComponent<OnScreenButton>();
             btn.controlPath = path;
+        }
+
+        /// <summary>Moves the stick under the first touch in the zone and forwards the drag to the OnScreenStick.</summary>
+        public class FloatingStickZone : MonoBehaviour, UnityEngine.EventSystems.IPointerDownHandler, UnityEngine.EventSystems.IDragHandler, UnityEngine.EventSystems.IPointerUpHandler
+        {
+            public OnScreenStick stick;
+            public RectTransform stickBase, layer;
+            public Vector2 restPosition, restAnchor;
+            CanvasGroup group;
+            int pointerId = int.MinValue;
+
+            // Fields are assigned after AddComponent (so after Awake): Build() calls Init() once they are set.
+            // Unity's "fake null" means `?? AddComponent` would not work here; compare with == null instead.
+            public void Init()
+            {
+                var g = stickBase.GetComponent<CanvasGroup>();
+                if (g == null) g = stickBase.gameObject.AddComponent<CanvasGroup>();
+                g.alpha = 0.6f;
+                g.blocksRaycasts = false;
+                group = g;
+            }
+
+            CanvasGroup Group
+            {
+                get
+                {
+                    if (group == null) Init();
+                    return group;
+                }
+            }
+
+            public void OnPointerDown(UnityEngine.EventSystems.PointerEventData e)
+            {
+                if (pointerId != int.MinValue) return;
+                pointerId = e.pointerId;
+                if (RectTransformUtility.ScreenPointToLocalPointInRectangle(layer, e.position, e.pressEventCamera, out var local))
+                {
+                    stickBase.anchorMin = stickBase.anchorMax = new Vector2(0.5f, 0.5f);
+                    stickBase.anchoredPosition = local;
+                }
+                Group.alpha = 1f;
+                stick.OnPointerDown(e);
+            }
+
+            public void OnDrag(UnityEngine.EventSystems.PointerEventData e)
+            {
+                if (e.pointerId == pointerId) stick.OnDrag(e);
+            }
+
+            public void OnPointerUp(UnityEngine.EventSystems.PointerEventData e)
+            {
+                if (e.pointerId != pointerId) return;
+                pointerId = int.MinValue;
+                stick.OnPointerUp(e);
+                stickBase.anchorMin = stickBase.anchorMax = restAnchor;
+                stickBase.anchoredPosition = restPosition;
+                Group.alpha = 0.6f;
+            }
         }
 
         void Update()
