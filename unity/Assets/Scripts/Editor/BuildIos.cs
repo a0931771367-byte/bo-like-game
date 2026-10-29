@@ -30,6 +30,14 @@ namespace BoLike.Editor
 
         public static void Build(bool qa)
         {
+            // Twice now a build went out from code the Mac hadn't pulled yet. Refuse when the branch is behind its remote.
+            if (!Application.isBatchMode)
+            {
+                int behind = CommitsBehindRemote();
+                if (behind > 0 && !EditorUtility.DisplayDialog("程式碼還沒更新",
+                        $"GitHub 上還有 {behind} 個新提交沒拉到這台 Mac。\n請等同步完成、Unity 重新編譯後再 Build。\n\n仍要用目前的程式碼建置嗎？", "仍要建置", "取消"))
+                    return;
+            }
             ProjectSetup.Run();
             if (!File.Exists(ScenePath)) ProjectSetup.SetupScene();
 
@@ -57,6 +65,26 @@ namespace BoLike.Editor
             if (summary.result != BuildResult.Succeeded && Application.isBatchMode) EditorApplication.Exit(1);
             else if (!Application.isBatchMode && summary.result == BuildResult.Succeeded)
                 EditorUtility.RevealInFinder(Path.Combine(Path.GetFullPath(OutDir), "Unity-iPhone.xcodeproj"));
+        }
+
+        /// <summary>Commits on the upstream branch that are not local yet (0 when unknown or up to date).</summary>
+        static int CommitsBehindRemote()
+        {
+            try
+            {
+                Git("fetch --quiet origin", 20000);
+                return int.TryParse(Git("rev-list --count HEAD..@{u}", 5000), out var n) ? n : 0;
+            }
+            catch { return 0; }
+        }
+
+        static string Git(string args, int timeoutMs)
+        {
+            var psi = new ProcessStartInfo("git", args) { RedirectStandardOutput = true, RedirectStandardError = true, UseShellExecute = false, CreateNoWindow = true };
+            using var p = Process.Start(psi);
+            string s = p.StandardOutput.ReadToEnd().Trim();
+            if (!p.WaitForExit(timeoutMs)) { try { p.Kill(); } catch { } return ""; }
+            return p.ExitCode == 0 ? s : "";
         }
 
         static string GitShort()
