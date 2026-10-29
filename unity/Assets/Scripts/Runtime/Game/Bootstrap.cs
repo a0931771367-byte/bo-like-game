@@ -91,6 +91,8 @@ namespace BoLike.Game
             ShowUnlockShop(layer, save);
             if (Debug.isDebugBuild || Application.isEditor)
                 UiKit.Button(layer, 0, -12, 150, 32, "種子開局", 0x3a3a4a, () => ShowSeedPanel(layer, unlocked), 14, UiKit.BottomCenter, new Vector2(0.5f, 0));
+            if (Feedback.Available)
+                UiKit.Button(layer, -170, -12, 150, 32, "封測問卷", 0x2f6fb5, () => Feedback.Open(BuildInfo.Number, "title", save.lastSeedCode ?? "-", 0), 14, UiKit.BottomCenter, new Vector2(0.5f, 0));
             UiKit.Text(layer, -16, -12, $"v{Application.version} ({BuildInfo.Number}) {BuildInfo.Commit}", 12, 0x9aa0b4, UiKit.BottomRight, UiKit.BottomRight, TextAnchor.LowerRight, false, 1);
 #if BOLIKE_QA || DEVELOPMENT_BUILD || UNITY_EDITOR
             // Hidden QA entry for beta builds only (BuildIos sets BOLIKE_QA; the App Store menu item does not, since
