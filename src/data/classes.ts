@@ -6,7 +6,7 @@ const hit = (power: number, range: number, startup: number, active: number, reco
 export const CLASSES: ClassDef[] = [
   {
     id: 'swordsman', name: '劍士', role: '近戰・耐打・新手友善', color: 0x4a7bd1, accent: 0xd8dde8, weapon: 'sword', playable: true,
-    hpBase: 150, hpPerLv: 18, spBase: 30, spPerLv: 3, weaponAtk: 18,
+    hpBase: 140, hpPerLv: 16, spBase: 30, spPerLv: 3, weaponAtk: 18,
     baseStats: { str: 6, agi: 3, vit: 6, int: 1, dex: 3, luk: 1 },
     combo: [
       hit(1.0, 105, 90, 90, 160, 60),

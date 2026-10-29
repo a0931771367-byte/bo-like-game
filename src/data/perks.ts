@@ -1,25 +1,29 @@
 import type { PerkDef } from './types';
 
 /**
- * 強化池 v1（封測版 15 個）。清完一個戰鬥房後三選一。
+ * 強化池 v1（封測版 17 個）。清完一個戰鬥房後三選一。
  * 稀有度抽取權重見 RUN_RULES.rarityWeights；同一個強化在一局內最多拿 maxStacks 次。
  */
 export const PERKS: PerkDef[] = [
   // ---- 全職業：數值 ----
-  { id: 'toughBody', name: '強韌體魄', desc: '最大 HP +20%', rarity: 'common', classes: [], maxStacks: 3,
-    effects: [{ kind: 'mult', target: 'maxHp', value: 1.2 }] },
-  { id: 'sharpen', name: '磨刃', desc: '攻擊力與魔攻 +12%', rarity: 'common', classes: [], maxStacks: 3,
-    effects: [{ kind: 'mult', target: 'atk', value: 1.12 }, { kind: 'mult', target: 'matk', value: 1.12 }] },
-  { id: 'swiftStep', name: '疾風步', desc: '移動速度 +12%、攻擊速度 +8%', rarity: 'common', classes: [], maxStacks: 2,
-    effects: [{ kind: 'mult', target: 'move', value: 1.12 }, { kind: 'mult', target: 'aspd', value: 1.08 }] },
-  { id: 'coolMind', name: '冷靜', desc: '技能冷卻時間 -15%', rarity: 'common', classes: [], maxStacks: 2,
-    effects: [{ kind: 'mult', target: 'cooldown', value: 0.85 }] },
-  { id: 'deepBreath', name: '回氣', desc: 'SP 回復速度 +50%', rarity: 'common', classes: [], maxStacks: 2,
-    effects: [{ kind: 'mult', target: 'spRegen', value: 1.5 }] },
+  { id: 'toughBody', name: '強韌體魄', desc: '最大 HP +25%', rarity: 'common', classes: [], maxStacks: 3,
+    effects: [{ kind: 'mult', target: 'maxHp', value: 1.25 }] },
+  { id: 'sharpen', name: '磨刃', desc: '攻擊力與魔攻 +15%', rarity: 'common', classes: [], maxStacks: 3,
+    effects: [{ kind: 'mult', target: 'atk', value: 1.15 }, { kind: 'mult', target: 'matk', value: 1.15 }] },
+  { id: 'swiftStep', name: '疾風步', desc: '移動速度 +15%、攻擊速度 +10%', rarity: 'common', classes: [], maxStacks: 2,
+    effects: [{ kind: 'mult', target: 'move', value: 1.15 }, { kind: 'mult', target: 'aspd', value: 1.1 }] },
+  { id: 'coolMind', name: '冷靜', desc: '技能冷卻時間 -20%', rarity: 'common', classes: [], maxStacks: 2,
+    effects: [{ kind: 'mult', target: 'cooldown', value: 0.8 }] },
+  { id: 'deepBreath', name: '回氣', desc: 'SP 回復速度 +60%', rarity: 'common', classes: [], maxStacks: 2,
+    effects: [{ kind: 'mult', target: 'spRegen', value: 1.6 }] },
   { id: 'medicBag', name: '藥袋', desc: '立刻獲得 2 瓶紅藥水，藥水回復量 +50%', rarity: 'common', classes: [], maxStacks: 1,
     effects: [{ kind: 'potion', red: 2 }, { kind: 'mult', target: 'potionHeal', value: 1.5 }] },
-  { id: 'campfire', name: '營火', desc: '每清完一個房間額外回復 15% HP', rarity: 'common', classes: [], maxStacks: 1,
-    effects: [{ kind: 'roomClearHeal', fraction: 0.15 }] },
+  { id: 'campfire', name: '營火', desc: '每清完一個房間額外回復 20% HP', rarity: 'common', classes: [], maxStacks: 1,
+    effects: [{ kind: 'roomClearHeal', fraction: 0.2 }] },
+  { id: 'frugal', name: '省力', desc: '技能 SP 消耗 -20%', rarity: 'common', classes: [], maxStacks: 2,
+    effects: [{ kind: 'mult', target: 'spCost', value: 0.8 }] },
+  { id: 'heavyHand', name: '重手', desc: '擊退距離 +40%', rarity: 'common', classes: [], maxStacks: 2,
+    effects: [{ kind: 'mult', target: 'knock', value: 1.4 }] },
   // ---- 全職業：機制 ----
   { id: 'bloodDrink', name: '飲血', desc: '每擊殺一名敵人回復 3% HP', rarity: 'rare', classes: [], maxStacks: 2,
     effects: [{ kind: 'onKillHeal', fraction: 0.03 }] },
@@ -41,7 +45,7 @@ export const PERKS: PerkDef[] = [
 ];
 
 /**
- * 強化池 v2（正式版 16–30）。封測不入池，等 Unity 支援新的 effect kind 後併入 PERKS。
+ * 強化池 v2（正式版 18–30）。封測不入池，等 Unity 支援新的 effect kind 後併入 PERKS。
  * 設計目標：普通強化要「立刻有感」（防禦、閃避、開場爆發），稀有以上做機制而不是堆數字。
  */
 export const PERKS_NEXT: PerkDef[] = [
@@ -50,10 +54,6 @@ export const PERKS_NEXT: PerkDef[] = [
     effects: [{ kind: 'guardMult', value: 0.1 }] },
   { id: 'afterimage', name: '殘影', desc: '閃避無敵時間 +0.12 秒、距離 +20%', rarity: 'common', classes: [], maxStacks: 2,
     effects: [{ kind: 'dodge', invulnAdd: 120, distanceMult: 1.2 }] },
-  { id: 'frugal', name: '省力', desc: '技能 SP 消耗 -20%', rarity: 'common', classes: [], maxStacks: 2,
-    effects: [{ kind: 'mult', target: 'spCost', value: 0.8 }] },
-  { id: 'heavyHand', name: '重手', desc: '擊退距離 +40%', rarity: 'common', classes: [], maxStacks: 2,
-    effects: [{ kind: 'mult', target: 'knock', value: 1.4 }] },
   { id: 'openingRush', name: '開場衝鋒', desc: '每間房開始 5 秒內攻擊力 +30%', rarity: 'common', classes: [], maxStacks: 2,
     effects: [{ kind: 'roomStartBuff', duration: 5000, mult: 1.3 }] },
   // ---- 稀有：機制 ----
