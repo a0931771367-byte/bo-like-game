@@ -14,3 +14,4 @@
 - 原圖 `raw/`（Higgsfield 生成），工具 `art/characters-v2/tools/runframes.py`（劍士）、`runauto.py`（其餘）。
 
 交付規則：所有角色格一律朝右，交付前逐職業比對 idle／walk／attack 朝向。
+交付流程（QA 規則）：新增或修改角色動畫格後，先跑 `python3 tools/check_sprite_facing.py --sheet` 產生對照表，逐格確認朝右再 `--approve <格名>`，否則 CI 會擋。只交 Unity 用 PNG，網頁版已停止維護，不再出 webp。
