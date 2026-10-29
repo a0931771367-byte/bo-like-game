@@ -59,11 +59,9 @@ namespace BoLike.UI
             var rt = go.GetComponent<RectTransform>();
             rt.SetParent(canvas.transform, false);
             // Keep controls and HUD inside the iPhone safe area (notch / home indicator); backgrounds use the canvas root instead.
-            var safe = Screen.safeArea;
-            float sw = Mathf.Max(1, Screen.width), sh = Mathf.Max(1, Screen.height);
-            rt.anchorMin = new Vector2(safe.xMin / sw, safe.yMin / sh);
-            rt.anchorMax = new Vector2(safe.xMax / sw, safe.yMax / sh);
-            rt.offsetMin = Vector2.zero; rt.offsetMax = Vector2.zero;
+            // The fitter re-applies the anchors whenever the safe area or screen size changes: on iOS the first frames
+            // after launch (or a rotation) can report stale portrait values, which squeezed every button into the middle.
+            go.AddComponent<SafeAreaFitter>().Apply();
             return rt;
         }
 
@@ -151,6 +149,32 @@ namespace BoLike.UI
             rt.anchorMin = Vector2.zero; rt.anchorMax = Vector2.one; rt.offsetMin = Vector2.zero; rt.offsetMax = Vector2.zero;
             img.raycastTarget = true;
             return img;
+        }
+    }
+
+    /// <summary>Anchors a full-canvas RectTransform to Screen.safeArea and keeps it in sync when the screen changes.</summary>
+    public class SafeAreaFitter : MonoBehaviour
+    {
+        Rect lastSafe; int lastW, lastH;
+
+        void OnEnable() => Apply();
+        void Update()
+        {
+            if (Screen.safeArea != lastSafe || Screen.width != lastW || Screen.height != lastH) Apply();
+        }
+
+        public void Apply()
+        {
+            var rt = (RectTransform)transform;
+            var safe = Screen.safeArea;
+            float sw = Mathf.Max(1, Screen.width), sh = Mathf.Max(1, Screen.height);
+            // A safe area that doesn't fit the current screen (stale after a rotation) is worse than none: fall back to full screen.
+            if (safe.width <= 0 || safe.height <= 0 || safe.xMax > sw + 0.5f || safe.yMax > sh + 0.5f || safe.width < sw * 0.5f || safe.height < sh * 0.5f)
+                safe = new Rect(0, 0, sw, sh);
+            lastSafe = Screen.safeArea; lastW = Screen.width; lastH = Screen.height;
+            rt.anchorMin = new Vector2(safe.xMin / sw, safe.yMin / sh);
+            rt.anchorMax = new Vector2(safe.xMax / sw, safe.yMax / sh);
+            rt.offsetMin = Vector2.zero; rt.offsetMax = Vector2.zero;
         }
     }
 }

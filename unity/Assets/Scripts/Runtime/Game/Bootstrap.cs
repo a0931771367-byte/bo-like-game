@@ -91,6 +91,19 @@ namespace BoLike.Game
             if (Debug.isDebugBuild || Application.isEditor)
                 UiKit.Button(layer, 0, -12, 150, 32, "種子開局", 0x3a3a4a, () => ShowSeedPanel(layer, unlocked), 14, UiKit.BottomCenter, new Vector2(0.5f, 0));
             UiKit.Text(layer, -16, -12, $"v{Application.version} ({BuildInfo.Number}) {BuildInfo.Commit}", 12, 0x9aa0b4, UiKit.BottomRight, UiKit.BottomRight, TextAnchor.LowerRight, false, 1);
+#if BOLIKE_QA || DEVELOPMENT_BUILD || UNITY_EDITOR
+            // Hidden QA entry for beta builds only (BuildIos sets BOLIKE_QA; the App Store menu item does not, since
+            // App Review guideline 2.3.1 forbids undocumented features): tap the version label five times within
+            // three seconds to open the seed panel with every class, so testers can replay a seed or try the mage/archer.
+            var secret = UiKit.Button(layer, 0, 0, 260, 40, "", 0x000000, () =>
+            {
+                if (Time.unscaledTime - secretTapAt > 3f) secretTaps = 0;
+                secretTapAt = Time.unscaledTime;
+                if (++secretTaps >= 5) { secretTaps = 0; ShowSeedPanel(layer, new System.Collections.Generic.List<string>(System.Linq.Enumerable.Select(GameDb.Classes, c => c.id))); }
+            }, 12, UiKit.BottomRight, UiKit.BottomRight);
+            secret.image.color = new Color(0, 0, 0, 0);
+            secret.transition = UnityEngine.UI.Selectable.Transition.None;
+#endif
             UiKit.Text(layer, 16, -12, TouchControls.IsTouchDevice ? "點選職業開始" : "點選職業開始 · 鍵盤 WASD 移動 J 攻擊 K 跳 L 防禦 UIOP 技能", 12, 0x9aa0b4, UiKit.BottomLeft, UiKit.BottomLeft, TextAnchor.LowerLeft, false, 1);
         }
 
@@ -122,11 +135,14 @@ namespace BoLike.Game
         }
 
         /// <summary>Debug/QA: start a run from a seed code so a reported run can be replayed (editor and development builds).</summary>
+        int secretTaps;
+        float secretTapAt;
+
         void ShowSeedPanel(RectTransform layer, System.Collections.Generic.List<string> classes)
         {
             var dim = UiKit.Dim(layer, 0.75f);
             var panel = dim.transform;
-            UiKit.Text(panel, 0, 200, "輸入 8 碼種子碼", 24, 0xfff4de, UiKit.TopCenter, UiKit.TopCenter, TextAnchor.UpperCenter, true);
+            UiKit.Text(panel, 0, 200, "輸入 8 碼種子碼（留空＝隨機）", 24, 0xfff4de, UiKit.TopCenter, UiKit.TopCenter, TextAnchor.UpperCenter, true);
             var box = UiKit.Rect(panel, 0, 250, 320, 56, 0xffffff, 0.95f, UiKit.TopCenter, UiKit.TopCenter);
             box.raycastTarget = true;
             var text = UiKit.Text(box.transform, 12, 0, "", 28, 0x111111, UiKit.TopLeft, UiKit.TopLeft, TextAnchor.MiddleLeft, true, 0);
@@ -143,9 +159,8 @@ namespace BoLike.Game
                 UiKit.Button(panel, x, 330, 160, 50, GameDb.Class(id).name, 0x2f6fb5, () =>
                 {
                     var code = field.text.Trim();
-                    if (code.Length == 0) return;
                     Destroy(title);
-                    GameController.Launch(cid, Rng.CodeToSeed(code));
+                    GameController.Launch(cid, code.Length == 0 ? 0 : Rng.CodeToSeed(code));
                 }, 20, UiKit.TopCenter);
                 x += 170;
             }
