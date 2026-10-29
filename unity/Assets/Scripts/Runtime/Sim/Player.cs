@@ -745,7 +745,14 @@ namespace BoLike.Sim
                 return true;
             }
             if (Endure) return true;
-            if (h.launch > 0 || Airborne)
+            if (state == FighterState.Knock)
+            {
+                // Already flying: take the damage but don't re-launch, so repeated hits can't juggle the player
+                // across the room. Keep the current momentum and just make sure they still come down.
+                vz = Math.Max(vz, 120);
+                z = Math.Max(z, 1);
+            }
+            else if (h.launch > 0 || Airborne)
             {
                 vz = Math.Max(h.launch, 380);
                 z = Math.Max(z, 1);
