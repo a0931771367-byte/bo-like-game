@@ -58,22 +58,24 @@ namespace BoLike.UI
             floating.Init();
 
             // Action buttons (right).
-            Button(-110, -110, 60, 0xff6a2b, "攻擊", "<Gamepad>/buttonWest", 22);
-            Button(-230, -70, 44, 0x4da3ff, "跳", "<Gamepad>/buttonSouth", 20);
-            Button(-215, -195, 44, 0x9be15d, "防", "<Gamepad>/rightTrigger", 20);
-            Button(-60, -300, 30, 0xff5d5d, "紅", "<Gamepad>/leftTrigger", 14);
-            Button(-130, -300, 30, 0x5d8bff, "藍", "<Gamepad>/select", 14);
+            // Layout checked so no two circles overlap (centre distance > r1 + r2): attack under the thumb, jump
+            // below-left, guard above-left, the skill row above all of them, potions moved up under the pause button.
+            Button(-130, -130, 62, 0xff6a2b, "攻擊", "<Gamepad>/buttonWest", 22);
+            Button(-275, -80, 44, 0x4da3ff, "跳", "<Gamepad>/buttonSouth", 20);
+            Button(-255, -200, 40, 0x9be15d, "防", "<Gamepad>/rightTrigger", 20);
+            Button(-50, 110, 30, 0xff5d5d, "紅", "<Gamepad>/leftTrigger", 14, UiKit.TopRight);
+            Button(-120, 110, 30, 0x5d8bff, "藍", "<Gamepad>/select", 14, UiKit.TopRight);
 
             // Skill row above the cluster, with icons and cooldown covers.
             string[] paths = { "<Gamepad>/buttonNorth", "<Gamepad>/buttonEast", "<Gamepad>/leftShoulder", "<Gamepad>/rightShoulder" };
             var cls = world.Player.cls;
             for (int i = 0; i < cls.skills.Count && i < 4; i++)
             {
-                float x = -330 + i * 72, y = -215;
-                var b = Circle(x, y, 32, 0x000000, 0.5f, UiKit.BottomRight);
+                float x = -340 + i * 80, y = -310;
+                var b = Circle(x, y, 34, 0x000000, 0.5f, UiKit.BottomRight);
                 b.raycastTarget = true;
-                var icon = UiKit.Sprite(b.transform, Game.SpriteBank.Icon(cls.id, i), 0, 0, 56, 56, UiKit.Center, UiKit.Center);
-                var cover = Circle(0, 0, 32, 0x000000, 0.65f, UiKit.Center, b.transform);
+                var icon = UiKit.Sprite(b.transform, Game.SpriteBank.Icon(cls.id, i), 0, 0, 60, 60, UiKit.Center, UiKit.Center);
+                var cover = Circle(0, 0, 34, 0x000000, 0.65f, UiKit.Center, b.transform);
                 cover.type = Image.Type.Filled;
                 cover.fillMethod = Image.FillMethod.Radial360;
                 cover.fillOrigin = (int)Image.Origin360.Top;
@@ -96,7 +98,7 @@ namespace BoLike.UI
 
         void Button(float x, float y, float r, int color, string label, string path, int size, Vector2? anchor = null)
         {
-            var img = Circle(x, y, r, color, 0.55f, anchor ?? UiKit.BottomRight);
+            var img = Circle(x, y, r, color, 0.45f, anchor ?? UiKit.BottomRight);
             img.raycastTarget = true;
             UiKit.Text(img.transform, 0, 0, label, size, 0xffffff, UiKit.Center, UiKit.Center, TextAnchor.MiddleCenter, true);
             var btn = img.gameObject.AddComponent<OnScreenButton>();
