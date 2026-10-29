@@ -27,7 +27,8 @@ namespace BoLike.UI
             return t;
         }
 
-        public static bool IsTouchDevice => Application.isMobilePlatform || UnityEngine.InputSystem.Touchscreen.current != null;
+        /// <summary>Also true in the editor so the on-screen controls can be checked with the mouse before a device build.</summary>
+        public static bool IsTouchDevice => Application.isMobilePlatform || UnityEngine.InputSystem.Touchscreen.current != null || Application.isEditor;
 
         void Build()
         {
@@ -110,11 +111,19 @@ namespace BoLike.UI
             CanvasGroup group;
             int pointerId = int.MinValue;
 
-            void Awake()
+            // Fields are assigned after AddComponent (so after Awake); set the group up lazily.
+            CanvasGroup Group
             {
-                group = stickBase.gameObject.AddComponent<CanvasGroup>();
-                group.alpha = 0.6f;
-                group.blocksRaycasts = false;
+                get
+                {
+                    if (group == null)
+                    {
+                        group = stickBase.GetComponent<CanvasGroup>() ?? stickBase.gameObject.AddComponent<CanvasGroup>();
+                        group.alpha = 0.6f;
+                        group.blocksRaycasts = false;
+                    }
+                    return group;
+                }
             }
 
             public void OnPointerDown(UnityEngine.EventSystems.PointerEventData e)
@@ -126,7 +135,7 @@ namespace BoLike.UI
                     stickBase.anchorMin = stickBase.anchorMax = new Vector2(0.5f, 0.5f);
                     stickBase.anchoredPosition = local;
                 }
-                group.alpha = 1f;
+                Group.alpha = 1f;
                 stick.OnPointerDown(e);
             }
 
@@ -142,7 +151,7 @@ namespace BoLike.UI
                 stick.OnPointerUp(e);
                 stickBase.anchorMin = stickBase.anchorMax = restAnchor;
                 stickBase.anchoredPosition = restPosition;
-                group.alpha = 0.6f;
+                Group.alpha = 0.6f;
             }
         }
 
