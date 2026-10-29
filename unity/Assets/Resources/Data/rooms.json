@@ -7,7 +7,7 @@
    "kind": "combat",
    "width": 1800,
    "bg": "bg_chapter1",
-   "bgGroundY": 528,
+   "bgGroundY": 420,
    "waveSets": [
     [
      {
@@ -162,7 +162,7 @@
    "kind": "combat",
    "width": 1700,
    "bg": "bg_chapter1",
-   "bgGroundY": 528,
+   "bgGroundY": 420,
    "tint": 14215360,
    "waveSets": [
     [
@@ -318,7 +318,7 @@
    "kind": "combat",
    "width": 2000,
    "bg": "bg_chapter1",
-   "bgGroundY": 528,
+   "bgGroundY": 420,
    "tint": 12109032,
    "waveSets": [
     [
@@ -459,7 +459,7 @@
    "kind": "combat",
    "width": 1800,
    "bg": "bg_chapter1",
-   "bgGroundY": 528,
+   "bgGroundY": 420,
    "tint": 16757896,
    "waveSets": [
     [
@@ -625,7 +625,7 @@
    "kind": "boss",
    "width": 1600,
    "bg": "bg_chapter1",
-   "bgGroundY": 528,
+   "bgGroundY": 420,
    "tint": 15780056,
    "waveSets": [
     [
@@ -674,7 +674,7 @@
    "kind": "combat",
    "width": 1800,
    "bg": "bg_chapter2",
-   "bgGroundY": 546,
+   "bgGroundY": 420,
    "waveSets": [
     [
      {
@@ -829,7 +829,7 @@
    "kind": "combat",
    "width": 1700,
    "bg": "bg_chapter2",
-   "bgGroundY": 546,
+   "bgGroundY": 420,
    "tint": 12576472,
    "waveSets": [
     [
@@ -990,7 +990,7 @@
    "kind": "combat",
    "width": 2000,
    "bg": "bg_chapter2",
-   "bgGroundY": 546,
+   "bgGroundY": 420,
    "tint": 14205160,
    "waveSets": [
     [
@@ -1156,7 +1156,7 @@
    "kind": "combat",
    "width": 2000,
    "bg": "bg_chapter2",
-   "bgGroundY": 546,
+   "bgGroundY": 420,
    "tint": 10135760,
    "waveSets": [
     [
@@ -1317,7 +1317,7 @@
    "kind": "boss",
    "width": 1600,
    "bg": "bg_chapter2",
-   "bgGroundY": 546,
+   "bgGroundY": 420,
    "tint": 11058376,
    "waveSets": [
     [
