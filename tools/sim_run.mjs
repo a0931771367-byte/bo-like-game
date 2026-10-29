@@ -24,7 +24,7 @@ await build({
       export { PERKS } from './src/data/perks';
       export { RUN_RULES } from './src/data/meta';
       export { lv } from './src/data/types';
-      export { derive } from './src/systems/Stats';
+      export { derive, expToNext } from './src/systems/Stats';
       export { newProgress } from './src/systems/Save';`,
     resolveDir: ROOT, loader: 'ts',
   },
@@ -38,6 +38,17 @@ const RUNS = Number(process.argv[2] ?? 2000);
 const SKILL = Number(process.argv[3] ?? 0.55);
 const R = D.RUN_RULES;
 const DT = 0.1;
+// Optional overrides for parameter sweeps: --hp=1.3,1.7,2.1,2.6 --atk=1,1.15,1.3,1.5 --boss=1.8,1.15 --greedy=0.6
+const ARG = Object.fromEntries(process.argv.slice(2).filter((a) => a.startsWith('--')).map((a) => a.slice(2).split('=')));
+if (ARG.hp) R.roomScaling.hp = ARG.hp.split(',').map(Number);
+if (ARG.atk) R.roomScaling.atk = ARG.atk.split(',').map(Number);
+if (ARG.boss) { const [h, a] = ARG.boss.split(',').map(Number); R.roomScaling.boss = { hp: h, atk: a }; }
+/** Share of perk picks where the player takes the rarest card; the rest pick at random (real players are not pure min-maxers). */
+const GREEDY = Number(ARG.greedy ?? 0.6);
+/** Enemy damage formula. 'flat' = current build (atk − def×0.6). 'floor' = proposed: at least `floor`×atk always goes through. */
+const DMG_MODEL = ARG.dmg ?? (R.enemyDamage ? 'floor' : 'flat');
+const DMG_FLOOR = Number(ARG.floor ?? R.enemyDamage?.minFraction ?? 0.35);
+const DEF_COEF = Number(ARG.defk ?? R.enemyDamage?.defCoef ?? 0.6);
 
 // ---- seeded rng -----------------------------------------------------------
 function rng(seed) {
@@ -48,14 +59,45 @@ const pick = (rand, arr) => arr[Math.floor(rand() * arr.length)];
 const shuffle = (rand, arr) => { const a = [...arr]; for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(rand() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
 
 // ---- player model -----------------------------------------------------------
+const LV = R.levelUp ?? { expScalingBySlot: [1, 1, 1, 1], bossExpMult: 1, heal: 1, statsPerLevel: 3, skillUnlockLevels: [1, 1, 1, 1] };
+function topStats(cls) {
+  return Object.entries(cls.baseStats).sort((a, b) => b[1] - a[1]).slice(0, 2).map(([k]) => k);
+}
 function makePlayer(cls) {
-  const d = D.derive(cls, D.newProgress(cls));
+  const prog = D.newProgress(cls);
+  // Starting stat points are spent like a level (two best stats +1, vit +1).
+  const top = topStats(cls);
+  prog.stats[top[0]]++; prog.stats[top[1]]++; prog.stats.vit++;
+  // Only the first skill is learned at the start; the rest unlock on run levels.
+  for (const sk of cls.skills) prog.skillLv[sk.id] = 0;
+  prog.skillLv[cls.skills[0].id] = 1;
+  const d = D.derive(cls, prog);
   return {
-    cls, d, hp: d.maxHp, sp: d.maxSp,
+    cls, d, prog, exp: 0, level: 1, top, hp: d.maxHp, sp: d.maxSp,
     mult: { maxHp: 1, atk: 1, matk: 1, move: 1, aspd: 1, cooldown: 1, spCost: 1, spRegen: 1, knock: 1, potionHeal: 1 },
     critAdd: 0, critDmgAdd: 0, skillLvAdd: 0, onKillHeal: 0, roomHeal: R.roomClearHeal, revive: null, revived: false,
     potions: { ...R.startPotions }, taken: {}, dpsMult: 1,
   };
+}
+
+function maxHpOf(p) { return p.d.maxHp * p.mult.maxHp; }
+function gainExp(p, amount) {
+  p.exp += amount;
+  while (p.level < 50 && p.exp >= D.expToNext(p.level)) {
+    p.exp -= D.expToNext(p.level);
+    p.level++;
+    p.prog.level = p.level;
+    p.prog.stats[p.top[0]]++; p.prog.stats[p.top[1]]++; p.prog.stats.vit++;
+    // Skill unlock order, then raise the lowest-level skill.
+    const unlockIdx = LV.skillUnlockLevels.findIndex((L, i) => L === p.level && (p.prog.skillLv[p.cls.skills[i].id] ?? 0) === 0);
+    if (unlockIdx >= 0) p.prog.skillLv[p.cls.skills[unlockIdx].id] = 1;
+    else {
+      const learned = p.cls.skills.filter((sk) => (p.prog.skillLv[sk.id] ?? 0) > 0 && p.prog.skillLv[sk.id] < sk.maxLv);
+      if (learned.length) { const low = learned.sort((a, b) => p.prog.skillLv[a.id] - p.prog.skillLv[b.id])[0]; p.prog.skillLv[low.id]++; }
+    }
+    p.d = D.derive(p.cls, p.prog);
+    p.hp = Math.min(maxHpOf(p), p.hp + maxHpOf(p) * LV.heal);
+  }
 }
 
 function applyPerk(p, perk) {
@@ -80,10 +122,14 @@ function applyPerk(p, perk) {
 function offerPerks(rand, p) {
   const eligible = D.PERKS.filter((k) => (k.classes.length === 0 || k.classes.includes(p.cls.id)) && (p.taken[k.id] ?? 0) < k.maxStacks);
   const out = [];
+  const offer = R.perkOffer ?? { minCommon: 0, maxEpic: 3 };
   for (let i = 0; i < R.perkChoices && eligible.length; i++) {
     const w = R.rarityWeights;
     let roll = rand() * (w.common + w.rare + w.epic);
     let rarity = roll < w.common ? 'common' : roll < w.common + w.rare ? 'rare' : 'epic';
+    const commons = out.filter((k) => k.rarity === 'common').length, epics = out.filter((k) => k.rarity === 'epic').length;
+    if (R.perkChoices - i <= offer.minCommon - commons) rarity = 'common';
+    if (rarity === 'epic' && epics >= offer.maxEpic) rarity = 'rare';
     let pool = eligible.filter((k) => k.rarity === rarity && !out.includes(k));
     if (!pool.length) pool = eligible.filter((k) => !out.includes(k));
     if (!pool.length) break;
@@ -105,8 +151,9 @@ function playerDps(p, enemyDef, enemyMdef) {
   let skillDps = 0, spPerSec = 0;
   const spIncome = d.spRegen * p.mult.spRegen + d.maxSp / 60; // pool amortised over a minute
   for (const s of cls.skills) {
-    const L = Math.min(s.maxLv, R.startSkillLv + p.skillLvAdd);
-    if (s.power[0] <= 0) continue;
+    const learned = p.prog.skillLv[s.id] ?? 0;
+    if (learned <= 0 || s.power[0] <= 0) continue;
+    const L = Math.min(s.maxLv, learned + p.skillLvAdd);
     const stat = s.magic ? matk : atk, def = s.magic ? enemyMdef : enemyDef;
     const count = s.count ? D.lv(s.count, L) : 1;
     const targets = s.type === 'aoe' || s.type === 'strikes' || s.type === 'wall' ? 1.6 : 1;
@@ -121,17 +168,20 @@ function playerDps(p, enemyDef, enemyMdef) {
 
 // ---- run model ------------------------------------------------------------
 function simRoom(rand, p, room, slot, log) {
-  const scale = room.kind === 'boss' ? R.roomScaling.boss : { hp: R.roomScaling.hp[slot], atk: R.roomScaling.atk[slot] };
+  const last = R.roomScaling.hp.length - 1;
+  const scaleFor = (def) => room.kind === 'boss'
+    ? (def.boss ? R.roomScaling.boss : { hp: R.roomScaling.hp[last], atk: R.roomScaling.atk[last] })
+    : { hp: R.roomScaling.hp[slot], atk: R.roomScaling.atk[slot] };
   const set = pick(rand, room.waveSets);
   let t = 0, wave = 0, waveStart = 0, alive = [], pending = [];
   const spawnWave = (i) => { waveStart = t; pending = set[i].spawns.map((s) => ({ ...D.ENEMIES[s.enemy], at: t + s.delay / 1000 })); };
   spawnWave(0);
   const bossRoom = room.kind === 'boss';
-  const def = p.d.def * (p.mult.maxHp > 1 ? 1 : 1);
   while (t < 180) {
     t += DT;
     // spawns
     for (const s of pending.filter((s) => s.at <= t)) {
+      const scale = scaleFor(s);
       alive.push({ def: s, hp: s.hp * scale.hp, atk: s.atk * scale.atk, engageAt: t + 1.5, nextAtk: t + 1.5 + s.windup / 1000, boss: !!s.boss });
     }
     pending = pending.filter((s) => s.at > t);
@@ -148,25 +198,28 @@ function simRoom(rand, p, room, slot, log) {
       target.hp -= dps * DT;
       if (target.hp <= 0) {
         alive.shift();
-        p.hp = Math.min(p.d.maxHp * p.mult.maxHp, p.hp + p.onKillHeal * p.d.maxHp * p.mult.maxHp);
+        p.hp = Math.min(maxHpOf(p), p.hp + p.onKillHeal * maxHpOf(p));
+        const expMult = bossRoom ? (target.boss ? LV.bossExpMult : LV.expScalingBySlot[LV.expScalingBySlot.length - 1]) : LV.expScalingBySlot[slot];
+        gainExp(p, target.def.exp * expMult);
       }
     }
     // enemies attack
     for (const e of alive) {
       if (t < e.nextAtk) continue;
       e.nextAtk = t + (e.def.attackCd + e.def.windup) / 1000;
-      const dodged = rand() < SKILL || rand() * 100 < p.d.flee;
+      const dodged = rand() < SKILL + (p.cls.ranged || p.cls.id === 'mage' ? 0.15 : 0) || rand() * 100 < p.d.flee; // ranged classes kite
       if (dodged) continue;
-      const dmg = Math.max(1, Math.round(e.atk * (e.boss ? 1.2 : 1) - def * 0.6));
+      const raw = e.atk * (e.boss ? 1.2 : 1);
+      const dmg = Math.max(1, Math.round(DMG_MODEL === 'floor' ? Math.max(raw * DMG_FLOOR, raw - p.d.def * DEF_COEF) : raw - p.d.def * 0.6));
       p.hp -= dmg;
       if (p.hp <= 0) {
-        if (p.revive && !p.revived) { p.revived = true; p.hp = p.d.maxHp * p.mult.maxHp * p.revive.fraction; continue; }
+        if (p.revive && !p.revived) { p.revived = true; p.hp = maxHpOf(p) * p.revive.fraction; continue; }
         log.deathSlot = bossRoom ? 4 : slot; return { cleared: false, t };
       }
     }
     // potion when low
-    if (p.hp < p.d.maxHp * p.mult.maxHp * 0.4 && p.potions.red > 0) {
-      p.potions.red--; p.hp = Math.min(p.d.maxHp * p.mult.maxHp, p.hp + p.d.maxHp * p.mult.maxHp * 0.35 * p.mult.potionHeal);
+    if (p.hp < maxHpOf(p) * 0.4 && p.potions.red > 0) {
+      p.potions.red--; p.hp = Math.min(maxHpOf(p), p.hp + maxHpOf(p) * 0.35 * p.mult.potionHeal);
     }
   }
   return { cleared: true, t };
@@ -176,20 +229,24 @@ function simRun(seed, cls) {
   const rand = rng(seed);
   const p = makePlayer(cls);
   const rooms = shuffle(rand, D.ROOM_POOL).slice(0, R.combatRooms).map((id) => D.ROOMS[id]);
-  const log = { roomTimes: [], perks: [], deathSlot: -1, cleared: false, total: 0 };
+  const log = { roomTimes: [], perks: [], offered: [], deathSlot: -1, cleared: false, total: 0 };
   for (let slot = 0; slot < rooms.length; slot++) {
     const r = simRoom(rand, p, rooms[slot], slot, log);
     log.roomTimes.push(r.t); log.total += r.t + R.roomTransition / 1000;
-    if (!r.cleared) return log;
-    p.hp = Math.min(p.d.maxHp * p.mult.maxHp, p.hp + p.d.maxHp * p.mult.maxHp * p.roomHeal);
+    if (!r.cleared) { log.level = p.level; return log; }
+    p.hp = Math.min(maxHpOf(p), p.hp + maxHpOf(p) * p.roomHeal);
     const offer = offerPerks(rand, p);
     // Greedy-ish player: prefer rare/epic, else random.
-    const choice = offer.find((k) => k.rarity === 'epic') ?? offer.find((k) => k.rarity === 'rare') ?? offer[0];
+    const choice = rand() < GREEDY
+      ? (offer.find((k) => k.rarity === 'epic') ?? offer.find((k) => k.rarity === 'rare') ?? offer[0])
+      : pick(rand, offer);
+    for (const k of offer) log.offered.push(k.id);
     if (choice) { applyPerk(p, choice); log.perks.push(choice.id); }
   }
   const b = simRoom(rand, p, D.ROOMS[D.BOSS_ROOM], 4, log);
   log.roomTimes.push(b.t); log.total += b.t;
   log.cleared = b.cleared;
+  log.level = p.level;
   return log;
 }
 
@@ -208,5 +265,13 @@ for (const cls of D.CLASSES.filter((c) => ['swordsman', 'mage', 'archer'].includ
   console.log(`\n${cls.name}(${cls.id})  通關率 ${fmt(clears.length / RUNS * 100)}%  通關平均用時 ${fmt((clears.reduce((a, l) => a + l.total, 0) / Math.max(1, clears.length)) / 60, 2)} 分`);
   console.log(`  各房平均用時(秒) 房1 ${fmt(roomAvg[0])} 房2 ${fmt(roomAvg[1])} 房3 ${fmt(roomAvg[2])} 房4 ${fmt(roomAvg[3])} Boss ${fmt(roomAvg[4])}`);
   console.log(`  死亡分布 房1 ${deaths[0]} 房2 ${deaths[1]} 房3 ${deaths[2]} 房4 ${deaths[3]} Boss ${deaths[4]}`);
-  console.log(`  最常被選的強化 ${top}`);
+  const lvAvg = logs.reduce((a, l) => a + (l.level ?? 0), 0) / logs.length;
+  const total = logs.reduce((a, l) => a + l.perks.length, 0);
+  const offered = {};
+  for (const l of logs) for (const id of l.offered) offered[id] = (offered[id] ?? 0) + 1;
+  // Pick rate = chosen ÷ offered (QA gate B6: every perk between 5 % and 60 %).
+  const rates = Object.entries(offered).map(([k, n]) => [k, (perkCount[k] ?? 0) / n]);
+  const low = rates.filter(([, r]) => r < 0.05).map(([k, r]) => `${k} ${(r * 100).toFixed(0)}%`);
+  const high = rates.filter(([, r]) => r > 0.6).map(([k, r]) => `${k} ${(r * 100).toFixed(0)}%`);
+  console.log(`  最常被選的強化 ${top}；局均等級 ${fmt(lvAvg)}；選取率過低 [${low}] 過高 [${high}]`);
 }
