@@ -71,12 +71,13 @@ namespace BoLike.UI
                 var btn = b.gameObject.AddComponent<OnScreenButton>();
                 btn.controlPath = paths[i];
             }
-            Button(-40, -40, 22, 0xffffff, "II", "<Gamepad>/start", 12, UiKit.TopRight);
+            Button(-40, 40, 22, 0xffffff, "II", "<Gamepad>/start", 12, UiKit.TopRight);
         }
 
         Image Circle(float x, float y, float r, int color, float alpha, Vector2 anchor, Transform parent = null)
         {
-            var img = UiKit.Rect(parent ?? layer, x, -y, r * 2, r * 2, color, alpha, anchor, UiKit.Center);
+            // Same convention as UiKit.Rect: y grows downwards, so bottom-anchored controls pass a negative y.
+            var img = UiKit.Rect(parent ?? layer, x, y, r * 2, r * 2, color, alpha, anchor, UiKit.Center);
             img.sprite = Game.SpriteBank.Circle;
             img.raycastTarget = false;
             return img;
