@@ -34,6 +34,7 @@ namespace BoLike.Editor
             if (!Application.isBatchMode)
             {
                 int behind = CommitsBehindRemote();
+                if (behind == int.MaxValue) return;
                 if (behind > 0 && !EditorUtility.DisplayDialog("程式碼還沒更新",
                         $"GitHub 上還有 {behind} 個新提交沒拉到這台 Mac。\n請等同步完成、Unity 重新編譯後再 Build。\n\n仍要用目前的程式碼建置嗎？", "仍要建置", "取消"))
                     return;
@@ -72,30 +73,38 @@ namespace BoLike.Editor
         {
             try
             {
-                Git("fetch --quiet origin", 20000);
-                return int.TryParse(Git("rev-list --count HEAD..@{u}", 5000), out var n) ? n : 0;
+                var (fetchOk, fetchErr) = Git("fetch --quiet origin", 30000);
+                var (ok, count) = Git("rev-list --count HEAD..@{u}", 5000);
+                UnityEngine.Debug.Log($"[BuildIos] git fetch {(fetchOk ? "ok" : "FAILED: " + fetchErr)}; behind upstream: {(ok ? count : "unknown")}");
+                if (!fetchOk && !EditorUtility.DisplayDialog("無法確認程式碼是否最新",
+                        $"git fetch 失敗，無法確認這台 Mac 的程式碼是否已是最新：\n{fetchErr}\n\n仍要建置嗎？", "仍要建置", "取消"))
+                    return int.MaxValue;
+                return int.TryParse(count, out var n) ? n : 0;
             }
-            catch { return 0; }
+            catch (Exception e) { UnityEngine.Debug.LogWarning($"[BuildIos] git check failed: {e.Message}"); return 0; }
         }
 
-        static string Git(string args, int timeoutMs)
+        static (bool ok, string output) Git(string args, int timeoutMs)
         {
-            var psi = new ProcessStartInfo("git", args) { RedirectStandardOutput = true, RedirectStandardError = true, UseShellExecute = false, CreateNoWindow = true };
+            // Unity.app launched from the Dock has a minimal PATH and no terminal: pin git, run from the repo root,
+            // and never let it block on a credential prompt.
+            string git = File.Exists("/usr/bin/git") ? "/usr/bin/git" : "git";
+            string root = Path.GetFullPath(Path.Combine(Application.dataPath, "..", ".."));
+            var psi = new ProcessStartInfo(git, $"-C \"{root}\" {args}") { RedirectStandardOutput = true, RedirectStandardError = true, UseShellExecute = false, CreateNoWindow = true };
+            psi.Environment["GIT_TERMINAL_PROMPT"] = "0";
             using var p = Process.Start(psi);
-            string s = p.StandardOutput.ReadToEnd().Trim();
-            if (!p.WaitForExit(timeoutMs)) { try { p.Kill(); } catch { } return ""; }
-            return p.ExitCode == 0 ? s : "";
+            string outp = p.StandardOutput.ReadToEnd().Trim();
+            string err = p.StandardError.ReadToEnd().Trim();
+            if (!p.WaitForExit(timeoutMs)) { try { p.Kill(); } catch { } return (false, "timeout"); }
+            return p.ExitCode == 0 ? (true, outp) : (false, err);
         }
 
         static string GitShort()
         {
             try
             {
-                var psi = new ProcessStartInfo("git", "rev-parse --short HEAD") { RedirectStandardOutput = true, UseShellExecute = false, CreateNoWindow = true };
-                using var p = Process.Start(psi);
-                string s = p.StandardOutput.ReadToEnd().Trim();
-                p.WaitForExit();
-                return string.IsNullOrEmpty(s) ? "" : s;
+                var (ok, s) = Git("rev-parse --short HEAD", 5000);
+                return ok ? s : "";
             }
             catch { return ""; }
         }
