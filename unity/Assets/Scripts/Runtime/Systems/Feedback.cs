@@ -4,7 +4,7 @@ namespace BoLike.Systems
 {
     /// <summary>
     /// Beta feedback target from Resources/feedback-url.txt: a form URL or a mailto:. Placeholders {build} {class}
-    /// {seed} {room} {info} are substituted URL-escaped; a URL without placeholders gets "?entry_info=…" appended.
+    /// {seed} {room} {info} {device} are substituted URL-escaped; a URL without placeholders gets "?entry_info=…" appended.
     /// The info line is also copied to the clipboard so testers can paste it anywhere.
     /// </summary>
     public static class Feedback
@@ -34,6 +34,7 @@ namespace BoLike.Systems
                    .Replace("{seed}", System.Uri.EscapeDataString(seed))
                    .Replace("{room}", room.ToString())
                    .Replace("{info}", System.Uri.EscapeDataString(info))
+                   .Replace("{device}", System.Uri.EscapeDataString($"{SystemInfo.deviceModel} / {SystemInfo.operatingSystem}"))
                 : u + (u.Contains("?") ? "&" : "?") + "entry_info=" + System.Uri.EscapeDataString(info);
             GUIUtility.systemCopyBuffer = info;
             Application.OpenURL(full);
