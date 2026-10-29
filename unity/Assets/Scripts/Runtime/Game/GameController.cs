@@ -38,6 +38,8 @@ namespace BoLike.Game
         int pendingSpawns;
         double roomEnteredAt, lastWaveStart;
         bool roomCleared, doorOpen, finished, transitioning;
+        readonly RunLogEntry runLog = new();
+        RoomLogEntry roomLog;
         Enemy boss;
         Canvas overlayCanvas;
         GameObject overlay;
@@ -112,6 +114,8 @@ namespace BoLike.Game
             roomCleared = doorOpen = transitioning = false;
             boss = null;
             roomEnteredAt = world.Now;
+            roomLog = new RoomLogEntry { roomId = run.CurrentRoomId, waveSet = run.CurrentWaveSet };
+            runLog.rooms.Add(roomLog);
 
             foreach (var e in world.Enemies) if (views.TryGetValue(e, out var v)) Destroy(v.gameObject);
             foreach (var e in world.Enemies) views.Remove(e);
@@ -202,6 +206,7 @@ namespace BoLike.Game
         {
             roomCleared = true;
             var p = world.Player;
+            MarkRoomCleared();
             float heal = run.Rules.roomClearHeal + run.mods.roomClearHeal;
             if (run.InBossRoom)
             {
@@ -213,6 +218,7 @@ namespace BoLike.Game
                 AudioManager.Instance.StopMusic(1.5f);
                 world.Sfx.Play("clear");
                 finished = true;
+                FinishRunLog("win");
                 world.Delay(2200, () => ShowResult(true));
                 return;
             }
@@ -308,10 +314,42 @@ namespace BoLike.Game
             finished = true;
             save.gold = run.inv.gold;
             SaveSystem.Save();
+            FinishRunLog("lose");
             fx.Banner("你倒下了…", 0xff8080, 64);
             AudioManager.Instance.StopMusic(1.0f);
             world.Sfx.Play("lose");
             world.Delay(1400, () => ShowResult(false));
+        }
+
+        // ---------- run log (local balance data for design) ----------
+
+        void MarkRoomCleared()
+        {
+            if (roomLog == null) return;
+            var p = world.Player;
+            roomLog.clearMs = (int)(world.Now - roomEnteredAt);
+            roomLog.hpAtClear = Mathf.RoundToInt(p.hp);
+            roomLog.maxHp = Mathf.RoundToInt(p.maxHp);
+            roomLog.potionsLeft = run.inv.red;
+        }
+
+        bool runLogged;
+        void FinishRunLog(string result)
+        {
+            if (runLogged) return;
+            runLogged = true;
+            runLog.build = BuildInfo.Number;
+            runLog.classId = classId;
+            runLog.seed = run.SeedCode;
+            runLog.result = result;
+            runLog.roomsCleared = run.roomsCleared;
+            runLog.bossKilled = run.bossKilled;
+            runLog.totalMs = (int)(world.Now - run.startedAt);
+            runLog.stardust = run.stardustEarned;
+            runLog.level = world.Player.prog.level;
+            runLog.perks.Clear();
+            foreach (var pk in run.perks) runLog.perks.Add(pk.id);
+            RunLog.Append(runLog);
         }
 
         // ---------- overlays ----------
@@ -380,6 +418,7 @@ namespace BoLike.Game
         void PickPerk(PerkDef perk)
         {
             run.TakePerk(perk);
+            if (roomLog != null) roomLog.perk = perk.id;
             world.Mods = run.mods;
             world.Player.Recompute();
             perkChoices = null;
@@ -397,7 +436,7 @@ namespace BoLike.Game
             string body = $"清除房間 {run.roomsCleared} / {run.Rules.combatRooms}" + (run.bossKilled ? "  ＋ Boss" : "") +
                           $"\n獲得星塵 ✦ {run.stardustEarned}    累計 ✦ {save.stardust}" +
                           $"\n強化：{(run.perks.Count == 0 ? "無" : string.Join("、", run.perks.ConvertAll(p => p.name)))}" +
-                          $"\n種子 {run.SeedCode}";
+                          $"\n用時 {RunLog.FormatMs(runLog.totalMs)}    種子 {run.SeedCode}";
             var t = UiKit.Text(layer, 0, 210, body, 22, 0xffffff, UiKit.TopCenter, UiKit.TopCenter, TextAnchor.UpperCenter);
             t.rectTransform.sizeDelta = new Vector2(900, 200);
             UiKit.Button(layer, -130, 480, 240, 60, "再來一局", 0xf28c28, () => Restart(classId), 24, UiKit.TopCenter, UiKit.TopCenter);
@@ -411,7 +450,7 @@ namespace BoLike.Game
             UiKit.Text(layer, 0, 160, "暫停", 44, 0xfff4de, UiKit.TopCenter, UiKit.TopCenter, TextAnchor.UpperCenter, true);
             UiKit.Text(layer, 0, 230, $"種子 {run.SeedCode}   第 {Mathf.Min(run.roomIndex + 1, run.Rules.combatRooms + 1)} 房", 20, 0xcfd4e6, UiKit.TopCenter, UiKit.TopCenter, TextAnchor.UpperCenter);
             UiKit.Button(layer, 0, 320, 260, 60, "繼續", 0xf28c28, ClearOverlay, 24, UiKit.TopCenter, UiKit.TopCenter);
-            UiKit.Button(layer, 0, 400, 260, 60, "放棄本局", 0x7a2a2a, () => { run.abandoned = true; finished = true; ClearOverlay(); ShowResult(false); }, 24, UiKit.TopCenter, UiKit.TopCenter);
+            UiKit.Button(layer, 0, 400, 260, 60, "放棄本局", 0x7a2a2a, () => { run.abandoned = true; finished = true; FinishRunLog("abandon"); ClearOverlay(); ShowResult(false); }, 24, UiKit.TopCenter, UiKit.TopCenter);
         }
 
         void Restart(string cls)
