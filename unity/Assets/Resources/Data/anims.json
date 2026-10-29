@@ -2,7 +2,7 @@
  {
   "classId": "swordsman",
   "idle": 4,
-  "walk": 6,
+  "walk": 8,
   "attack": 4
  },
  {

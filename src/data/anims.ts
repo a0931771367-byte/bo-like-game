@@ -2,7 +2,7 @@
 export interface AnimSet { idle: number; walk: number; attack: number }
 
 export const ANIMS: Record<string, AnimSet> = {
-  swordsman: { idle: 4, walk: 6, attack: 4 },
+  swordsman: { idle: 4, walk: 8, attack: 4 },
   mage: { idle: 4, walk: 6, attack: 4 },
   merchant: { idle: 4, walk: 6, attack: 4 },
   acolyte: { idle: 3, walk: 6, attack: 4 },
