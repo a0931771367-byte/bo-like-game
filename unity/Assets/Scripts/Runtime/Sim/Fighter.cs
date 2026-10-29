@@ -55,7 +55,10 @@ namespace BoLike.Sim
         public bool Physics(float dt, float xMin, float xMax)
         {
             bool landed = false;
-            if (Airborne)
+            // Integrate whenever the fighter is off the ground at all, not only while Airborne (z > 0.5).
+            // During hit-stop a fall advances ~1 px per frame, so z used to settle in (0, 0.5] with gravity off:
+            // never airborne, never landed, and the player stayed in Jump/AirAttack until an enemy hit them.
+            if (z > 0 || vz > 0)
             {
                 vz -= Units.GravityPx * dt;
                 z += vz * dt;
