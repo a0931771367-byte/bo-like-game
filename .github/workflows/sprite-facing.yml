@@ -1,0 +1,19 @@
+name: Sprite facing check
+
+on:
+  push:
+    paths: [unity/Assets/Resources/Sprites/anim/**, unity/Assets/Resources/Data/anims.json, tools/check_sprite_facing.py, tools/sprite_facing.json]
+  pull_request:
+    paths: [unity/Assets/Resources/Sprites/anim/**, unity/Assets/Resources/Data/anims.json, tools/check_sprite_facing.py, tools/sprite_facing.json]
+  workflow_dispatch:
+
+jobs:
+  facing:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install pillow numpy
+      - run: python3 tools/check_sprite_facing.py

@@ -1,0 +1,50 @@
+name: Bug 回報
+description: 遊戲裡的錯誤、閃退、卡關
+title: "[模組] 現象"
+labels: ["type:bug", "status:needs-repro"]
+body:
+  - type: input
+    id: build
+    attributes:
+      label: 版本 / 建置號
+      description: 標題畫面角落的數字，例 0.1.0 (12)
+    validations:
+      required: true
+  - type: input
+    id: device
+    attributes:
+      label: 裝置與 iOS 版本
+      placeholder: iPhone 13、iOS 18.1
+    validations:
+      required: true
+  - type: input
+    id: seed
+    attributes:
+      label: 種子（如果是一局中發生）
+  - type: textarea
+    id: steps
+    attributes:
+      label: 重現步驟
+      placeholder: |
+        1. 選劍士
+        2. 進第 2 房
+        3. ...
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: 預期結果 vs 實際結果
+    validations:
+      required: true
+  - type: dropdown
+    id: rate
+    attributes:
+      label: 重現率
+      options: ["每次", "常常（超過一半）", "偶爾", "只發生一次"]
+    validations:
+      required: true
+  - type: textarea
+    id: media
+    attributes:
+      label: 截圖或錄影

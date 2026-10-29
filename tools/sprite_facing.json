@@ -1,0 +1,374 @@
+{
+ "acolyte_attack_0": {
+  "facing": "right",
+  "sha256": "8e5955a9b78f954160cdd563af82027cee7572435abe948ec81eb6d1fd289654"
+ },
+ "acolyte_attack_1": {
+  "facing": "right",
+  "sha256": "1bb5a3c78990110f2102607566f8945cbbad81beaae2dc6da27beedec1194c71"
+ },
+ "acolyte_attack_2": {
+  "facing": "right",
+  "sha256": "a85d647659f4c812913219935d2ca8f3434f3d376dd27cad25ae53711ccef3f0"
+ },
+ "acolyte_attack_3": {
+  "facing": "right",
+  "sha256": "d0156c0742c4b751073007823b1f17ca90964f93536f526a8a42cf2f3023b2ee"
+ },
+ "acolyte_idle_0": {
+  "facing": "right",
+  "sha256": "769104c33ba0ac6bee5bd660da5294fa3156d6bd56fc21ebcef970aa33501567"
+ },
+ "acolyte_idle_1": {
+  "facing": "right",
+  "sha256": "0b30c51985686aed433649cae37ffecc67e274d447d5abf19f21e093acba2107"
+ },
+ "acolyte_idle_2": {
+  "facing": "right",
+  "sha256": "1321c6a963b09844479c6cd22ef15881fac50460a4ecbd289373f67553ba1b6f"
+ },
+ "acolyte_walk_0": {
+  "facing": "right",
+  "sha256": "b215ce11c5202ce632948b4698f4ad45842bde6d48a98543ac59ec92661760b8"
+ },
+ "acolyte_walk_1": {
+  "facing": "right",
+  "sha256": "acb0b8269d6871957f9dd3bdee7f32603f7dd57d60f4ddeb75a3aa0e8c1c483f"
+ },
+ "acolyte_walk_2": {
+  "facing": "right",
+  "sha256": "3020d58dec30908b4c592f354fed57b898e44eea9aed17a93b66238a48685bf2"
+ },
+ "acolyte_walk_3": {
+  "facing": "right",
+  "sha256": "177cab7c4f6e6a94077ff8f2fff242097025eda67e160c49a3d0418c1a17273c"
+ },
+ "acolyte_walk_4": {
+  "facing": "right",
+  "sha256": "5ad959f21076c97edc23022ce7108ad5cc409f0a70641054175f8fd38a5ad8b3"
+ },
+ "acolyte_walk_5": {
+  "facing": "right",
+  "sha256": "95847db4c7868634a9b92a3b534b26779769b33f690d093cda30fd96df0daedf"
+ },
+ "acolyte_walk_6": {
+  "facing": "right",
+  "sha256": "6bf9d61946665c41d62cd3ff8d4271659e5096e12dae47170ee299accc4cb3fd"
+ },
+ "acolyte_walk_7": {
+  "facing": "right",
+  "sha256": "e9e0b88ff64c59d740f608dd0cf71186559f1769acb915d397137f2171eb2839"
+ },
+ "archer_attack_0": {
+  "facing": "right",
+  "sha256": "382901de075b612348ea43d6e13c4bc332e2e18b3bb4d0040e07e217b45ee077"
+ },
+ "archer_attack_1": {
+  "facing": "right",
+  "sha256": "e50acd89c0a23a4c7e1128ec1c600ded1ac2a53b7089b5c3d0805ec53630f014"
+ },
+ "archer_attack_2": {
+  "facing": "right",
+  "sha256": "fc63410ec336bbea7e12ab16520c0a7f80c53111728d8189ec3339aef4c84b56"
+ },
+ "archer_attack_3": {
+  "facing": "right",
+  "sha256": "174d9c032cf5d59d351420faf1cb711ec307a01b4a5a9e8c21542de2880ba436"
+ },
+ "archer_idle_0": {
+  "facing": "right",
+  "sha256": "5166773cd7d18da5727d779c64291efedd4c036fedd59bd68204e05e4956c952"
+ },
+ "archer_idle_1": {
+  "facing": "right",
+  "sha256": "8b2ac1101da02e470356bc3c203920cc05500b338b3a4bcc9baf8f903ed045de"
+ },
+ "archer_idle_2": {
+  "facing": "right",
+  "sha256": "3051c1297ea3bceddb71cba8e76ebfe71c98dc83fb750db912a3eccae1858757"
+ },
+ "archer_idle_3": {
+  "facing": "right",
+  "sha256": "9b70548053bb65cb9efc9c52bf5fcc8637f518155beea560b2f4af91d81704bf"
+ },
+ "archer_walk_0": {
+  "facing": "right",
+  "sha256": "24e6eae3e2b01db606ce9ec0ce3021a018d1994e9d052f9417415ffb5dcafcba"
+ },
+ "archer_walk_1": {
+  "facing": "right",
+  "sha256": "9623165d258529c192eb371de689414a3360e0456d2ee97edde4bb8320016d8a"
+ },
+ "archer_walk_2": {
+  "facing": "right",
+  "sha256": "250949da5fcde98b2738131aa6edbe986aae1e26c730fc53ed5e512700195b72"
+ },
+ "archer_walk_3": {
+  "facing": "right",
+  "sha256": "a1c435d8792319373a92790a16b33d79ccc3a3cb9d704f976214224a5fd74682"
+ },
+ "archer_walk_4": {
+  "facing": "right",
+  "sha256": "cb97e893dd9e3be47eeb7879fb40fc5b1a7d2cbc480815326b1de020098f2543"
+ },
+ "archer_walk_5": {
+  "facing": "right",
+  "sha256": "e40736c467c935f6ffd0752b97dda006659000501a33ffa0d8fab385b2f6f9bb"
+ },
+ "archer_walk_6": {
+  "facing": "right",
+  "sha256": "0560a87a66b0baab9ac414fd82047c54ebdffd9cfe7ea7856aab7e99234c7302"
+ },
+ "archer_walk_7": {
+  "facing": "right",
+  "sha256": "754ef60ace0686a5ccbab45b6ecdda0163bc843c19490cada3b70ea86a0f959b"
+ },
+ "mage_attack_0": {
+  "facing": "right",
+  "sha256": "ed54703cd857b23381ef5bf5d90d558e1a2cb234377dc2dd827be35d4c404820"
+ },
+ "mage_attack_1": {
+  "facing": "right",
+  "sha256": "8d0284c51d3a589a6649a3774f401d9c51bc373f0de4a4222359c288773830cc"
+ },
+ "mage_attack_2": {
+  "facing": "right",
+  "sha256": "4d20895a758b57cc2924fa7980013a059630e76e1e0e6afc1c550278565654fc"
+ },
+ "mage_attack_3": {
+  "facing": "right",
+  "sha256": "bbb0cbfba919d4e846efcbdda1c63aeddd72a683580bba2b49bc88a42630602a"
+ },
+ "mage_idle_0": {
+  "facing": "right",
+  "sha256": "3d2eebbe8fe4ccfa735fe6ea438912ac0e879db1960fc8631de0a625a918e27d"
+ },
+ "mage_idle_1": {
+  "facing": "right",
+  "sha256": "bacc4696c37fcc86233a54034175d6f1f606a05977a2b91fda52a205478658a6"
+ },
+ "mage_idle_2": {
+  "facing": "right",
+  "sha256": "3b4bea85de8b96eca5e453587611e3dc8bf790ba00811538cb280573ba2519ce"
+ },
+ "mage_idle_3": {
+  "facing": "right",
+  "sha256": "50fd7b2a5efff5df2c1c5ab5a329eb11bcc3a240e425c13ce3a77d59546dc233"
+ },
+ "mage_walk_0": {
+  "facing": "right",
+  "sha256": "4ed53a3fcdea7975f54ffb6cfb771375ac6230283a9f30fb9a1c31c74e4e5754"
+ },
+ "mage_walk_1": {
+  "facing": "right",
+  "sha256": "3824169a8d461c2ebc8b0644f3bae59cbe647d31d9f2fa793931c3f8387e38d2"
+ },
+ "mage_walk_2": {
+  "facing": "right",
+  "sha256": "f497764ee11f23ce5744cf57a80055aa4ab5b1bb8d0d089270658939ad8c27a2"
+ },
+ "mage_walk_3": {
+  "facing": "right",
+  "sha256": "d1f5ad2e9635e3f98191434cd1a6d0e8086f34ee14a046baedc24d0af0cdfe79"
+ },
+ "mage_walk_4": {
+  "facing": "right",
+  "sha256": "b418abcb9eb8debcb2e7b7a83694faff9db648ba91083f4d7c18c7009bdeeab9"
+ },
+ "mage_walk_5": {
+  "facing": "right",
+  "sha256": "389952ba6034921330029d17559fc2e113855a15996505507ebdbf33714dd713"
+ },
+ "mage_walk_6": {
+  "facing": "right",
+  "sha256": "e09bf2e28ad25bc350204ad68a2e9319561f723080bde9c2a813a658c9af8c0c"
+ },
+ "mage_walk_7": {
+  "facing": "right",
+  "sha256": "d35f52a8d67804a7d2a073d57e0c374304d80a8acfc92b65fcface4ba75f887c"
+ },
+ "merchant_attack_0": {
+  "facing": "right",
+  "sha256": "5052c229fca5066b2e928c2374ee0ffe63037e7b72bd4e71180f13195c5d8bc5"
+ },
+ "merchant_attack_1": {
+  "facing": "right",
+  "sha256": "4ce66fdd39fb123af81ab9a19aca5e4aa292537cbee93845637e5f8f876cdd52"
+ },
+ "merchant_attack_2": {
+  "facing": "right",
+  "sha256": "afadda4f20bae34683038fe930d8bda19676df0a8f72ada47362193fd09a0944"
+ },
+ "merchant_attack_3": {
+  "facing": "right",
+  "sha256": "869daddfb2519b0d64341e078df7125052d2183200f2ca455ee899865c53d848"
+ },
+ "merchant_idle_0": {
+  "facing": "right",
+  "sha256": "a2e49e9c6ceeea2c42e607671b40293e25103c9a311a5c4efe694adae20a57ff"
+ },
+ "merchant_idle_1": {
+  "facing": "right",
+  "sha256": "8849b020f3593f8a90b6518018c47338bf0c28fce80cb701395df74c56469518"
+ },
+ "merchant_idle_2": {
+  "facing": "right",
+  "sha256": "f2200c508d2df5978662a9d7f6cf7a4261f8cfe5b0f3484135ca7c9c23466cc7"
+ },
+ "merchant_idle_3": {
+  "facing": "right",
+  "sha256": "35c8066f19a0ff0f87321e393d42f3d05fd25bcfab4b0676f02b93a7e6aefbf5"
+ },
+ "merchant_walk_0": {
+  "facing": "right",
+  "sha256": "3aeef37c0913946047d9d677c3f6f243717f7a67fbe4d21f160bf2af6e8e421e"
+ },
+ "merchant_walk_1": {
+  "facing": "right",
+  "sha256": "11a9277aca0049b9148d013d07bdd3a95ac1ad634f6d81ed4e120437c34c6a74"
+ },
+ "merchant_walk_2": {
+  "facing": "right",
+  "sha256": "1549574ea1d8cbc99972b97c5e7823b882cdc305988248dae5614358256a2d2f"
+ },
+ "merchant_walk_3": {
+  "facing": "right",
+  "sha256": "c6937f2c18baaa18bb054ada40a7b061560557cdd2b37dbc6d18a1f6baa5cea9"
+ },
+ "merchant_walk_4": {
+  "facing": "right",
+  "sha256": "811921df8a8aca4af2c1edeb059226329e19d0c0302cd187f8034c31175c010f"
+ },
+ "merchant_walk_5": {
+  "facing": "right",
+  "sha256": "33086db524b324805f5b974f0930d138985a2f542f44182b699d1057d4e74872"
+ },
+ "swordsman_attack_0": {
+  "facing": "right",
+  "sha256": "bc9576b6a8f1e156b0d57cab40e01fa9de6e67ad04c211fc90a0dd24c50ace9d"
+ },
+ "swordsman_attack_1": {
+  "facing": "right",
+  "sha256": "8e3368a27bac53a2599094455945cf450c264c1e677d1846aa2e11ff5a785703"
+ },
+ "swordsman_attack_2": {
+  "facing": "right",
+  "sha256": "90c4ea7fe6284fc86ae9df75e99ff8ebca2c8ff5b5141ca5a1f64e51fc48ce75"
+ },
+ "swordsman_attack_3": {
+  "facing": "right",
+  "sha256": "19533feba434347f7627ad14d85b44947fcc7cfd6817b173834df7c4a79dc69d"
+ },
+ "swordsman_idle_0": {
+  "facing": "right",
+  "sha256": "364c8c0bae629cc204f32264725f2afb76a1e18276348deabdcf09ab5b6fdb98"
+ },
+ "swordsman_idle_1": {
+  "facing": "right",
+  "sha256": "acda4a5694bd443431a2ae3a9f9c4b5e140c2013e70252f84f7917b70fdfbaa9"
+ },
+ "swordsman_idle_2": {
+  "facing": "right",
+  "sha256": "6572ef1fab66d9baa0dc78a5375f36d15e81a0c670ea38d22612bf374306adbe"
+ },
+ "swordsman_idle_3": {
+  "facing": "right",
+  "sha256": "b1203a0d7b703fdfbfe8fb022ede707fc2298705c89e43e73e1856b2da11af82"
+ },
+ "swordsman_walk_0": {
+  "facing": "right",
+  "sha256": "fc7db420695e05b7cb16b03cd63a907d2f147d0746ae39943c82f4a744293d7c"
+ },
+ "swordsman_walk_1": {
+  "facing": "right",
+  "sha256": "6cf068c01dfdc96a1c522c50335773149ff5c4c217a1a97bc99c9f81245174a1"
+ },
+ "swordsman_walk_2": {
+  "facing": "right",
+  "sha256": "6c80d80cb1403a1fce47d745906261935bf79057a43ec8d0bb6e8c0f3f583ee8"
+ },
+ "swordsman_walk_3": {
+  "facing": "right",
+  "sha256": "2cfa3b03580304b6f995aefe2aee58a8c379d40e0ac1e084438fb47ad07b3ce0"
+ },
+ "swordsman_walk_4": {
+  "facing": "right",
+  "sha256": "a264b4f31142ed6defedb0040d4e5e5c32040d52fbd2e849d8697f7594800328"
+ },
+ "swordsman_walk_5": {
+  "facing": "right",
+  "sha256": "3a126f37f1749dfe92da9e0e8e284248edfa7993cd257c7fc118a9789ead625a"
+ },
+ "swordsman_walk_6": {
+  "facing": "right",
+  "sha256": "31d8fcbe14e28d9465686e50469906bfd2f02fa3a94b3416ede354cfeec9f9a4"
+ },
+ "swordsman_walk_7": {
+  "facing": "right",
+  "sha256": "07d034822dacfb6b868dee8d4b226b41da51e3fc219e800517306e0d5774da42"
+ },
+ "thief_attack_0": {
+  "facing": "right",
+  "sha256": "ea7f375e2ec05118e243a5f21627a5f9b7663e62c43de7e911228fdb6d63c113"
+ },
+ "thief_attack_1": {
+  "facing": "right",
+  "sha256": "bd6126c12be17b587cc02dc2ddc75c506786b08388cbddde6ff0303256d7bfcf"
+ },
+ "thief_attack_2": {
+  "facing": "right",
+  "sha256": "6679edea5c52b408c68359d7a595674ebf941c5ce8f224701d2a3e6660c49d8b"
+ },
+ "thief_attack_3": {
+  "facing": "right",
+  "sha256": "3b1f676f10cb0939a734a548f14c95b8df81228cd8db7ba191efb95905863505"
+ },
+ "thief_idle_0": {
+  "facing": "right",
+  "sha256": "2f73bd0d41f51edc46bbb84176162ac8a288267c852bb0665c42a8e1c53a1e49"
+ },
+ "thief_idle_1": {
+  "facing": "right",
+  "sha256": "8e98843a0598903fc1ff11f374833ca597b89a1db755f18642ed9e643549ef78"
+ },
+ "thief_idle_2": {
+  "facing": "right",
+  "sha256": "41e83c23288d8fdf53ed3046e3f84222c133e9fb06723dc07e4c8f6182ae1a3f"
+ },
+ "thief_idle_3": {
+  "facing": "right",
+  "sha256": "b17dd242ddbfaecf83df44cf69ccfecc2f6067ccc2d89b9d3a464e6bf5618dc5"
+ },
+ "thief_walk_0": {
+  "facing": "right",
+  "sha256": "8d2e1e5f4771ab4b77a43d543a33e8a053690f26d0d01203b374dac77abf9949"
+ },
+ "thief_walk_1": {
+  "facing": "right",
+  "sha256": "1c422edf3cc47f93337e6451a5752fdcf140d5f413a02a7473fb77239c30ef69"
+ },
+ "thief_walk_2": {
+  "facing": "right",
+  "sha256": "6262dcf1b905aa2356a4ed7b45c392ace6a2be085c860ec07dad4c574102cebd"
+ },
+ "thief_walk_3": {
+  "facing": "right",
+  "sha256": "22520de237964036aef82cbc36f672bb2f75afcf69e8c577245f933bf23300c2"
+ },
+ "thief_walk_4": {
+  "facing": "right",
+  "sha256": "fce3ea6a893130c6decad909a0a444cb621fc64f8c97dcfc9eb9bd425c1a9898"
+ },
+ "thief_walk_5": {
+  "facing": "right",
+  "sha256": "019cca614b3b44cb0ce79aa8c64f169dfe732101c77cf18eac7fa60b1e36bbde"
+ },
+ "thief_walk_6": {
+  "facing": "right",
+  "sha256": "8f44d0a3f7246eb75aae207289d01702aaff9d765530f0e05d33641ade7f14fe"
+ },
+ "thief_walk_7": {
+  "facing": "right",
+  "sha256": "d901d8585dc6070a86d548a9eb088343f1afcbdc46341a498330417599acf998"
+ }
+}
