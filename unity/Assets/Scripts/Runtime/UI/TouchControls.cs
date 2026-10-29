@@ -55,6 +55,7 @@ namespace BoLike.UI
             floating.layer = layer;
             floating.restPosition = stickBase.rectTransform.anchoredPosition;
             floating.restAnchor = stickBase.rectTransform.anchorMin;
+            floating.Init();
 
             // Action buttons (right).
             Button(-110, -110, 60, 0xff6a2b, "攻擊", "<Gamepad>/buttonWest", 22);
@@ -111,17 +112,22 @@ namespace BoLike.UI
             CanvasGroup group;
             int pointerId = int.MinValue;
 
-            // Fields are assigned after AddComponent (so after Awake); set the group up lazily.
+            // Fields are assigned after AddComponent (so after Awake): Build() calls Init() once they are set.
+            // Unity's "fake null" means `?? AddComponent` would not work here; compare with == null instead.
+            public void Init()
+            {
+                var g = stickBase.GetComponent<CanvasGroup>();
+                if (g == null) g = stickBase.gameObject.AddComponent<CanvasGroup>();
+                g.alpha = 0.6f;
+                g.blocksRaycasts = false;
+                group = g;
+            }
+
             CanvasGroup Group
             {
                 get
                 {
-                    if (group == null)
-                    {
-                        group = stickBase.GetComponent<CanvasGroup>() ?? stickBase.gameObject.AddComponent<CanvasGroup>();
-                        group.alpha = 0.6f;
-                        group.blocksRaycasts = false;
-                    }
+                    if (group == null) Init();
                     return group;
                 }
             }
