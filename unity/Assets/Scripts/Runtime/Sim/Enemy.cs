@@ -136,14 +136,23 @@ namespace BoLike.Sim
                     break;
             }
             bool landed = Physics(dt, xMin, xMax);
+            if (!landed && state == FighterState.Knock && z <= 0 && vz <= 0 && stateTime > 150) landed = true; // knocked while grounded: resolve instead of sliding
             if (landed) OnLand();
-            if (def.behavior == EnemyBehavior.Flyer && !dead)
+            if (def.behavior == EnemyBehavior.Flyer && !dead && state != FighterState.Knock && state != FighterState.Down)
             {
+                // (A knocked bee falls and lands like everyone else; hovering through Knock left it sliding forever.)
                 // Bees hover instead of falling; a dive drops them to the player's height.
                 float hover = state == FighterState.Attack ? 10 : 58 + Mathf.Sin((float)((Now + phase) / 180)) * 9;
                 z += (hover - z) * Math.Min(1, dt * 10);
                 vz = 0;
             }
+        }
+
+        /// <summary>True when moving in direction <paramref name="dir"/> would leave the strip the player can reach.</summary>
+        bool Cornered(float dir)
+        {
+            var (pmin, pmax) = world.PlayerBounds();
+            return (dir < 0 && x <= pmin + 70) || (dir > 0 && x >= pmax - 70);
         }
 
         void OnLand()
@@ -229,16 +238,22 @@ namespace BoLike.Sim
                     vy = Clamp1(dy / 20) * sp * 0.7f;
                     break;
                 case EnemyBehavior.Lunger:
-                    if (Now < retreatUntil)
+                {
+                    // Never back off past where the player can follow: a wolf pinned against the room edge
+                    // used to retreat forever and become unreachable.
+                    bool cornered = Cornered(-sdx);
+                    if (Now < retreatUntil && !cornered)
                     {
                         vx = -sdx * sp * 0.8f;
                         vy = Clamp1(-dy / 20) * sp * 0.4f;
                         break;
                     }
-                    if (dist < def.attackRange && dist > 90 && aligned && canAttack) { lungeDir = sdx == 0 ? 1 : sdx; SetState(FighterState.Windup); return; }
-                    vx = sdx * sp * (dist > 150 ? 1 : -0.6f);
+                    if (cornered) retreatUntil = 0;
+                    if (dist < def.attackRange && (dist > 90 || cornered) && aligned && canAttack) { lungeDir = sdx == 0 ? 1 : sdx; SetState(FighterState.Windup); return; }
+                    vx = sdx * sp * (dist > 150 ? 1 : cornered ? 0 : -0.6f);
                     vy = Clamp1(dy / 20) * sp * 0.7f;
                     break;
+                }
                 case EnemyBehavior.BossSlime:
                     if (canAttack && aligned)
                     {
@@ -251,7 +266,7 @@ namespace BoLike.Sim
                 case EnemyBehavior.Flyer:
                     // Circle in from the side, then sting when lined up.
                     if (dist < def.attackRange && aligned && canAttack) { SetState(FighterState.Windup); return; }
-                    vx = sdx * sp * (dist > 70 ? 1 : -0.4f);
+                    vx = sdx * sp * (dist > 70 ? 1 : Cornered(-sdx) ? 0 : -0.4f);
                     vy = Clamp1(dy / 16) * sp * 0.8f;
                     break;
                 case EnemyBehavior.Turret:
