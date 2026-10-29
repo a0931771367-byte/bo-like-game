@@ -75,7 +75,7 @@ namespace BoLike.UI
             return rt;
         }
 
-        public static readonly Vector2 TopLeft = new(0, 1), TopRight = new(1, 1), BottomLeft = new(0, 0), BottomRight = new(1, 0), Center = new(0.5f, 0.5f), TopCenter = new(0.5f, 1), MiddleRight = new(1, 0.5f);
+        public static readonly Vector2 TopLeft = new(0, 1), TopRight = new(1, 1), BottomLeft = new(0, 0), BottomRight = new(1, 0), Center = new(0.5f, 0.5f), TopCenter = new(0.5f, 1), BottomCenter = new(0.5f, 0), MiddleRight = new(1, 0.5f);
 
         /// <summary>Solid rectangle. x,y are measured from the anchor corner, downwards positive.</summary>
         public static Image Rect(Transform parent, float x, float y, float w, float h, int color, float alpha = 1f, Vector2? anchor = null, Vector2? pivot = null)
