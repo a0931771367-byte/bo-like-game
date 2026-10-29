@@ -456,7 +456,11 @@ namespace BoLike.Game
             FeedbackButton(layer, 0, 480);
         }
 
-        /// <summary>"回報問題" opens the beta feedback form (Resources/feedback-url.txt) with build, class and seed pre-filled; hidden when no URL is configured.</summary>
+        /// <summary>
+        /// "回報問題" opens the beta feedback target from Resources/feedback-url.txt (a form URL or a mailto:), hidden when
+        /// the file is empty. Placeholders {build} {class} {seed} {room} {info} are substituted (URL-escaped); a URL
+        /// without placeholders gets "?entry_info=…" appended. The same info line is copied to the clipboard.
+        /// </summary>
         void FeedbackButton(RectTransform layer, float x, float y)
         {
             var url = Resources.Load<TextAsset>("feedback-url")?.text.Trim();
@@ -464,7 +468,13 @@ namespace BoLike.Game
             UiKit.Button(layer, x, y, 260, 48, "回報問題", 0x3a3a4a, () =>
             {
                 string info = $"build {BuildInfo.Number} {classId} seed {run.SeedCode} room {run.roomIndex + 1}";
-                string full = url + (url.Contains("?") ? "&" : "?") + "entry_info=" + System.Uri.EscapeDataString(info);
+                string full = url.Contains("{")
+                    ? url.Replace("{build}", System.Uri.EscapeDataString(BuildInfo.Number))
+                         .Replace("{class}", System.Uri.EscapeDataString(classId))
+                         .Replace("{seed}", System.Uri.EscapeDataString(run.SeedCode))
+                         .Replace("{room}", (run.roomIndex + 1).ToString())
+                         .Replace("{info}", System.Uri.EscapeDataString(info))
+                    : url + (url.Contains("?") ? "&" : "?") + "entry_info=" + System.Uri.EscapeDataString(info);
                 GUIUtility.systemCopyBuffer = info;
                 Application.OpenURL(full);
             }, 20, UiKit.TopCenter, UiKit.TopCenter);
