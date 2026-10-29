@@ -1,0 +1,26 @@
+name: 封測回饋整理
+description: QA 把 TestFlight 回饋或問卷整理成 Issue 時使用
+title: "[封測] "
+labels: ["source:beta", "platform:ios"]
+body:
+  - type: input
+    id: build
+    attributes:
+      label: 建置號
+    validations:
+      required: true
+  - type: input
+    id: count
+    attributes:
+      label: 回報人數
+      description: 同一問題達 3 人以上，嚴重度升一級
+  - type: textarea
+    id: summary
+    attributes:
+      label: 玩家說了什麼（摘要，附 TestFlight 截圖）
+    validations:
+      required: true
+  - type: textarea
+    id: qa
+    attributes:
+      label: QA 判讀與建議
