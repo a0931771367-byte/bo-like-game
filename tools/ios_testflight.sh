@@ -7,7 +7,7 @@
 #   TEAM_ID=XXXXXXXXXX tools/ios_testflight.sh
 #
 # Signing is automatic (Xcode account signed in with the paid team). The bundle id comes from Unity's
-# ProjectSettings (com.kuantsun.pocketadventurers) and is not overridden here. Upload uses the Xcode account's
+# ProjectSettings (com.pocketadventurers.game) and is not overridden here. Upload uses the Xcode account's
 # App Store Connect session; to avoid interactive prompts pass an API key instead:
 #   ASC_KEY_ID=… ASC_ISSUER_ID=… ASC_KEY_PATH=~/private_keys/AuthKey_….p8 TEAM_ID=… tools/ios_testflight.sh
 set -euo pipefail
