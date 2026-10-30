@@ -49,6 +49,6 @@ fi
 
 echo "== upload to App Store Connect"
 xcodebuild -exportArchive -archivePath "$ARCHIVE" -exportOptionsPlist "$PLIST" -exportPath "$OUT/export-$BUILD_NUMBER" \
-  -allowProvisioningUpdates "${AUTH[@]}" | tail -n 20
+  -allowProvisioningUpdates ${AUTH[@]+"${AUTH[@]}"} | tail -n 20
 
 echo "== done: build $BUILD_NUMBER uploaded; it appears in App Store Connect > TestFlight after processing (5–30 min)."
