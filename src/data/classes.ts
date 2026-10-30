@@ -14,6 +14,7 @@ export const CLASSES: ClassDef[] = [
       hit(1.7, 125, 140, 110, 300, 380, 480, 500),
     ],
     air: hit(1.2, 100, 60, 180, 120, 160, 0, 360),
+    dodge: { kind: 'shieldDash', name: '盾衝', desc: '舉盾向前衝撞，撞開路上的敵人', distance: 150, duration: 240, invuln: 240, cooldown: 900, knock: 220 },
     skills: [
       { id: 'bash', name: '裂甲斬', short: '裂甲', ref: 'Bash', desc: '強力單體斬擊，高等級機率暈眩', type: 'melee', maxLv: 5,
         sp: [8, 1], cooldown: 1400, cast: 180, power: [2.2, 0.45], element: 'neutral', magic: false, color: 0xffd34d,
@@ -39,6 +40,7 @@ export const CLASSES: ClassDef[] = [
       hit(1.2, 110, 150, 100, 320, 320, 380, 450),
     ],
     air: hit(0.9, 90, 70, 160, 140, 140, 0, 320),
+    dodge: { kind: 'blink', name: '瞬移', desc: '短暫凝聚後瞬間移動到前方，留下殘影', distance: 280, duration: 90, invuln: 260, cooldown: 1400, passThrough: true },
     skills: [
       { id: 'firebolt', name: '火球術', short: '火球', ref: 'Fire Bolt', desc: '連發火屬性魔彈，等級越高發數越多', type: 'projectile', maxLv: 5,
         sp: [8, 2], cooldown: 1300, cast: 320, power: [1.05, 0.05], element: 'fire', magic: true, color: 0xff7b2e,
@@ -64,6 +66,7 @@ export const CLASSES: ClassDef[] = [
       hit(2.0, 130, 200, 120, 360, 420, 520, 550),
     ],
     air: hit(1.4, 105, 80, 180, 140, 180, 0, 380),
+    dodge: { kind: 'jetDash', name: '噴射推進', desc: '機關噴射向前滑行，拖著一道煙', distance: 190, duration: 280, invuln: 220, cooldown: 1000, knock: 120 },
     skills: [
       { id: 'mammonite', name: '齒輪重錘', short: '重錘', ref: 'Mammonite', desc: '消耗金幣驅動的超高傷害一錘', type: 'melee', maxLv: 5,
         sp: [5, 0], cooldown: 2600, cast: 260, power: [3.0, 0.6], element: 'neutral', magic: false, color: 0xffd34d,
@@ -89,6 +92,7 @@ export const CLASSES: ClassDef[] = [
       hit(1.4, 115, 150, 100, 320, 340, 420, 480),
     ],
     air: hit(1.0, 95, 70, 170, 130, 150, 0, 340),
+    dodge: { kind: 'graceStep', name: '聖光步', desc: '輕盈地滑開，成功閃過攻擊時回復少量 HP', distance: 160, duration: 260, invuln: 300, cooldown: 1100, onAvoidHeal: 0.03 },
     skills: [
       { id: 'heal', name: '治癒術', short: '治癒', ref: 'Heal', desc: '恢復自身 HP，對不死系造成聖傷害', type: 'heal', maxLv: 5,
         sp: [14, 2], cooldown: 4000, cast: 400, power: [1.2, 0.3], element: 'holy', magic: true, color: 0xb6f28a,
@@ -115,6 +119,7 @@ export const CLASSES: ClassDef[] = [
       hit(1.3, 110, 100, 90, 260, 340, 420, 450),
     ],
     air: hit(1.0, 95, 50, 160, 110, 140, 0, 320),
+    dodge: { kind: 'shadowStep', name: '影遁', desc: '化作影子穿過敵人，最快也最短的閃避', distance: 230, duration: 180, invuln: 240, cooldown: 600, passThrough: true, cancelWindow: 60 },
     skills: [
       { id: 'doubleattack', name: '影刃連擊', short: '影刃', ref: 'Double Attack', desc: '被動：普攻有機率命中兩次', type: 'passive', maxLv: 5,
         sp: [0, 0], cooldown: 0, cast: 0, power: [0, 0], element: 'neutral', magic: false, color: 0xb9f5c8,
@@ -140,6 +145,7 @@ export const CLASSES: ClassDef[] = [
       hit(1.3, 700, 160, 60, 320, 260, 0, 450),
     ],
     air: hit(1.0, 700, 80, 60, 150, 120, 0, 340),
+    dodge: { kind: 'roll', name: '滾翻', desc: '向前滾翻，起身瞬間就能接著射擊', distance: 210, duration: 320, invuln: 320, cooldown: 700, cancelWindow: 100 },
     skills: [
       { id: 'doublestrafe', name: '雙矢', short: '雙矢', ref: 'Double Strafe', desc: '連射兩箭的高傷害單體', type: 'projectile', maxLv: 5,
         sp: [10, 1], cooldown: 1600, cast: 220, power: [1.4, 0.2], element: 'neutral', magic: false, color: 0xe6d38a,

@@ -24,9 +24,27 @@ export const STRINGS: Record<string, string> = {
   'hint.move': '左手搖桿移動，可以上下走位',
   'hint.attack': '連按攻擊打出連段，第三下會擊飛',
   'hint.skill': '技能鈕放技能，看 SP 夠不夠',
-  'hint.dodge': '雙擊方向或按閃避，閃避中無敵',
+  'hint.skillPoint': '升級了！點技能鈕旁的 + 分配技能點',
+  'hint.dodge': '按閃避鈕迴避攻擊，閃避中無敵',
   'hint.potion': 'HP 低了就喝藥水，開局有 2 瓶',
   'hint.door': '清完這一房，門會打開',
+
+  // ---- 升級與技能面板 ----
+  'levelup.banner': 'LEVEL UP!',
+  'levelup.point': '技能點 +{n}',
+  'skill.panel.title': '技能',
+  'skill.panel.points': '可用技能點 {n}',
+  'skill.panel.hint': '點技能鈕旁的 + 或長按技能鈕打開',
+  'skill.learn': '學習（1 點）',
+  'skill.raise': '升級（1 點）',
+  'skill.max': '已滿級',
+  'skill.locked': '尚未學習',
+  'skill.level': 'Lv {n}/{max}',
+  'skill.next': '下一級',
+  'skill.noPoints': '沒有技能點，升級後再來',
+  'skill.type': '{type}・{element}屬性',
+  'skill.cooldown': '冷卻 {s} 秒',
+  'dodge.title': '閃避：{name}',
 
   // ---- 房間 ----
   'room.enter': '第 {n} 房',
