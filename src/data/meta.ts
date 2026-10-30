@@ -24,9 +24,19 @@ export const RUN_RULES = {
     heal: 0.3,
     /** Each level: +1 to the class's two highest base stats, +1 VIT (auto-allocated, no menu in a run). */
     statsPerLevel: 3,
-    /** Skill n (0-based) is learned when the run level reaches skillUnlockLevels[n]; after all four are learned,
-     *  each further level raises the lowest-level skill by 1. */
+    /** Each level grants this many skill points. The player spends them in the skill panel (learn a skill 0→1 or
+     *  raise one by 1, up to SkillDef.maxLv). Points bank until spent; nothing is auto-spent (罐子 10/30). */
+    skillPointsPerLevel: 1,
+    /** Skill n (0-based) can be learned once the run level is at least skillUnlockLevels[n]; the panel shows
+     *  「Lv N 解鎖」 before that. Keeps the "one new option per room" pacing while the player still chooses. */
     skillUnlockLevels: [1, 2, 3, 4],
+    /** Learning a skill costs this many points; raising a learned skill by one level costs this many. */
+    skillLearnCost: 1,
+    skillRaiseCost: 1,
+    /** Points the first skill costs at run start: it is pre-learned at Lv1 for free. */
+    startSkills: 1,
+    /** Opening the skill panel pauses the fight (single player, no timer). */
+    panelPausesGame: true,
   },
   /** HP restored when a combat room is cleared. */
   roomClearHeal: 0.2,

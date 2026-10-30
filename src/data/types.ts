@@ -66,6 +66,29 @@ export interface SkillDef {
   dashDistance?: Scaling;
 }
 
+export type DodgeKind = 'shieldDash' | 'blink' | 'roll' | 'jetDash' | 'graceStep' | 'shadowStep';
+
+/** Per-class dodge. Distances px, times ms. Every kind grants invulnerability for `invuln` ms from the press. */
+export interface DodgeDef {
+  kind: DodgeKind;
+  name: string;
+  desc: string;
+  /** Total distance travelled (blink: teleport distance). */
+  distance: number;
+  /** Time the dodge state lasts; the player cannot act until it ends (blink: the pre-teleport wind-up). */
+  duration: number;
+  invuln: number;
+  cooldown: number;
+  /** Passes through enemies instead of being blocked by them. */
+  passThrough?: boolean;
+  /** Enemies touched during the dodge are pushed back this far (no damage). */
+  knock?: number;
+  /** Fraction of max HP restored when an attack is avoided by the invulnerability. */
+  onAvoidHeal?: number;
+  /** Normal attacks and skills may start this many ms before `duration` ends (roll out into an attack). */
+  cancelWindow?: number;
+}
+
 export interface ClassDef {
   id: string;
   name: string;
@@ -84,6 +107,7 @@ export interface ClassDef {
   baseStats: Stats;
   combo: ComboHit[];
   air: ComboHit;
+  dodge: DodgeDef;
   skills: SkillDef[];
 }
 
