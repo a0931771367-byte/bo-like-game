@@ -427,6 +427,9 @@ namespace BoLike.Sim
             return true;
         }
 
+        /// <summary>Corpse time: down 120 ms, flat 120 ms, fade 200 ms (the view draws the art poses over this).</summary>
+        public const int DyingMs = 440;
+
         void Die()
         {
             SetState(FighterState.Dying);
@@ -434,7 +437,7 @@ namespace BoLike.Sim
             Fx.Spark(x, y - h / 2, def.color, def.boss ? 3 : 1.6f);
             Fx.Dust(x, y, def.boss ? 14 : 6, def.boss ? 2 : 1);
             if (def.boss) { Fx.Flash(0.7f, 400); Fx.Shake(400, 0.012f); }
-            world.Delay(260, () => world.RemoveEnemy(this));
+            world.Delay(DyingMs, () => world.RemoveEnemy(this));
         }
     }
 }

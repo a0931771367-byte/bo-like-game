@@ -14,6 +14,8 @@ namespace BoLike.Game
         [System.NonSerialized] public Fighter fighter;
         Transform view;
         SpriteRenderer body, shadow, hpBg, hpBar, aura;
+        /// <summary>Art's hit poses for enemies (<id>_hurt/_knock/_down/_flat); null when the monster has none yet.</summary>
+        Sprite sideSprite, hurtSprite, knockSprite, downSprite, flatSprite;
         MaterialPropertyBlock mpb;
         float bodyScale = 1f;
         AnimSet anim;
@@ -61,7 +63,12 @@ namespace BoLike.Game
             }
             else if (f is Enemy e)
             {
-                body = MakeSprite("Body", view, SpriteBank.Get($"{e.def.SpriteId}_side"));
+                sideSprite = SpriteBank.Get($"{e.def.SpriteId}_side");
+                body = MakeSprite("Body", view, sideSprite);
+                hurtSprite = PoseOrNull(e.def.SpriteId, "hurt");
+                knockSprite = PoseOrNull(e.def.SpriteId, "knock");
+                downSprite = PoseOrNull(e.def.SpriteId, "down");
+                flatSprite = PoseOrNull(e.def.SpriteId, "flat");
                 if (e.def.tint.HasValue) baseTint = Colors.Rgb(e.def.tint.Value);
                 float hPx = body.sprite != null ? body.sprite.rect.height : e.def.spriteH;
                 bodyScale = e.def.spriteH / hPx;
@@ -79,6 +86,12 @@ namespace BoLike.Game
             body.color = baseTint;
             SetBodyScale(1, 1);
             Sync();
+        }
+
+        static Sprite PoseOrNull(string spriteId, string pose)
+        {
+            // Quiet lookup: monsters without the pose art yet fall back to the old rotate/squash, without a warning per pose.
+            return Resources.Load<Sprite>($"Sprites/{spriteId}_{pose}");
         }
 
         static SpriteRenderer MakeSprite(string name, Transform parent, Sprite sprite)
@@ -220,6 +233,34 @@ namespace BoLike.Game
             double now = e.Now;
             var b = e.def.behavior;
             float wob = Mathf.Sin((float)((now + e.phase) / (b == EnemyBehavior.Hopper ? 260 : e.def.boss ? 520 : 380)));
+            baseTint = e.Frozen ? Colors.Rgb(Colors.Ice) : e.Weakened ? Colors.Rgb(0xffb0b0) : e.Poisoned ? Colors.Rgb(0xc9a0ff)
+                : e.def.tint.HasValue ? Colors.Rgb(e.def.tint.Value) : Color.white;
+            if (sideSprite != null) body.sprite = sideSprite;
+            // Art-drawn hit poses (art dept 10/30): no rotation tricks when the pose exists.
+            if (e.state == FighterState.Hurt && hurtSprite != null) { body.sprite = hurtSprite; sx = 0.96f; return; }
+            if (e.state == FighterState.Knock && knockSprite != null)
+            {
+                body.sprite = knockSprite;
+                lean = Mathf.Clamp(-e.vz / 40f, -15f, 15f); // leans back while rising, forward while falling
+                return;
+            }
+            if (e.state == FighterState.Down && downSprite != null)
+            {
+                body.sprite = downSprite;
+                sy = Mathf.Lerp(0.85f, 1f, Mathf.Clamp01(t / 120f)); // landing rebound
+                return;
+            }
+            if (e.state == FighterState.Dying && flatSprite != null)
+            {
+                // down 120 ms → flat 120 ms → fade 200 ms; the shadow fades with the body.
+                float ms = (float)(now - e.dyingSince);
+                body.sprite = ms < 120 && downSprite != null ? downSprite : flatSprite;
+                float k = Mathf.Clamp01((ms - 240f) / 200f);
+                alpha = 1 - k;
+                shadow.color = new Color(0, 0, 0, 0.28f * (1 - k));
+                shadow.transform.localScale = new Vector3(shadow.transform.localScale.x * (1 - 0.5f * k), shadow.transform.localScale.y * (1 - 0.5f * k), 1);
+                return;
+            }
             switch (e.state)
             {
                 case FighterState.Idle:
@@ -253,8 +294,6 @@ namespace BoLike.Game
             }
             if (b == EnemyBehavior.Flyer) sy *= 1 + Mathf.Sin((float)(now / 45)) * 0.02f;
             else if (e.Airborne && e.state != FighterState.Knock && e.state != FighterState.Slam) { sy = 1.1f; sx = 0.92f; }
-            baseTint = e.Frozen ? Colors.Rgb(Colors.Ice) : e.Weakened ? Colors.Rgb(0xffb0b0) : e.Poisoned ? Colors.Rgb(0xc9a0ff)
-                : e.def.tint.HasValue ? Colors.Rgb(e.def.tint.Value) : Color.white;
         }
     }
 }
