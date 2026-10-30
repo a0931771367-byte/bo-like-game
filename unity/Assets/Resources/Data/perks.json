@@ -2,7 +2,7 @@
  {
   "id": "toughBody",
   "name": "強韌體魄",
-  "desc": "最大 HP +20%",
+  "desc": "最大 HP +25%",
   "rarity": "common",
   "classes": [],
   "maxStacks": 3,
@@ -10,14 +10,14 @@
    {
     "kind": "mult",
     "target": "maxHp",
-    "value": 1.2
+    "value": 1.25
    }
   ]
  },
  {
   "id": "sharpen",
   "name": "磨刃",
-  "desc": "攻擊力與魔攻 +12%",
+  "desc": "攻擊力與魔攻 +15%",
   "rarity": "common",
   "classes": [],
   "maxStacks": 3,
@@ -25,19 +25,19 @@
    {
     "kind": "mult",
     "target": "atk",
-    "value": 1.12
+    "value": 1.15
    },
    {
     "kind": "mult",
     "target": "matk",
-    "value": 1.12
+    "value": 1.15
    }
   ]
  },
  {
   "id": "swiftStep",
   "name": "疾風步",
-  "desc": "移動速度 +12%、攻擊速度 +8%",
+  "desc": "移動速度 +15%、攻擊速度 +10%",
   "rarity": "common",
   "classes": [],
   "maxStacks": 2,
@@ -45,19 +45,19 @@
    {
     "kind": "mult",
     "target": "move",
-    "value": 1.12
+    "value": 1.15
    },
    {
     "kind": "mult",
     "target": "aspd",
-    "value": 1.08
+    "value": 1.1
    }
   ]
  },
  {
   "id": "coolMind",
   "name": "冷靜",
-  "desc": "技能冷卻時間 -15%",
+  "desc": "技能冷卻時間 -20%",
   "rarity": "common",
   "classes": [],
   "maxStacks": 2,
@@ -65,14 +65,14 @@
    {
     "kind": "mult",
     "target": "cooldown",
-    "value": 0.85
+    "value": 0.8
    }
   ]
  },
  {
   "id": "deepBreath",
   "name": "回氣",
-  "desc": "SP 回復速度 +50%",
+  "desc": "SP 回復速度 +60%",
   "rarity": "common",
   "classes": [],
   "maxStacks": 2,
@@ -80,7 +80,7 @@
    {
     "kind": "mult",
     "target": "spRegen",
-    "value": 1.5
+    "value": 1.6
    }
   ]
  },
@@ -106,14 +106,44 @@
  {
   "id": "campfire",
   "name": "營火",
-  "desc": "每清完一個房間額外回復 15% HP",
+  "desc": "每清完一個房間額外回復 20% HP",
   "rarity": "common",
   "classes": [],
   "maxStacks": 1,
   "effects": [
    {
     "kind": "roomClearHeal",
-    "fraction": 0.15
+    "fraction": 0.2
+   }
+  ]
+ },
+ {
+  "id": "frugal",
+  "name": "省力",
+  "desc": "技能 SP 消耗 -20%",
+  "rarity": "common",
+  "classes": [],
+  "maxStacks": 2,
+  "effects": [
+   {
+    "kind": "mult",
+    "target": "spCost",
+    "value": 0.8
+   }
+  ]
+ },
+ {
+  "id": "heavyHand",
+  "name": "重手",
+  "desc": "擊退距離 +40%",
+  "rarity": "common",
+  "classes": [],
+  "maxStacks": 2,
+  "effects": [
+   {
+    "kind": "mult",
+    "target": "knock",
+    "value": 1.4
    }
   ]
  },

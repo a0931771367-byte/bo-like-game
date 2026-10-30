@@ -74,8 +74,15 @@ namespace BoLike.Game
             return v;
         }
 
-        /// <summary>Draws perk choices for this class: weighted by rarity, no duplicates, stacks respected.</summary>
-        public List<PerkDef> DrawPerks(int count, float rareBonus)
+        /// <summary>
+        /// Draws perk choices for this class: weighted by rarity, no duplicates, stacks respected, and the offer
+        /// rules of growth curve v2 §2: at least <c>perkOffer.minCommon</c> commons and at most
+        /// <c>perkOffer.maxEpic</c> epics per offer (an epic over the cap is redrawn as a rare, then as a common).
+        /// The cards are shuffled afterwards so the guaranteed common is not always the first card.
+        /// </summary>
+        public List<PerkDef> DrawPerks(int count, float rareBonus) => DrawPerks(count, rareBonus, Rules.perkOffer ?? new PerkOffer());
+
+        public List<PerkDef> DrawPerks(int count, float rareBonus, PerkOffer offer)
         {
             var candidates = new List<PerkDef>();
             foreach (var p in GameDb.Perks)
@@ -86,21 +93,46 @@ namespace BoLike.Game
             }
             var weights = Rules.rarityWeights;
             var result = new List<PerkDef>();
+            int commons = 0, epics = 0;
             while (result.Count < count && candidates.Count > 0)
             {
-                float total = 0;
-                foreach (var p in candidates) total += Weight(p, weights, rareBonus);
-                float roll = perkRng.Value * total;
-                PerkDef pick = candidates[candidates.Count - 1];
-                foreach (var p in candidates)
+                int left = count - result.Count;
+                // Fill the common quota first when the remaining slots could not otherwise satisfy it.
+                bool needCommon = commons < offer.minCommon && left <= offer.minCommon - commons;
+                var pool = needCommon ? candidates.FindAll(p => p.rarity == PerkRarity.Common) : candidates;
+                if (pool.Count == 0) pool = candidates;
+                var pick = WeightedPick(pool, weights, rareBonus);
+                if (pick.rarity == PerkRarity.Epic && epics >= offer.maxEpic)
                 {
-                    roll -= Weight(p, weights, rareBonus);
-                    if (roll <= 0) { pick = p; break; }
+                    var rares = candidates.FindAll(p => p.rarity == PerkRarity.Rare);
+                    if (rares.Count == 0) rares = candidates.FindAll(p => p.rarity == PerkRarity.Common);
+                    if (rares.Count > 0) pick = WeightedPick(rares, weights, rareBonus);
                 }
+                if (pick.rarity == PerkRarity.Common) commons++;
+                if (pick.rarity == PerkRarity.Epic) epics++;
                 result.Add(pick);
                 candidates.Remove(pick);
             }
+            for (int i = result.Count - 1; i > 0; i--)
+            {
+                int j = perkRng.Range(0, i + 1);
+                (result[i], result[j]) = (result[j], result[i]);
+            }
             return result;
+        }
+
+        PerkDef WeightedPick(List<PerkDef> pool, Dictionary<PerkRarity, float> weights, float rareBonus)
+        {
+            float total = 0;
+            foreach (var p in pool) total += Weight(p, weights, rareBonus);
+            float roll = perkRng.Value * total;
+            PerkDef pick = pool[pool.Count - 1];
+            foreach (var p in pool)
+            {
+                roll -= Weight(p, weights, rareBonus);
+                if (roll <= 0) { pick = p; break; }
+            }
+            return pick;
         }
 
         static float Weight(PerkDef p, Dictionary<PerkRarity, float> w, float rareBonus)

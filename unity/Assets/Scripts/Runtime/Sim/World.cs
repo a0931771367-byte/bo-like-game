@@ -42,6 +42,9 @@ namespace BoLike.Sim
         public event Action<Projectile> ProjectileSpawned;
         public event Action<Wall> WallSpawned;
         public event Action PlayerDied;
+        /// <summary>The player lost HP to a hit (not a guard, miss or shield).</summary>
+        public event Action PlayerHurt;
+        public void RaisePlayerHurt() => PlayerHurt?.Invoke();
         public event Action<string> Toasted;
         public event Action<int> ComboChanged;
 

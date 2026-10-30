@@ -15,7 +15,7 @@ namespace BoLike.UI
     {
         Canvas canvas;
         RectTransform layer;
-        readonly System.Collections.Generic.List<(Image cover, int skill)> skillCovers = new();
+        readonly System.Collections.Generic.List<(Image cover, Image icon, Image locked, Image level, int skill)> skillCovers = new();
         World world;
 
         public static TouchControls Create(World world)
@@ -80,7 +80,12 @@ namespace BoLike.UI
                 cover.fillMethod = Image.FillMethod.Radial360;
                 cover.fillOrigin = (int)Image.Origin360.Top;
                 cover.fillClockwise = false;
-                skillCovers.Add((cover, i));
+                var lockSprite = Resources.Load<Sprite>("Icons/skill_locked");
+                Image lockImg = lockSprite != null ? UiKit.Sprite(b.transform, lockSprite, 0, 0, 44, 44, UiKit.Center, UiKit.Center) : null;
+                // Level capsule 28×16 at the bottom-right of the 68 px button, 4 px outside the circle.
+                var levelImg = UiKit.Sprite(b.transform, Hud.SkillLevelBadge(1), 34 - 14 + 4, 34 - 8 + 4, 28, 16, UiKit.Center, UiKit.Center);
+                levelImg.raycastTarget = false;
+                skillCovers.Add((cover, icon, lockImg, levelImg, i));
                 var btn = b.gameObject.AddComponent<OnScreenButton>();
                 btn.controlPath = paths[i];
             }
@@ -167,11 +172,17 @@ namespace BoLike.UI
         {
             var p = world.Player;
             if (p == null) return;
-            foreach (var (cover, i) in skillCovers)
+            foreach (var (cover, icon, lockImg, levelImg, i) in skillCovers)
             {
                 var s = p.cls.skills[i];
                 float left = p.CooldownLeft(s);
-                cover.fillAmount = p.SkillLv(s) > 0 ? (left > 0 ? Mathf.Min(1, left / p.CooldownTotal(s)) : 0) : 0.85f;
+                bool learned = p.SkillLv(s) > 0;
+                if (learned) levelImg.sprite = Hud.SkillLevelBadge(p.SkillLv(s));
+                UiKit.SetAlpha(levelImg, learned && levelImg.sprite != null ? 1f : 0f);
+                // Locked skills show the lock over a dimmed icon (art spec: icon at 40%); the cooldown cover is for learned ones.
+                cover.fillAmount = learned ? (left > 0 ? Mathf.Min(1, left / p.CooldownTotal(s)) : 0) : (lockImg != null ? 0f : 0.85f);
+                UiKit.SetAlpha(icon, learned ? 1f : 0.4f);
+                if (lockImg != null) UiKit.SetAlpha(lockImg, learned ? 0f : 0.9f);
             }
         }
     }

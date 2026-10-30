@@ -15,7 +15,7 @@ namespace BoLike.UI
         RectTransform layer;
         Image hpBar, spBar, expBar, bossBar, bossFrame, flashImg;
         Text hpText, spText, lvText, goldText, potText, buffText, toastText, goText, comboText, bossName, stardustText;
-        readonly List<(Image bg, Image cover, Image label, Text key)> skillCd = new();
+        readonly List<(Image bg, Image cover, Image label, Text key, Image locked, Image level)> skillCd = new();
         float toastUntil, comboUntil, comboPop, flashUntil, flashDur, flashAlpha;
         Enemy boss;
         readonly List<(Text t, float until, float start)> banners = new();
@@ -64,7 +64,11 @@ namespace BoLike.UI
                 var label = UiKit.Sprite(layer, Game.SpriteBank.Icon(cls.id, i), bx + 2, by + 2, 60, 60, UiKit.TopCenter);
                 var cover = UiKit.Rect(layer, bx, by + 64, 64, 0, 0x000000, 0.65f, UiKit.TopCenter, UiKit.BottomLeft);
                 var key = UiKit.Text(layer, bx + 4, by + 2, keys[i], 12, 0xffffff, UiKit.TopCenter);
-                skillCd.Add((bg, cover, label, key));
+                var lockSprite = Resources.Load<Sprite>("Icons/skill_locked");
+                Image lockImg = lockSprite != null ? UiKit.Sprite(layer, lockSprite, bx + 8, by + 8, 48, 48, UiKit.TopCenter) : null;
+                // Art: level capsule 36×20 at the bottom-right corner, protruding 4 px outside the slot.
+                var levelImg = UiKit.Sprite(layer, SkillLevelBadge(1), bx + 64 - 36 + 4, by + 64 - 20 + 4, 36, 20, UiKit.TopCenter);
+                skillCd.Add((bg, cover, label, key, lockImg, levelImg));
             }
             if (!touch) UiKit.Text(layer, 0, 92, "J 攻擊  K 跳躍  L 防禦(+方向閃躲)  1/2 藥水  Esc 選單", 13, 0xcfd4e6, UiKit.TopCenter, UiKit.TopCenter, TextAnchor.UpperCenter);
 
@@ -87,11 +91,21 @@ namespace BoLike.UI
             bossName = UiKit.Text(layer, 0, y - 26, e.def.name, 18, 0xffb3c6, UiKit.TopCenter, UiKit.TopCenter, TextAnchor.UpperCenter, true);
         }
 
-        public void Toast(string msg)
+        static readonly Sprite[] levelBadges = new Sprite[10];
+        /// <summary>Art's pre-rendered "LvN" capsule (skill_level_1…9); levels above 9 reuse 9.</summary>
+        public static Sprite SkillLevelBadge(int level)
+        {
+            int n = Mathf.Clamp(level, 1, 9);
+            return levelBadges[n] ??= Resources.Load<Sprite>("Icons/skill_level_" + n);
+        }
+
+        public void Toast(string msg) => Toast(msg, 2.0f);
+
+        public void Toast(string msg, float seconds)
         {
             toastText.text = msg;
             UiKit.SetAlpha(toastText, 1);
-            toastUntil = Time.time + 2.0f;
+            toastUntil = Time.time + seconds;
         }
 
         public void ShowGo(bool show) => UiKit.SetAlpha(goText, show ? 0.6f + Mathf.PingPong(Time.time * 2f, 0.4f) : 0);
@@ -129,7 +143,7 @@ namespace BoLike.UI
             hpText.text = $"{Mathf.CeilToInt(p.hp)} / {Mathf.RoundToInt(p.maxHp)}";
             spText.text = $"{Mathf.FloorToInt(p.sp)} / {Mathf.RoundToInt(p.maxSp)}";
             lvText.text = $"{p.cls.name}  Lv.{p.prog.level}";
-            goldText.text = $"{world.Inv.gold} G";
+            goldText.text = ""; // beta hides gold (growth curve v2 E7): it is still tracked for the merchant room later
             stardustText.text = Stardust != null ? $"✦ {Stardust()}" : "";
             var sb = new System.Text.StringBuilder();
             foreach (var b in p.buffs)
@@ -144,13 +158,19 @@ namespace BoLike.UI
             for (int i = 0; i < skillCd.Count; i++)
             {
                 var s = p.cls.skills[i];
-                var (bg, cover, label, key) = skillCd[i];
+                var (bg, cover, label, key, lockImg, levelImg) = skillCd[i];
                 bool learned = p.SkillLv(s) > 0;
+                if (levelImg != null)
+                {
+                    if (learned) levelImg.sprite = SkillLevelBadge(p.SkillLv(s));
+                    UiKit.SetAlpha(levelImg, learned && levelImg.sprite != null ? 1f : 0f);
+                }
                 UiKit.SetAlpha(bg, learned ? 0.4f : 0.2f);
-                UiKit.SetAlpha(label, learned ? 1f : 0.3f);
+                UiKit.SetAlpha(label, learned ? 1f : 0.4f);
+                if (lockImg != null) UiKit.SetAlpha(lockImg, learned ? 0f : 0.9f);
                 float left = p.CooldownLeft(s);
                 cover.rectTransform.sizeDelta = new Vector2(64, left > 0 ? 64 * Mathf.Min(1, left / p.CooldownTotal(s)) : 0);
-                key.text = learned ? $"{keys[i]} Lv{p.SkillLv(s)}" : keys[i];
+                key.text = keys[i]; // the level now sits on the art badge
             }
             if (boss != null && bossBar != null)
             {

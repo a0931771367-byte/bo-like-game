@@ -343,8 +343,19 @@ namespace BoLike.Sim
         {
             var p = P;
             float pdef = p != null ? (float)p.d.def : 0;
-            int dmg = Math.Max(1, (int)StatFormulas.JsRound((def.atk * atkMult * powerMult - pdef * 0.6) * (0.9 + Rng.NextDouble() * 0.2)));
+            int dmg = Math.Max(1, (int)StatFormulas.JsRound(BaseDamage(def.atk * atkMult, powerMult, pdef, GameDb.Rules.enemyDamage) * (0.9 + Rng.NextDouble() * 0.2)));
             return new HitInfo { damage = dmg, crit = false, mult = 1, element = def.element, dir = dir, knock = knock, launch = launch, stun = stun, source = this };
+        }
+
+        /// <summary>
+        /// Pre-roll enemy damage: a plain atk − def×coef subtraction with a floor of atk × minFraction, so high-DEF
+        /// classes still take pressure late in a run (growth curve v2 E1).
+        /// </summary>
+        public static double BaseDamage(double atk, double powerMult, double def, EnemyDamage rule)
+        {
+            double floor = atk * (rule?.minFraction ?? 0);
+            double raw = atk * powerMult - def * (rule?.defCoef ?? 0.6);
+            return Math.Max(floor, raw);
         }
 
         public override bool TakeHit(HitInfo h)
@@ -416,6 +427,9 @@ namespace BoLike.Sim
             return true;
         }
 
+        /// <summary>Corpse time: down 120 ms, flat 120 ms, fade 200 ms (the view draws the art poses over this).</summary>
+        public const int DyingMs = 440;
+
         void Die()
         {
             SetState(FighterState.Dying);
@@ -423,7 +437,7 @@ namespace BoLike.Sim
             Fx.Spark(x, y - h / 2, def.color, def.boss ? 3 : 1.6f);
             Fx.Dust(x, y, def.boss ? 14 : 6, def.boss ? 2 : 1);
             if (def.boss) { Fx.Flash(0.7f, 400); Fx.Shake(400, 0.012f); }
-            world.Delay(260, () => world.RemoveEnemy(this));
+            world.Delay(DyingMs, () => world.RemoveEnemy(this));
         }
     }
 }

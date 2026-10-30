@@ -53,6 +53,8 @@ namespace BoLike.Systems
         public bool bossCleared;
         /// <summary>Seed code of the most recent run (for the debug seed panel and bug reports).</summary>
         public string lastSeedCode;
+        /// <summary>Tutorial hints already shown (strings.json hint.* keys); hints only run in the first two runs anyway.</summary>
+        public List<string> hintsSeen = new();
 
         public ClassProgress ProgressFor(ClassDef cls)
         {
@@ -134,6 +136,7 @@ namespace BoLike.Systems
             s.potions ??= new();
             s.cleared ??= new();
             s.unlocks ??= new();
+            s.hintsSeen ??= new();
             // A null entry (hand-edited or truncated file) is dropped so ProgressFor rebuilds it instead of returning null.
             foreach (var k in s.classes.Where(kv => kv.Value == null).Select(kv => kv.Key).ToList()) s.classes.Remove(k);
             foreach (var kv in s.classes)

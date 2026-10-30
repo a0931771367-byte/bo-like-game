@@ -87,12 +87,30 @@ namespace BoLike.Editor
             Debug.Log("BoLike: Main scene ready at " + ScenePath);
         }
 
+        /// <summary>
+        /// App icon from the art department's logo-final (1024×1024, opaque). App Store Connect rejects an upload
+        /// without the 1024 "Any Appearance" icon, so it is set as the default icon and on every iOS icon slot.
+        /// </summary>
+        static void SetupIcons()
+        {
+            var tex = AssetDatabase.LoadAssetAtPath<Texture2D>("Assets/Icons/app-icon-1024.png");
+            if (tex == null) { Debug.LogWarning("[ProjectSetup] Assets/Icons/app-icon-1024.png missing: no app icon set"); return; }
+            PlayerSettings.SetIconsForTargetGroup(BuildTargetGroup.Unknown, new[] { tex });
+            foreach (var kind in PlayerSettings.GetSupportedIconKinds(NamedBuildTarget.iOS))
+            {
+                var icons = PlayerSettings.GetPlatformIcons(NamedBuildTarget.iOS, kind);
+                foreach (var icon in icons) icon.SetTexture(tex);
+                PlayerSettings.SetPlatformIcons(NamedBuildTarget.iOS, kind, icons);
+            }
+        }
+
         static void SetupPlayer()
         {
             PlayerSettings.companyName = "Pocket Adventurers";
             PlayerSettings.productName = "口袋冒險團"; // iOS home-screen name; App Store name: 口袋冒險團 Pocket Adventurers
             // Must match the bundle id registered in App Store Connect (sprint D10).
             PlayerSettings.SetApplicationIdentifier(NamedBuildTarget.iOS, "com.pocketadventurers.game");
+            SetupIcons();
 
             PlayerSettings.defaultInterfaceOrientation = UIOrientation.AutoRotation;
             PlayerSettings.allowedAutorotateToLandscapeLeft = true;

@@ -715,6 +715,7 @@ namespace BoLike.Sim
                 return true;
             }
             hp -= h.damage;
+            world.RaisePlayerHurt();
             fx.Number(x, y - 110 - z, $"{h.damage}", Colors.Hp, h.damage > maxHp * 0.2f);
             fx.Spark(x, y - 55 - z, 0xff7070);
             Flash(0xff4444, 90);
