@@ -1,7 +1,7 @@
 import type { PerkDef } from './types';
 
 /**
- * 強化池 v1（封測版 17 個）。清完一個戰鬥房後三選一。
+ * 強化池 v2（封測 2：30 個）。清完一個戰鬥房後三選一。
  * 稀有度抽取權重見 RUN_RULES.rarityWeights；同一個強化在一局內最多拿 maxStacks 次。
  */
 export const PERKS: PerkDef[] = [
@@ -42,13 +42,8 @@ export const PERKS: PerkDef[] = [
     effects: [{ kind: 'projectileCount', add: 1 }] },
   { id: 'pierceArrow', name: '穿透箭', desc: '箭矢可多穿透 1 名敵人', rarity: 'rare', classes: ['archer'], maxStacks: 2,
     effects: [{ kind: 'pierce', add: 1 }] },
-];
 
-/**
- * 強化池 v2（正式版 18–30）。封測不入池，等 Unity 支援新的 effect kind 後併入 PERKS。
- * 設計目標：普通強化要「立刻有感」（防禦、閃避、開場爆發），稀有以上做機制而不是堆數字。
- */
-export const PERKS_NEXT: PerkDef[] = [
+  // ---- 封測 2：原 PERKS_NEXT 併入池（11/1 凍結：強化池 30）。程式部需實作 9 個 v2 kind。 ----
   // ---- 普通：立刻有感 ----
   { id: 'ironGuard', name: '鐵壁', desc: '防禦時受到的傷害減為 10%', rarity: 'common', classes: [], maxStacks: 1,
     effects: [{ kind: 'guardMult', value: 0.1 }] },
@@ -81,6 +76,8 @@ export const PERKS_NEXT: PerkDef[] = [
     effects: [{ kind: 'crit', chanceAdd: 15 }] },
 ];
 
+/** @deprecated 封測 2 起全部在 PERKS 裡；保留空陣列給舊程式。 */
+export const PERKS_NEXT: PerkDef[] = [];
 export const getPerk = (id: string) => {
   const p = [...PERKS, ...PERKS_NEXT].find((k) => k.id === id);
   if (!p) throw new Error(`unknown perk ${id}`);
