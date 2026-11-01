@@ -51,6 +51,9 @@ namespace BoLike.Sim
         public event Action PlayerHurt;
         public void RaisePlayerHurt() => PlayerHurt?.Invoke();
         public event Action<string> Toasted;
+        /// <summary>A sim event worth a one-time tutorial hint (strings key); the game layer decides whether to show it.</summary>
+        public event Action<string> HintRequested;
+        public void RequestHint(string key) => HintRequested?.Invoke(key);
         public event Action<int> ComboChanged;
 
         double hitStopUntil;
@@ -78,7 +81,7 @@ namespace BoLike.Sim
             for (int i = targets.Count - 1; i >= 0; i--)
             {
                 var t = targets[i];
-                if (t.dead || src.struck.Contains(t)) continue;
+                if (!t.CanBeHit || src.struck.Contains(t)) continue;
                 float dx = t.x - src.x;
                 if (Math.Sign(dx) != src.facing && Math.Abs(dx) > t.w * 0.5f) continue;
                 if (Math.Abs(dx) > range + t.w / 2 || Math.Abs(t.y - src.y) > depthY || Math.Abs(t.z - src.z) > 120) continue;
@@ -101,7 +104,7 @@ namespace BoLike.Sim
             for (int i = targets.Count - 1; i >= 0; i--)
             {
                 var t = targets[i];
-                if (t.dead || (!ignoreStruck && src.struck.Contains(t))) continue;
+                if (!t.CanBeHit || (!ignoreStruck && src.struck.Contains(t))) continue;
                 if (!InCircle(t.x, t.y, x, y, r + t.w / 2)) continue;
                 if (!ignoreStruck) src.struck.Add(t);
                 if (t.TakeHit(make(t))) n++;

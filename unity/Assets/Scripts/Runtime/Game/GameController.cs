@@ -162,6 +162,7 @@ namespace BoLike.Game
             world.PlayerDied += OnPlayerDead;
             world.PlayerHurt += () => Hint("hint.dodge");
             world.Toasted += hud.Toast;
+            world.HintRequested += Hint;
             world.ComboChanged += hud.Combo;
 
             GameInput.Enable();

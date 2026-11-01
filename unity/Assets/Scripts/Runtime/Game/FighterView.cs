@@ -15,7 +15,7 @@ namespace BoLike.Game
         Transform view;
         SpriteRenderer body, shadow, hpBg, hpBar, aura;
         /// <summary>Art's hit poses for enemies (<id>_hurt/_knock/_down/_flat); null when the monster has none yet.</summary>
-        Sprite sideSprite, hurtSprite, knockSprite, downSprite, flatSprite;
+        Sprite sideSprite, hurtSprite, knockSprite, downSprite, flatSprite, pileSprite;
         /// <summary>Gold silhouette copies behind an elite's body (design doc 08 §2.6: 金色輪廓).</summary>
         SpriteRenderer[] outlines;
         MaterialPropertyBlock mpb;
@@ -71,6 +71,7 @@ namespace BoLike.Game
                 knockSprite = PoseOrNull(e.def.SpriteId, "knock");
                 downSprite = PoseOrNull(e.def.SpriteId, "down");
                 flatSprite = PoseOrNull(e.def.SpriteId, "flat");
+                pileSprite = PoseOrNull(e.def.SpriteId, "pile"); // 沙蟲 sand pile / 木乃伊 bandage pile (art dept keys)
                 if (e.def.tint.HasValue) baseTint = Colors.Rgb(e.def.tint.Value);
                 float hPx = body.sprite != null ? body.sprite.rect.height : e.def.spriteH;
                 bodyScale = e.def.spriteH / hPx * e.sizeMult;
@@ -283,8 +284,24 @@ namespace BoLike.Game
             var b = e.def.behavior;
             float wob = Mathf.Sin((float)((now + e.phase) / (b == EnemyBehavior.Hopper ? 260 : e.def.boss ? 520 : 380)));
             baseTint = e.Frozen ? Colors.Rgb(Colors.Ice) : e.Weakened ? Colors.Rgb(0xffb0b0) : e.Poisoned ? Colors.Rgb(0xc9a0ff)
+                : e.PetrifiedBoss ? Colors.Rgb(0xc9b28a) : e.Enraged ? Colors.Rgb(0xff9090)
                 : e.def.tint.HasValue ? Colors.Rgb(e.def.tint.Value) : Color.white;
             if (sideSprite != null) body.sprite = sideSprite;
+            if (e.Burrowed)
+            {
+                // Sand pile: the pile pose when the art has one, else the body squashed flat; it shakes while about to emerge.
+                if (pileSprite != null) body.sprite = pileSprite; else { sy = 0.3f; sx = 1.25f; }
+                if (e.EmergeAt > 0) { float sh = Mathf.Sin((float)(now / 25)); lean = sh * 6; sx *= 1 + sh * 0.05f; }
+                return;
+            }
+            if (e.Pile)
+            {
+                if (pileSprite != null) body.sprite = pileSprite;
+                else if (flatSprite != null) body.sprite = flatSprite;
+                else sy = 0.35f;
+                shadow.color = new Color(0, 0, 0, 0.28f);
+                return;
+            }
             // Art-drawn hit poses (art dept 10/30): no rotation tricks when the pose exists.
             if (e.state == FighterState.Hurt && hurtSprite != null) { body.sprite = hurtSprite; sx = 0.96f; return; }
             if (e.state == FighterState.Knock && knockSprite != null)
@@ -327,6 +344,7 @@ namespace BoLike.Game
                 case FighterState.Lunge: lean = 14; sx = 1.1f; break;
                 case FighterState.Slam: sy = 1.25f; sx = 0.85f; break;
                 case FighterState.Stomp: sy = t < 520 ? 1 + t / 520f * 0.18f : 0.85f; sx = t < 520 ? 1 - t / 520f * 0.08f : 1.15f; break;
+                case FighterState.Beam: sx = 1.08f; lean = t < 700 ? -4 : 6; break;
                 case FighterState.Hurt: lean = -10; sx = 0.92f; break;
                 case FighterState.Knock: lean = -60; break;
                 case FighterState.Down: lean = -90; sy = 0.6f; break;

@@ -48,7 +48,7 @@ namespace BoLike.Sim
             for (int i = 0; i < targets.Count; i++)
             {
                 var t = targets[i];
-                if (t.dead || hit.Contains(t) || Math.Abs(t.y - o.y) > 50f) continue;
+                if (!t.CanBeHit || hit.Contains(t) || Math.Abs(t.y - o.y) > 50f) continue;
                 if (Math.Abs(t.x - o.x) < t.w / 2f + 14f && t.z < o.z + 40f)
                 {
                     if (t is Player pl && o.targets == Team.Player && pl.ReflectsProjectiles)
@@ -117,7 +117,7 @@ namespace BoLike.Sim
             for (int i = 0; i < targets.Count; i++)
             {
                 var t = targets[i];
-                if (t.dead || Math.Abs(t.x - o.x) > 45f + t.w / 2f || Math.Abs(t.y - o.y) > 80f || t.z > 60f) continue;
+                if (!t.CanBeHit || t.dead || Math.Abs(t.x - o.x) > 45f + t.w / 2f || Math.Abs(t.y - o.y) > 80f || t.z > 60f) continue;
                 if (lastTick.TryGetValue(t, out var last) && now - last < 350) continue;
                 lastTick[t] = now;
                 var h = o.make(t);
@@ -187,7 +187,7 @@ namespace BoLike.Sim
             for (int i = 0; i < targets.Count; i++)
             {
                 var t = targets[i];
-                if (t.dead || t.z > 60f) continue;
+                if (!t.CanBeHit || t.dead || t.z > 60f) continue;
                 float dx = t.x - o.x, dy = (t.y - o.y) * 1.6f; // the ground is drawn foreshortened, so the zone is an ellipse
                 if (dx * dx + dy * dy > (o.radius + t.w / 2f) * (o.radius + t.w / 2f)) continue;
                 if (o.slow < 1f) t.ApplySlow(o.slow, 120);

@@ -45,6 +45,25 @@ namespace BoLike.Sim
             if (mod == "haste") hasteMult = rules.hasteMult;
         }
 
+        // ---- desert ruins behaviours (design doc 08 §2.5) ----
+        /// <summary>沙蟲 underground: untargetable, drawn as a sand pile; <see cref="EmergeAt"/> > 0 while the pile shakes before it bursts out.</summary>
+        public bool Burrowed;
+        public double EmergeAt;
+        double lastNearAt;
+        /// <summary>木乃伊 bandage pile: dead but about to revive; the pile itself can be broken.</summary>
+        public bool Pile;
+        public float pileHp;
+        double reviveAt;
+        bool revived;
+        /// <summary>石像 phases: petrified (invulnerable, still) and enraged (ATK up, red).</summary>
+        public double PetrifiedUntil;
+        public bool Enraged;
+        public bool PetrifiedBoss => Now < PetrifiedUntil;
+        readonly HashSet<int> phasesDone = new();
+        int beamDir = 1;
+        bool beamFired;
+        public override bool CanBeHit => Pile || (!dead && !Burrowed);
+
         /// <summary>爆裂 elite: the death explosion's hit on the player.</summary>
         public HitInfo ExplosionHit(float powerMult, int dir) => MakeHit(powerMult, 240, 0, 0, dir);
         public int hitCount;
@@ -66,6 +85,7 @@ namespace BoLike.Sim
             maxHp = hp = Mathf.Round(def.hp * hpMult);
             facing = world.Player != null && x > world.Player.x ? -1 : 1;
             phase = Rng.Value * 1000f;
+            if (def.behavior == EnemyBehavior.Burrower && def.burrow != null) Burrowed = true;
         }
 
         public Defender Defender() => new()
@@ -104,6 +124,13 @@ namespace BoLike.Sim
             float ms = dt * 1000;
             stateTime += ms;
             var (xMin, xMax) = world.EnemyBounds();
+            if (Pile)
+            {
+                // 繃帶堆: lies still until it revives or is broken.
+                vx = vy = 0;
+                if (Now >= reviveAt) Revive();
+                return;
+            }
             if (!dead && Now < poisonUntil && Now >= poisonNext)
             {
                 poisonNext = Now + 500;
@@ -144,13 +171,46 @@ namespace BoLike.Sim
                     vx = vy = 0;
                     if (stateTime >= 520)
                     {
-                        Fx.Shake(220, 0.014f);
-                        Fx.Ring(x, y, 240, 0x9be15d, y - 1);
-                        Fx.Dust(x, y, 14, 2);
-                        world.Sfx.Play("thunder", 0.8f);
-                        TryHitPlayer(230, 1.4f, 420, 480, 500, true);
+                        if (def.behavior == EnemyBehavior.BossGuardian)
+                        {
+                            // 砸地震波: a wide ground wave that launches; airborne players (z > 90) are missed.
+                            Fx.Shake(260, 0.016f);
+                            Fx.Ring(x, y, 320, 0xc9b28a, y - 1);
+                            Fx.Dust(x, y, 18, 2.2f);
+                            world.Sfx.Play("guardianQuake");
+                            TryHitPlayer(300, 1.3f, 460, 520, 500, true);
+                        }
+                        else
+                        {
+                            Fx.Shake(220, 0.014f);
+                            Fx.Ring(x, y, 240, 0x9be15d, y - 1);
+                            Fx.Dust(x, y, 14, 2);
+                            world.Sfx.Play("thunder", 0.8f);
+                            TryHitPlayer(230, 1.4f, 420, 480, 500, true);
+                        }
                         SetState(FighterState.Recover);
                     }
+                    break;
+                case FighterState.Beam:
+                    vx = vy = 0;
+                    if (stateTime < 700)
+                    {
+                        // Telegraph: a red line of sparks along the lane, refreshed every 80 ms.
+                        if ((int)(stateTime / 80) != (int)((stateTime - ms) / 80))
+                            for (int k = 1; k <= 7; k++) Fx.Spark(x + beamDir * (60 + k * 95), y - 60, 0xff4d4d, 0.6f);
+                    }
+                    else if (!beamFired)
+                    {
+                        beamFired = true;
+                        world.SpawnProjectile(new ProjectileOpts
+                        {
+                            owner = this, targets = Team.Player, x = x + beamDir * 60, y = y, z = 60, dir = beamDir, speed = 2600, color = 0xff4d4d,
+                            range = 760, pierce = 9, make = _ => MakeHit(1.6f, 300, 0, 600, beamDir),
+                        });
+                        world.Sfx.Play("guardianBeam");
+                        Fx.Shake(200, 0.01f);
+                    }
+                    if (stateTime >= 1000) SetState(FighterState.Recover);
                     break;
                 case FighterState.Recover:
                     vx *= 0.85f;
@@ -256,6 +316,13 @@ namespace BoLike.Sim
             float dx = (decoy ? world.DecoyX : p.x) - x;
             float dy = (decoy ? world.DecoyY : p.y) - y;
             float dist = Math.Abs(dx);
+            if (PetrifiedBoss)
+            {
+                // 石化 phase: a statue again — still and invulnerable while its mummies come out.
+                vx = vy = 0;
+                if (state != FighterState.Idle) SetState(FighterState.Idle);
+                return;
+            }
             facing = dx >= 0 ? 1 : -1;
             float sp = def.speed * SpeedMult;
             if (Rooted && !def.boss) sp = 0;
@@ -276,13 +343,63 @@ namespace BoLike.Sim
                     }
                     return;
                 case EnemyBehavior.Melee:
-                case EnemyBehavior.Burrower: // desert ruins behaviours (design doc 08 §2.5) land one by one; melee until then
                 case EnemyBehavior.Reviver:
-                case EnemyBehavior.Crab:
-                case EnemyBehavior.BossGuardian:
                     if (dist < def.attackRange && aligned && canAttack) { SetState(FighterState.Windup); return; }
                     vx = dist > def.attackRange * 0.7f ? sdx * sp : 0;
                     vy = Clamp1(dy / 20) * sp * 0.7f;
+                    break;
+                case EnemyBehavior.Burrower:
+                {
+                    var bd = def.burrow;
+                    if (Burrowed)
+                    {
+                        vx = vy = 0;
+                        if (state != FighterState.Idle) SetState(FighterState.Idle);
+                        if (bd == null) { Burrowed = false; break; }
+                        if (EmergeAt <= 0 && dist < bd.triggerRange && Math.Abs(dy) < 90)
+                        {
+                            // The pile starts shaking; the worm bursts out emergeDelay later.
+                            EmergeAt = Now + bd.emergeDelay;
+                            Fx.Number(x, y - 40, "!", 0xe0c070, true);
+                            world.RequestHint("hint.burrow");
+                        }
+                        if (EmergeAt > 0 && Now >= EmergeAt)
+                        {
+                            Burrowed = false; EmergeAt = 0; lastNearAt = Now;
+                            vz = 380; z = 1;
+                            Fx.Dust(x, y, 12, 1.5f);
+                            Fx.Ring(x, y, 110, 0xe0c070, y - 1);
+                            world.Sfx.Play("wormEmerge");
+                            attackReadyAt = Now + 500;
+                        }
+                        return;
+                    }
+                    if (bd == null || dist < bd.triggerRange * 1.6f) lastNearAt = Now;
+                    else if (Now - lastNearAt > bd.rest && !Airborne)
+                    {
+                        // Nobody near for a while: back under the sand.
+                        Burrowed = true; vx = vy = 0; struck.Clear();
+                        Fx.Dust(x, y, 8, 1.2f);
+                        if (state != FighterState.Idle) SetState(FighterState.Idle);
+                        return;
+                    }
+                    goto case EnemyBehavior.Melee;
+                }
+                case EnemyBehavior.Crab:
+                    // Sidles: mostly horizontal, drifting onto the player's lane only once close.
+                    if (dist < def.attackRange && aligned && canAttack) { SetState(FighterState.Windup); return; }
+                    vx = dist > def.attackRange * 0.7f ? sdx * sp : 0;
+                    vy = dist < def.attackRange * 2.5f ? Clamp1(dy / 20) * sp * 0.35f : 0;
+                    break;
+                case EnemyBehavior.BossGuardian:
+                    if (canAttack)
+                    {
+                        if (dist < def.attackRange && aligned) { SetState(FighterState.Windup); return; }
+                        if (dist > 150 && dist < 460 && Rng.Chance(0.012)) { StartQuake(); return; }
+                        if (dist > 220 && dist < 720 && Math.Abs(dy) < 60 && Rng.Chance(0.014)) { StartBeam(sdx); return; }
+                    }
+                    vx = sdx * sp * (dist > 130 ? 1 : 0);
+                    vy = Clamp1(dy / 20) * sp * 0.5f;
                     break;
                 case EnemyBehavior.Lunger:
                 {
@@ -342,6 +459,63 @@ namespace BoLike.Sim
             if (!moving && state != FighterState.Idle) SetState(FighterState.Idle);
         }
 
+        void StartQuake()
+        {
+            Fx.Number(x, y - h - 40, "!", 0xc9b28a, true);
+            attackReadyAt = Now + def.attackCd + 1400;
+            world.RequestHint("hint.guardianQuake");
+            SetState(FighterState.Stomp);
+        }
+
+        void StartBeam(int sdx)
+        {
+            beamDir = sdx == 0 ? facing : sdx;
+            facing = beamDir;
+            beamFired = false;
+            attackReadyAt = Now + def.attackCd + 1600;
+            Fx.Number(x, y - h - 40, "!!", 0xff4d4d, true);
+            world.Sfx.Play("guardianBeamWarn");
+            world.RequestHint("hint.guardianBeam");
+            SetState(FighterState.Beam);
+        }
+
+        /// <summary>Boss HP-fraction phases (ruinGuardian): petrify spawns helpers and makes the boss invulnerable for a while; enrage raises ATK.</summary>
+        void CheckPhases()
+        {
+            if (def.phases == null || hp <= 0) return;
+            for (int i = 0; i < def.phases.Count; i++)
+            {
+                var ph = def.phases[i];
+                if (phasesDone.Contains(i) || hp > maxHp * ph.at) continue;
+                phasesDone.Add(i);
+                if (ph.action == "petrify")
+                {
+                    PetrifiedUntil = Now + (ph.duration > 0 ? ph.duration : 4000);
+                    vx = vy = 0;
+                    SetState(FighterState.Idle);
+                    Fx.Ring(x, y, 200, 0xc9b28a, y - 1);
+                    Fx.Number(x, y - h - 60, "石化！", 0xc9b28a, true);
+                    world.Sfx.Play("guardianPetrify");
+                    if (ph.spawn != null)
+                        for (int k = 0; k < ph.spawn.Count; k++)
+                        {
+                            float sx = x + (k % 2 == 0 ? -1 : 1) * (160 + 40 * (k / 2));
+                            var helper = world.SpawnEnemy(GameDb.Enemy(ph.spawn[k]), Mathf.Clamp(sx, 60, world.StageWidth - 60), y, 1f, atkMult);
+                            helper.attackReadyAt = Now + 800;
+                            Fx.Dust(helper.x, helper.y, 8, 1.2f);
+                        }
+                }
+                else if (ph.action == "enrage")
+                {
+                    Enraged = true;
+                    atkMult *= ph.mult > 0 ? ph.mult : 1.3f;
+                    Fx.Number(x, y - h - 60, "狂怒！", 0xff4d4d, true);
+                    Fx.Aura(x, y, 0xff4d4d);
+                    world.Sfx.Play("bossGrowl");
+                }
+            }
+        }
+
         void StartSlam(float dx)
         {
             Fx.Number(x, y - h - 40, "!", Colors.Crit, true);
@@ -359,12 +533,20 @@ namespace BoLike.Sim
             if (def.behavior == EnemyBehavior.Turret)
             {
                 int dir = facing;
-                world.SpawnProjectile(new ProjectileOpts
+                int shots = Math.Max(1, def.volley); // 仙人掌哨: a volley of needles 120 ms apart
+                for (int i = 0; i < shots; i++)
                 {
-                    owner = this, targets = Team.Player, x = x + dir * 30, y = y, z = 70, dir = dir, speed = 430, color = 0x9bd45a,
-                    range = def.attackRange + 80, make = _ => MakeHit(1, 240, 0, 400, dir),
-                });
-                world.Sfx.Play("arrow", 0.6f);
+                    world.Delay(i * 120, () =>
+                    {
+                        if (dead) return;
+                        world.SpawnProjectile(new ProjectileOpts
+                        {
+                            owner = this, targets = Team.Player, x = x + dir * 30, y = y, z = 70, dir = dir, speed = 430, color = 0x9bd45a,
+                            range = def.attackRange + 80, make = _ => MakeHit(1, 240, 0, 400, dir),
+                        });
+                        world.Sfx.Play("arrow", 0.6f);
+                    });
+                }
                 SetState(FighterState.Attack);
                 return;
             }
@@ -407,7 +589,42 @@ namespace BoLike.Sim
 
         public override bool TakeHit(HitInfo h)
         {
-            if (dead) return false;
+            if (Pile)
+            {
+                // 繃帶堆: break it before the mummy gets back up.
+                pileHp -= h.damage;
+                Fx.Number(x, y - 40, $"{h.damage}", 0xe0d6b0);
+                Fx.Spark(x, y - 20, 0xe0d6b0, 0.8f);
+                Flash(Colors.White, 60);
+                world.Sfx.Play("hit");
+                if (h.source == world.Player) world.RegisterHit();
+                if (pileHp <= 0)
+                {
+                    Pile = false; revived = true; dyingSince = Now;
+                    Fx.Dust(x, y, 10, 1.4f);
+                    Fx.Number(x, y - 60, "打碎！", 0xe0d6b0, true);
+                    world.Sfx.Play("pileBreak");
+                    world.Delay(DyingMs, () => world.RemoveEnemy(this));
+                }
+                return true;
+            }
+            if (dead || Burrowed) return false;
+            if (PetrifiedBoss)
+            {
+                Fx.Number(x, y - this.h - 30 - z, "石化", 0xc9b28a);
+                Fx.Spark(x, y - this.h / 2 - z, 0xc9b28a, 0.8f);
+                world.Sfx.Play("guard");
+                return false;
+            }
+            if (def.behavior == EnemyBehavior.Crab && def.facingDef != null && h.source != null)
+            {
+                // 沙蟹: the shell in front halves damage, the soft back takes extra (design doc 08 §2.5).
+                bool front = Math.Sign(h.source.x - x) == facing || h.source.x == x;
+                float k = front ? def.facingDef.front : def.facingDef.back;
+                h.damage = Math.Max(1, (int)StatFormulas.JsRound(h.damage * k));
+                if (front) { Fx.Number(x, y - this.h - 60 - z, "硬殼", 0xa0a0ff); world.Sfx.Play("crabShellHit"); world.RequestHint("hint.crab"); }
+                else Fx.Number(x, y - this.h - 60 - z, "弱點！", 0xff9f43);
+            }
             if (shieldHits > 0 && h.damage > 0)
             {
                 // 護盾 elite: the first hits bounce off.
@@ -441,6 +658,7 @@ namespace BoLike.Sim
                 fx.Number(x, y - this.h - 60, "凍結", Colors.Ice);
             }
             struck.Clear();
+            CheckPhases();
             if (hp <= 0)
             {
                 hp = 0;
@@ -505,7 +723,31 @@ namespace BoLike.Sim
             Fx.Spark(x, y - h / 2, def.color, def.boss ? 3 : 1.6f);
             Fx.Dust(x, y, def.boss ? 14 : 6, def.boss ? 2 : 1);
             if (def.boss) { Fx.Flash(0.7f, 400); Fx.Shake(400, 0.012f); }
+            if (def.behavior == EnemyBehavior.Reviver && def.revive != null && !revived)
+            {
+                // 木乃伊: leaves a bandage pile that revives once unless the player breaks it.
+                Pile = true;
+                pileHp = def.revive.pileHp;
+                reviveAt = Now + def.revive.delay;
+                vx = vy = 0; z = 0; vz = 0;
+                Fx.Number(x, y - 50, "繃帶堆", 0xe0d6b0);
+                return;
+            }
             world.Delay(DyingMs, () => world.RemoveEnemy(this));
+        }
+
+        void Revive()
+        {
+            Pile = false; revived = true; dead = false; dyingSince = -1;
+            hp = Mathf.Max(1, Mathf.Round(maxHp * def.revive.fraction));
+            frozenUntil = 0; poisonUntil = 0; struck.Clear();
+            z = 0; vz = 0;
+            attackReadyAt = Now + 600;
+            SetState(FighterState.Idle);
+            Fx.Ring(x, y, 90, 0xe0d6b0, y - 1);
+            Fx.Dust(x, y, 8, 1.2f);
+            Fx.Number(x, y - h - 40, "復活！", 0xe0d6b0, true);
+            world.Sfx.Play("mummyRevive");
         }
     }
 }
