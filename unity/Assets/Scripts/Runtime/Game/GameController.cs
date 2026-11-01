@@ -153,6 +153,7 @@ namespace BoLike.Game
             world.EnemyRemoved += e => { if (views.TryGetValue(e, out var v)) { Destroy(v.gameObject); views.Remove(e); } };
             world.ProjectileSpawned += p => ProjectileView.Create(p, worldRoot);
             world.WallSpawned += w => WallView.Create(w, worldRoot);
+            world.ZoneSpawned += zn => ZoneView.Create(zn, worldRoot);
             world.EnemyKilled += OnEnemyKilled;
             world.PlayerDied += OnPlayerDead;
             world.PlayerHurt += () => Hint("hint.dodge");

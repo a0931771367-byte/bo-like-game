@@ -62,7 +62,23 @@ namespace BoLike.Sim
             idleSince = Now;
         }
         bool dodgeHealUsed, dodgeTeleported;
-        public DodgeDef Dodge => cls.Dodge;
+        /// <summary>The class dodge with any dodgeOverride card/talent applied (passThrough, knock); kind and animation never change.</summary>
+        public DodgeDef Dodge
+        {
+            get
+            {
+                var dd = cls.Dodge;
+                DodgeDef over = null;
+                foreach (var e in Mods.raw)
+                {
+                    if (e.kind != PerkEffectKind.DodgeOverride) continue;
+                    over ??= dd.Clone();
+                    if (e.passThrough.HasValue) over.passThrough = e.passThrough.Value;
+                    if (e.knock > 0) over.knock = e.knock;
+                }
+                return over ?? dd;
+            }
+        }
         public float DodgeCooldownLeft => (float)Math.Max(0, dodgeReadyAt - Now);
         public float DodgeCooldownTotal => Math.Max(1, Dodge.cooldown);
         public SkillDef casting;
@@ -358,7 +374,7 @@ namespace BoLike.Sim
             dodgeSpeed = dd.kind == DodgeKind.Blink ? 0 : dd.distance / (dodgeMs / 1000f) / 0.7f; // the speed curve below averages 0.7×
             invulnUntil = Now + dd.invuln;
             dodgeReadyAt = Now + dd.cooldown;
-            dodgeHealUsed = dodgeTeleported = false;
+            dodgeHealUsed = dodgeTeleported = dodgeEnded = false;
             struck.Clear();
             SetState(FighterState.Dodge);
             switch (dd.kind)
@@ -404,6 +420,7 @@ namespace BoLike.Sim
                     x = Math.Clamp(x + dodgeDir * dd.distance, min, max);
                     Fx.Ring(x, y, 60, cls.accent, y - 1);
                     Fx.Spark(x, y - 60, cls.accent, 1.2f);
+                    OnDodgeEnd();
                     SetState(FighterState.Idle);
                 }
                 return;
@@ -425,11 +442,52 @@ namespace BoLike.Sim
             // Roll / shadow step: the last `cancelWindow` ms can flow straight into an attack or skill.
             if (dd.cancelWindow > 0 && stateTime >= dodgeMs - dd.cancelWindow)
             {
-                if (GameInput.Consume(GameAction.Attack)) { vx = 0; StartAttack(0); return; }
-                if (TrySkill()) return;
+                if (GameInput.Consume(GameAction.Attack)) { vx = 0; OnDodgeEnd(); StartAttack(0); return; }
+                if (TrySkill()) { OnDodgeEnd(); return; }
             }
-            if (stateTime >= dodgeMs) SetState(FighterState.Idle);
+            if (stateTime >= dodgeMs) { OnDodgeEnd(); SetState(FighterState.Idle); }
         }
+
+        bool dodgeEnded;
+
+        /// <summary>
+        /// Where the dodge ends, dodgeOverride landings leave a zone (荊棘之心 thorn wall, 流沙步伐 quicksand, talents'
+        /// ice burst / spike trap); afterDodgeBuff (talents) starts its timer. Runs once per dodge.
+        /// </summary>
+        void OnDodgeEnd()
+        {
+            if (dodgeEnded) return;
+            dodgeEnded = true;
+            foreach (var e in Mods.raw)
+            {
+                if (e.kind == PerkEffectKind.AfterDodgeBuff && e.duration > 0) afterDodgeUntil = Now + e.duration;
+                if (e.kind != PerkEffectKind.DodgeOverride || e.landing == null) continue;
+                var l = e.landing;
+                float radius = l.radius > 0 ? l.radius : 90;
+                switch (l.what)
+                {
+                    case "thornWall":
+                        world.SpawnZone(new ZoneOpts { owner = this, x = x, y = y, radius = radius, duration = l.duration, color = 0x6fcf5a, what = "thornWall", slow = l.slow > 0 ? l.slow : 1f, damage = Math.Max(1, (int)StatFormulas.JsRound(d.atk * (l.power > 0 ? l.power : 0.5f))), element = Element.Earth });
+                        Sfx.Play("card_thornHeart");
+                        break;
+                    case "quicksand":
+                        world.SpawnZone(new ZoneOpts { owner = this, x = x, y = y, radius = radius, duration = l.duration, color = 0xe0c070, what = "quicksand", slow = l.slow > 0 ? l.slow : 0.5f });
+                        Sfx.Play("card_quicksandStep");
+                        break;
+                    case "iceBurst":
+                        world.StrikeCircle(this, Enemies, x, y, radius, tt => { var hit = MakeHit((Enemy)tt, l.power > 0 ? l.power : 0.8f, Element.Water, true, 40, 0, 100); hit.freeze = l.duration; return hit; }, true);
+                        Fx.Ring(x, y, radius, Colors.Ice, y - 1);
+                        Sfx.Play("ice");
+                        break;
+                    case "spikeTrap":
+                        world.SpawnZone(new ZoneOpts { owner = this, x = x, y = y, radius = radius, duration = l.duration, color = 0xb0b0b0, what = "spikeTrap", rootMs = 1000, damage = Math.Max(1, (int)StatFormulas.JsRound(d.atk * (l.power > 0 ? l.power : 0.6f))) });
+                        break;
+                }
+            }
+        }
+
+        /// <summary>afterDodgeBuff (talents): the window after a dodge in which ASPD / extra arrows apply.</summary>
+        public double afterDodgeUntil;
 
         void Decel(float dt)
         {
@@ -449,6 +507,7 @@ namespace BoLike.Sim
         void StartAttack(int i)
         {
             combo = i;
+            comboSpawned = false;
             queued = false;
             struck.Clear();
             shotFired = false;
@@ -510,11 +569,12 @@ namespace BoLike.Sim
         {
             if (shotFired) return;
             shotFired = true;
+            int step = combo;
             void Fire(float zOff) => world.SpawnProjectile(new ProjectileOpts
             {
                 owner = this, x = x + facing * 30, y = y, z = z + 70 + zOff, dir = facing,
                 speed = ArrowSpeed, color = cls.accent, range = h.range, arrow = true, pierce = Mods.pierceAdd,
-                make = tt => MakeHit((Enemy)tt, h.power, Element.Neutral, false, h.knock, h.launch, h.stun),
+                make = tt => { var hit = MakeHit((Enemy)tt, h.power, Element.Neutral, false, h.knock, h.launch, h.stun); OnComboHit((Enemy)tt, step); return hit; },
             });
             Fire(0);
             for (int i = 0; i < Mods.projectileAdd; i++) Fire(-12 * (i + 1));
@@ -524,10 +584,47 @@ namespace BoLike.Sim
             if (da > 0 && Rng.Chance(da)) world.Delay(80, () => { if (!dead) Fire(-12); });
         }
 
+        bool comboSpawned;
+
+        /// <summary>
+        /// Epic-card combo hooks (S2): onComboHitSpawn drops a sticky blob or fires a piercing beam on combo hit `hit`
+        /// (1-based, 0 = the finisher), once per swing; comboDebuff weakens the target when the finisher lands.
+        /// </summary>
+        void OnComboHit(Enemy t, int step)
+        {
+            bool finisher = step == cls.combo.Count - 1;
+            foreach (var e in Mods.raw)
+            {
+                if (e.kind == PerkEffectKind.ComboDebuff && finisher && e.defMult < 1f)
+                    t.ApplyDefDown(1f - e.defMult, e.duration);
+                if (e.kind != PerkEffectKind.OnComboHitSpawn || comboSpawned) continue;
+                bool match = e.hit == 0 ? finisher : e.hit == step + 1;
+                if (!match) continue;
+                comboSpawned = true;
+                if (e.what == "stickyBlob")
+                {
+                    world.SpawnZone(new ZoneOpts { owner = this, x = t.x, y = t.y, radius = e.radius > 0 ? e.radius : 70, duration = e.duration > 0 ? e.duration : 1200, color = 0xff9ad0, what = "stickyBlob", rootMs = e.duration > 0 ? e.duration : 1200 });
+                    Sfx.Play("card_jellyCrown");
+                }
+                else if (e.what == "beam")
+                {
+                    float power = e.power > 0 ? e.power : 1f;
+                    world.SpawnProjectile(new ProjectileOpts
+                    {
+                        owner = this, x = x + facing * 30, y = y, z = z + 60, dir = facing, speed = 2200, color = 0xffe08a, range = 1100, pierce = 99,
+                        make = tt => MakeHit((Enemy)tt, power, Element.Holy, true, 60, 0, 120),
+                    });
+                    Fx.Slash(x + facing * 200, y - 60 - z, facing, 0xffe08a, 220, y);
+                    Sfx.Play("card_guardianEye");
+                }
+            }
+        }
+
         /// <summary>A normal-attack hit, with the thief's double-attack passive rolled in.</summary>
         HitInfo NormalHit(Enemy t, ComboHit h)
         {
             var hit = MakeHit(t, h.power, Element.Neutral, false, h.knock, h.launch, h.stun);
+            OnComboHit(t, combo);
             float da = PassiveValue(Passive.DoubleAttack);
             if (da > 0 && Rng.Chance(da))
             {

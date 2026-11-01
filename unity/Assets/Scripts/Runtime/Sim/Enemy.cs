@@ -21,6 +21,11 @@ namespace BoLike.Sim
         public double attackReadyAt;
         public float defDownMult = 1;
         public double defDownUntil;
+        /// <summary>Sticky blob (果凍王冠): cannot move until this time.</summary>
+        public double rootedUntil;
+        double slowUntil; float slowMult = 1f;
+        public bool Rooted => Now < rootedUntil;
+        public float SpeedMult => Now < slowUntil ? slowMult : 1f;
         public int hitCount;
         public double lastHitAt;
         public float poisonDps;
@@ -49,6 +54,20 @@ namespace BoLike.Sim
 
         public bool Weakened => Now < defDownUntil;
         public bool Poisoned => Now < poisonUntil;
+
+        public void ApplyRoot(float ms)
+        {
+            if (dead || def.boss) return;
+            rootedUntil = Math.Max(rootedUntil, Now + ms);
+            Fx.Number(x, y - h - 40, "黏住", 0xffc6e0);
+        }
+
+        /// <summary>Movement × mult while inside a zone; refreshed every tick, so it fades as soon as the enemy leaves.</summary>
+        public void ApplySlow(float mult, float ms)
+        {
+            slowMult = Math.Min(slowMult < 1f && Now < slowUntil ? slowMult : 1f, mult);
+            slowUntil = Now + ms;
+        }
 
         public void ApplyDefDown(float amount, float duration)
         {
@@ -215,7 +234,8 @@ namespace BoLike.Sim
             float dy = p.y - y;
             float dist = Math.Abs(dx);
             facing = dx >= 0 ? 1 : -1;
-            float sp = def.speed;
+            float sp = def.speed * SpeedMult;
+            if (Rooted && !def.boss) sp = 0;
             bool canAttack = Now >= attackReadyAt;
             bool aligned = Math.Abs(dy) < 36;
             int sdx = Math.Sign(dx);

@@ -111,4 +111,66 @@ namespace BoLike.Sim
             }
         }
     }
+
+    public class ZoneOpts
+    {
+        public Fighter owner;
+        public float x, y, radius, duration;
+        public int color;
+        /// <summary>stickyBlob | thornWall | quicksand | iceBurst | spikeTrap (the view picks the look by this).</summary>
+        public string what;
+        /// <summary>Movement speed multiplier applied to enemies inside while they stay inside (1 = none).</summary>
+        public float slow = 1f;
+        /// <summary>Root (immobilise) applied once to each enemy that enters, ms; 0 = none.</summary>
+        public float rootMs;
+        /// <summary>Damage per 350 ms tick to enemies inside; 0 = none.</summary>
+        public int damage;
+        public Element element = Element.Neutral;
+    }
+
+    /// <summary>
+    /// A ground zone left by an epic card (S2): sticky blob roots whoever steps in, a thorn wall hurts and slows,
+    /// quicksand only slows. Circular, on the ground, affects enemies (not the player).
+    /// </summary>
+    public class Zone
+    {
+        public readonly ZoneOpts o;
+        public bool done;
+        readonly World world;
+        readonly double until;
+        readonly Dictionary<Fighter, double> lastTick = new();
+        readonly HashSet<Fighter> rooted = new();
+
+        public Zone(World world, ZoneOpts o)
+        {
+            this.world = world;
+            this.o = o;
+            until = world.Now + o.duration;
+        }
+
+        public float TimeLeft => (float)(until - world.Now);
+        public float Progress => o.duration <= 0 ? 1f : (float)Math.Clamp(1 - TimeLeft / o.duration, 0, 1);
+
+        public void Update(IReadOnlyList<Enemy> targets)
+        {
+            double now = world.Now;
+            if (now > until) { done = true; return; }
+            for (int i = 0; i < targets.Count; i++)
+            {
+                var t = targets[i];
+                if (t.dead || t.z > 60f) continue;
+                float dx = t.x - o.x, dy = (t.y - o.y) * 1.6f; // the ground is drawn foreshortened, so the zone is an ellipse
+                if (dx * dx + dy * dy > (o.radius + t.w / 2f) * (o.radius + t.w / 2f)) continue;
+                if (o.slow < 1f) t.ApplySlow(o.slow, 120);
+                if (o.rootMs > 0 && !rooted.Contains(t) && !t.def.boss) { rooted.Add(t); t.ApplyRoot(o.rootMs); }
+                if (o.damage > 0)
+                {
+                    if (lastTick.TryGetValue(t, out var last) && now - last < 350) continue;
+                    lastTick[t] = now;
+                    int dir = Math.Sign(t.x - o.x) == 0 ? 1 : Math.Sign(t.x - o.x);
+                    t.TakeHit(new HitInfo { damage = o.damage, dir = dir, knock = 0, source = o.owner, element = o.element });
+                }
+            }
+        }
+    }
 }

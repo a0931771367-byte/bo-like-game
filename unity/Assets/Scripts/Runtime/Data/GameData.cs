@@ -95,6 +95,7 @@ namespace BoLike.Data
     /// <summary>Per-class dodge (design doc 06). Distances px, times ms; invulnerable for <see cref="invuln"/> ms from the press.</summary>
     public class DodgeDef
     {
+        public DodgeDef Clone() => (DodgeDef)MemberwiseClone();
         public DodgeKind kind;
         public string name, desc;
         public float distance, duration, invuln, cooldown;

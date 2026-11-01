@@ -21,6 +21,7 @@ namespace BoLike.Sim
         public readonly List<Enemy> Enemies = new();
         public readonly List<Projectile> Projectiles = new();
         public readonly List<Wall> Walls = new();
+        public readonly List<Zone> Zones = new();
         readonly List<Fighter> playerList = new();
 
         public IFx Fx = new NullFx();
@@ -41,6 +42,7 @@ namespace BoLike.Sim
         public event Action<Enemy> EnemyRemoved;
         public event Action<Projectile> ProjectileSpawned;
         public event Action<Wall> WallSpawned;
+        public event Action<Zone> ZoneSpawned;
         public event Action PlayerDied;
         /// <summary>The player lost HP to a hit (not a guard, miss or shield).</summary>
         public event Action PlayerHurt;
@@ -111,6 +113,13 @@ namespace BoLike.Sim
             ProjectileSpawned?.Invoke(p);
         }
 
+        public void SpawnZone(ZoneOpts o)
+        {
+            var z = new Zone(this, o);
+            Zones.Add(z);
+            ZoneSpawned?.Invoke(z);
+        }
+
         public void SpawnWall(WallOpts o)
         {
             var w = new Wall(this, o);
@@ -158,8 +167,10 @@ namespace BoLike.Sim
         {
             foreach (var p in Projectiles) p.done = true;
             foreach (var w in Walls) w.done = true;
+            foreach (var z in Zones) z.done = true;
             Projectiles.Clear();
             Walls.Clear();
+            Zones.Clear();
             delayed.Clear();
         }
 
@@ -190,6 +201,8 @@ namespace BoLike.Sim
             Projectiles.RemoveAll(p => p.done);
             for (int i = 0; i < Walls.Count; i++) Walls[i].Update(Enemies);
             Walls.RemoveAll(w => w.done);
+            for (int i = 0; i < Zones.Count; i++) Zones[i].Update(Enemies);
+            Zones.RemoveAll(z => z.done);
         }
     }
 }
