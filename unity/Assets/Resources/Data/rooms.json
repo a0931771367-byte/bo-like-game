@@ -1363,6 +1363,708 @@
      }
     ]
    ]
+  },
+  {
+   "id": "sandDune",
+   "name": "流沙沙丘",
+   "scene": "desertRuins",
+   "kind": "combat",
+   "width": 1900,
+   "bg": "bg_chapter3",
+   "bgGroundY": 540,
+   "waveSets": [
+    [
+     {
+      "spawns": [
+       {
+        "enemy": "sandworm",
+        "side": "right",
+        "delay": 0
+       },
+       {
+        "enemy": "sandworm",
+        "side": "left",
+        "delay": 800
+       },
+       {
+        "enemy": "bug",
+        "side": "right",
+        "delay": 1600
+       }
+      ],
+      "timeout": 13000
+     },
+     {
+      "spawns": [
+       {
+        "enemy": "sandworm",
+        "side": "right",
+        "delay": 0
+       },
+       {
+        "enemy": "sandworm",
+        "side": "right",
+        "delay": 400
+       },
+       {
+        "enemy": "sandCrab",
+        "side": "left",
+        "delay": 1200
+       }
+      ],
+      "timeout": 15000
+     },
+     {
+      "spawns": [
+       {
+        "enemy": "sandworm",
+        "side": "left",
+        "delay": 0
+       },
+       {
+        "enemy": "sandworm",
+        "side": "right",
+        "delay": 300
+       },
+       {
+        "enemy": "cactusTurret",
+        "side": "right",
+        "delay": 900
+       },
+       {
+        "enemy": "sandworm",
+        "side": "left",
+        "delay": 2200
+       }
+      ],
+      "timeout": 17000
+     }
+    ],
+    [
+     {
+      "spawns": [
+       {
+        "enemy": "sandworm",
+        "side": "left",
+        "delay": 0
+       },
+       {
+        "enemy": "bug",
+        "side": "right",
+        "delay": 500
+       },
+       {
+        "enemy": "sandworm",
+        "side": "right",
+        "delay": 1300
+       }
+      ],
+      "timeout": 13000
+     },
+     {
+      "spawns": [
+       {
+        "enemy": "sandworm",
+        "side": "right",
+        "delay": 0
+       },
+       {
+        "enemy": "sandworm",
+        "side": "left",
+        "delay": 300
+       },
+       {
+        "enemy": "sandworm",
+        "side": "left",
+        "delay": 900
+       },
+       {
+        "enemy": "mummy",
+        "side": "right",
+        "delay": 2000
+       }
+      ],
+      "timeout": 15000
+     },
+     {
+      "spawns": [
+       {
+        "enemy": "sandCrab",
+        "side": "right",
+        "delay": 0
+       },
+       {
+        "enemy": "sandworm",
+        "side": "left",
+        "delay": 600
+       },
+       {
+        "enemy": "sandworm",
+        "side": "right",
+        "delay": 1200
+       },
+       {
+        "enemy": "sandworm",
+        "side": "left",
+        "delay": 2400
+       }
+      ],
+      "timeout": 17000
+     }
+    ]
+   ]
+  },
+  {
+   "id": "cactusGrove",
+   "name": "仙人掌林",
+   "scene": "desertRuins",
+   "kind": "combat",
+   "width": 2000,
+   "bg": "bg_chapter3",
+   "bgGroundY": 540,
+   "tint": 15785128,
+   "waveSets": [
+    [
+     {
+      "spawns": [
+       {
+        "enemy": "cactusTurret",
+        "side": "right",
+        "delay": 0
+       },
+       {
+        "enemy": "cactusTurret",
+        "side": "left",
+        "delay": 0
+       },
+       {
+        "enemy": "sandworm",
+        "side": "right",
+        "delay": 1200
+       }
+      ],
+      "timeout": 15000
+     },
+     {
+      "spawns": [
+       {
+        "enemy": "cactusTurret",
+        "side": "right",
+        "delay": 0
+       },
+       {
+        "enemy": "sandCrab",
+        "side": "left",
+        "delay": 600
+       },
+       {
+        "enemy": "sandworm",
+        "side": "right",
+        "delay": 1500
+       },
+       {
+        "enemy": "sandworm",
+        "side": "left",
+        "delay": 2200
+       }
+      ],
+      "timeout": 17000
+     },
+     {
+      "spawns": [
+       {
+        "enemy": "cactusTurret",
+        "side": "left",
+        "delay": 0
+       },
+       {
+        "enemy": "cactusTurret",
+        "side": "right",
+        "delay": 300
+       },
+       {
+        "enemy": "mummy",
+        "side": "right",
+        "delay": 1200
+       },
+       {
+        "enemy": "sandworm",
+        "side": "left",
+        "delay": 2000
+       },
+       {
+        "enemy": "sandCrab",
+        "side": "right",
+        "delay": 2800
+       }
+      ],
+      "timeout": 19000
+     }
+    ],
+    [
+     {
+      "spawns": [
+       {
+        "enemy": "cactusTurret",
+        "side": "left",
+        "delay": 0
+       },
+       {
+        "enemy": "sandworm",
+        "side": "right",
+        "delay": 500
+       },
+       {
+        "enemy": "sandworm",
+        "side": "right",
+        "delay": 900
+       }
+      ],
+      "timeout": 15000
+     },
+     {
+      "spawns": [
+       {
+        "enemy": "cactusTurret",
+        "side": "right",
+        "delay": 0
+       },
+       {
+        "enemy": "cactusTurret",
+        "side": "left",
+        "delay": 400
+       },
+       {
+        "enemy": "mummy",
+        "side": "left",
+        "delay": 1400
+       },
+       {
+        "enemy": "sandworm",
+        "side": "right",
+        "delay": 2200
+       }
+      ],
+      "timeout": 17000
+     },
+     {
+      "spawns": [
+       {
+        "enemy": "cactusTurret",
+        "side": "right",
+        "delay": 0
+       },
+       {
+        "enemy": "sandCrab",
+        "side": "left",
+        "delay": 400
+       },
+       {
+        "enemy": "sandCrab",
+        "side": "left",
+        "delay": 800
+       },
+       {
+        "enemy": "sandworm",
+        "side": "right",
+        "delay": 1800
+       },
+       {
+        "enemy": "cactusTurret",
+        "side": "left",
+        "delay": 2600
+       }
+      ],
+      "timeout": 19000
+     }
+    ]
+   ]
+  },
+  {
+   "id": "tombHall",
+   "name": "陵墓長廊",
+   "scene": "desertRuins",
+   "kind": "combat",
+   "width": 1800,
+   "bg": "bg_chapter3",
+   "bgGroundY": 540,
+   "tint": 13154520,
+   "waveSets": [
+    [
+     {
+      "spawns": [
+       {
+        "enemy": "mummy",
+        "side": "right",
+        "delay": 0
+       },
+       {
+        "enemy": "mummy",
+        "side": "left",
+        "delay": 700
+       },
+       {
+        "enemy": "sandworm",
+        "side": "right",
+        "delay": 1600
+       }
+      ],
+      "timeout": 15000
+     },
+     {
+      "spawns": [
+       {
+        "enemy": "mummy",
+        "side": "right",
+        "delay": 0
+       },
+       {
+        "enemy": "mummy",
+        "side": "right",
+        "delay": 400
+       },
+       {
+        "enemy": "cactusTurret",
+        "side": "left",
+        "delay": 1200
+       },
+       {
+        "enemy": "sandworm",
+        "side": "left",
+        "delay": 2000
+       }
+      ],
+      "timeout": 17000
+     },
+     {
+      "spawns": [
+       {
+        "enemy": "mummy",
+        "side": "left",
+        "delay": 0
+       },
+       {
+        "enemy": "mummy",
+        "side": "right",
+        "delay": 300
+       },
+       {
+        "enemy": "mummy",
+        "side": "right",
+        "delay": 600
+       },
+       {
+        "enemy": "sandCrab",
+        "side": "left",
+        "delay": 2000
+       },
+       {
+        "enemy": "nightWolf",
+        "side": "right",
+        "delay": 2800
+       }
+      ],
+      "timeout": 19000
+     }
+    ],
+    [
+     {
+      "spawns": [
+       {
+        "enemy": "mummy",
+        "side": "left",
+        "delay": 0
+       },
+       {
+        "enemy": "sandworm",
+        "side": "right",
+        "delay": 600
+       },
+       {
+        "enemy": "mummy",
+        "side": "right",
+        "delay": 1400
+       }
+      ],
+      "timeout": 15000
+     },
+     {
+      "spawns": [
+       {
+        "enemy": "mummy",
+        "side": "right",
+        "delay": 0
+       },
+       {
+        "enemy": "mummy",
+        "side": "left",
+        "delay": 300
+       },
+       {
+        "enemy": "sandCrab",
+        "side": "right",
+        "delay": 1500
+       },
+       {
+        "enemy": "sandworm",
+        "side": "left",
+        "delay": 2200
+       }
+      ],
+      "timeout": 17000
+     },
+     {
+      "spawns": [
+       {
+        "enemy": "mummy",
+        "side": "right",
+        "delay": 0
+       },
+       {
+        "enemy": "mummy",
+        "side": "left",
+        "delay": 0
+       },
+       {
+        "enemy": "cactusTurret",
+        "side": "right",
+        "delay": 1000
+       },
+       {
+        "enemy": "mummy",
+        "side": "left",
+        "delay": 1800
+       },
+       {
+        "enemy": "nightWolf",
+        "side": "right",
+        "delay": 2600
+       }
+      ],
+      "timeout": 19000
+     }
+    ]
+   ]
+  },
+  {
+   "id": "crabShore",
+   "name": "乾河蟹灘",
+   "scene": "desertRuins",
+   "kind": "combat",
+   "width": 2000,
+   "bg": "bg_chapter3",
+   "bgGroundY": 540,
+   "tint": 16304288,
+   "waveSets": [
+    [
+     {
+      "spawns": [
+       {
+        "enemy": "sandCrab",
+        "side": "right",
+        "delay": 0
+       },
+       {
+        "enemy": "sandCrab",
+        "side": "left",
+        "delay": 800
+       },
+       {
+        "enemy": "sandworm",
+        "side": "right",
+        "delay": 1600
+       }
+      ],
+      "timeout": 14000
+     },
+     {
+      "spawns": [
+       {
+        "enemy": "sandCrab",
+        "side": "right",
+        "delay": 0
+       },
+       {
+        "enemy": "sandCrab",
+        "side": "right",
+        "delay": 400
+       },
+       {
+        "enemy": "cactusTurret",
+        "side": "left",
+        "delay": 1200
+       },
+       {
+        "enemy": "sandworm",
+        "side": "left",
+        "delay": 2000
+       }
+      ],
+      "timeout": 16000
+     },
+     {
+      "spawns": [
+       {
+        "enemy": "sandCrab",
+        "side": "left",
+        "delay": 0
+       },
+       {
+        "enemy": "sandCrab",
+        "side": "right",
+        "delay": 300
+       },
+       {
+        "enemy": "mummy",
+        "side": "right",
+        "delay": 1200
+       },
+       {
+        "enemy": "sandCrab",
+        "side": "left",
+        "delay": 2000
+       },
+       {
+        "enemy": "sandworm",
+        "side": "right",
+        "delay": 2600
+       }
+      ],
+      "timeout": 18000
+     }
+    ],
+    [
+     {
+      "spawns": [
+       {
+        "enemy": "sandCrab",
+        "side": "left",
+        "delay": 0
+       },
+       {
+        "enemy": "sandworm",
+        "side": "right",
+        "delay": 500
+       },
+       {
+        "enemy": "sandCrab",
+        "side": "right",
+        "delay": 1300
+       }
+      ],
+      "timeout": 14000
+     },
+     {
+      "spawns": [
+       {
+        "enemy": "sandCrab",
+        "side": "right",
+        "delay": 0
+       },
+       {
+        "enemy": "sandCrab",
+        "side": "left",
+        "delay": 300
+       },
+       {
+        "enemy": "mummy",
+        "side": "left",
+        "delay": 1400
+       },
+       {
+        "enemy": "sandworm",
+        "side": "right",
+        "delay": 2200
+       }
+      ],
+      "timeout": 16000
+     },
+     {
+      "spawns": [
+       {
+        "enemy": "sandCrab",
+        "side": "right",
+        "delay": 0
+       },
+       {
+        "enemy": "sandCrab",
+        "side": "left",
+        "delay": 0
+       },
+       {
+        "enemy": "cactusTurret",
+        "side": "right",
+        "delay": 1000
+       },
+       {
+        "enemy": "sandworm",
+        "side": "left",
+        "delay": 1800
+       },
+       {
+        "enemy": "sandCrab",
+        "side": "right",
+        "delay": 2600
+       }
+      ],
+      "timeout": 18000
+     }
+    ]
+   ]
+  },
+  {
+   "id": "guardianAltar",
+   "name": "守衛的祭壇",
+   "scene": "desertRuins",
+   "kind": "boss",
+   "width": 1600,
+   "bg": "bg_chapter3",
+   "bgGroundY": 540,
+   "tint": 15257768,
+   "waveSets": [
+    [
+     {
+      "spawns": [
+       {
+        "enemy": "ruinGuardian",
+        "side": "right",
+        "delay": 800
+       }
+      ],
+      "timeout": 0
+     },
+     {
+      "spawns": [
+       {
+        "enemy": "sandworm",
+        "side": "left",
+        "delay": 20000
+       },
+       {
+        "enemy": "sandworm",
+        "side": "left",
+        "delay": 20400
+       },
+       {
+        "enemy": "cactusTurret",
+        "side": "left",
+        "delay": 40000
+       },
+       {
+        "enemy": "sandworm",
+        "side": "right",
+        "delay": 60000
+       },
+       {
+        "enemy": "sandworm",
+        "side": "right",
+        "delay": 60400
+       }
+      ],
+      "timeout": 0
+     }
+    ]
+   ]
   }
  ],
  "pool": [
@@ -1375,7 +2077,7 @@
  "scenes": [
   {
    "id": "grassland",
-   "name": "王都草原",
+   "name": "果凍草原",
    "pool": [
     "meadow",
     "beetleNest",
@@ -1386,7 +2088,7 @@
   },
   {
    "id": "mistForest",
-   "name": "迷霧森林",
+   "name": "蘑菇森林",
    "pool": [
     "mistTrail",
     "sporeHollow",
@@ -1394,10 +2096,22 @@
     "wolfDen"
    ],
    "boss": "heartOfTheWood"
+  },
+  {
+   "id": "desertRuins",
+   "name": "沙漠遺跡",
+   "pool": [
+    "sandDune",
+    "cactusGrove",
+    "tombHall",
+    "crabShore"
+   ],
+   "boss": "guardianAltar"
   }
  ],
  "sceneOrder": [
   "grassland",
-  "mistForest"
+  "mistForest",
+  "desertRuins"
  ]
 }

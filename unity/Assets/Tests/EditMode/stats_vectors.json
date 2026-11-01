@@ -387,7 +387,7 @@
     "luk": 9
    },
    "expected": {
-    "maxHp": 282,
+    "maxHp": 272,
     "maxSp": 58,
     "atk": 41,
     "matk": 24,
@@ -414,7 +414,7 @@
     "luk": 6
    },
    "expected": {
-    "maxHp": 342,
+    "maxHp": 320,
     "maxSp": 84,
     "atk": 52,
     "matk": 38,
@@ -441,7 +441,7 @@
     "luk": 15
    },
    "expected": {
-    "maxHp": 774,
+    "maxHp": 720,
     "maxSp": 108,
     "atk": 61,
     "matk": 32,
@@ -468,7 +468,7 @@
     "luk": 10
    },
    "expected": {
-    "maxHp": 1248,
+    "maxHp": 1140,
     "maxSp": 225,
     "atk": 114,
     "matk": 93,

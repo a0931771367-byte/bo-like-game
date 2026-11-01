@@ -7,8 +7,8 @@
   "accent": 14212584,
   "weapon": "sword",
   "playable": true,
-  "hpBase": 150,
-  "hpPerLv": 18,
+  "hpBase": 140,
+  "hpPerLv": 16,
   "spBase": 30,
   "spPerLv": 3,
   "weaponAtk": 18,
@@ -61,6 +61,16 @@
    "knock": 160,
    "launch": 0,
    "stun": 360
+  },
+  "dodge": {
+   "kind": "shieldDash",
+   "name": "盾衝",
+   "desc": "舉盾向前衝撞，撞開路上的敵人",
+   "distance": 150,
+   "duration": 240,
+   "invuln": 240,
+   "cooldown": 900,
+   "knock": 220
   },
   "skills": [
    {
@@ -257,6 +267,16 @@
    "launch": 0,
    "stun": 320
   },
+  "dodge": {
+   "kind": "blink",
+   "name": "瞬移",
+   "desc": "短暫凝聚後瞬間移動到前方，留下殘影",
+   "distance": 280,
+   "duration": 90,
+   "invuln": 260,
+   "cooldown": 1400,
+   "passThrough": true
+  },
   "skills": [
    {
     "id": "firebolt",
@@ -443,6 +463,16 @@
    "knock": 180,
    "launch": 0,
    "stun": 380
+  },
+  "dodge": {
+   "kind": "jetDash",
+   "name": "噴射推進",
+   "desc": "機關噴射向前滑行，拖著一道煙",
+   "distance": 190,
+   "duration": 280,
+   "invuln": 220,
+   "cooldown": 1000,
+   "knock": 120
   },
   "skills": [
    {
@@ -635,6 +665,16 @@
    "knock": 150,
    "launch": 0,
    "stun": 340
+  },
+  "dodge": {
+   "kind": "graceStep",
+   "name": "聖光步",
+   "desc": "輕盈地滑開，成功閃過攻擊時回復少量 HP",
+   "distance": 160,
+   "duration": 260,
+   "invuln": 300,
+   "cooldown": 1100,
+   "onAvoidHeal": 0.03
   },
   "skills": [
    {
@@ -864,6 +904,17 @@
    "launch": 0,
    "stun": 320
   },
+  "dodge": {
+   "kind": "shadowStep",
+   "name": "影遁",
+   "desc": "化作影子穿過敵人，最快也最短的閃避",
+   "distance": 230,
+   "duration": 180,
+   "invuln": 240,
+   "cooldown": 600,
+   "passThrough": true,
+   "cancelWindow": 60
+  },
   "skills": [
    {
     "id": "doubleattack",
@@ -1059,6 +1110,16 @@
    "knock": 120,
    "launch": 0,
    "stun": 340
+  },
+  "dodge": {
+   "kind": "roll",
+   "name": "滾翻",
+   "desc": "向前滾翻，起身瞬間就能接著射擊",
+   "distance": 210,
+   "duration": 320,
+   "invuln": 320,
+   "cooldown": 700,
+   "cancelWindow": 100
   },
   "skills": [
    {

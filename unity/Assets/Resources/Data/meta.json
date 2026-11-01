@@ -3,42 +3,98 @@
   "combatRooms": 4,
   "perkChoices": 3,
   "rarityWeights": {
-   "common": 60,
-   "rare": 32,
-   "epic": 8
+   "common": 55,
+   "rare": 35,
+   "epic": 10
+  },
+  "perkOffer": {
+   "minCommon": 1,
+   "maxEpic": 1
   },
   "startSkillLv": 1,
   "startPotions": {
    "red": 2,
    "blue": 1
   },
+  "levelUp": {
+   "expScalingBySlot": [
+    1,
+    1.3,
+    1.6,
+    2
+   ],
+   "bossExpMult": 2,
+   "heal": 0.3,
+   "statsPerLevel": 3,
+   "skillPointsPerLevel": 1,
+   "skillUnlockLevels": [
+    1,
+    2,
+    3,
+    4
+   ],
+   "skillLearnCost": 1,
+   "skillRaiseCost": 1,
+   "startSkills": 1,
+   "panelPausesGame": true
+  },
   "roomClearHeal": 0.2,
   "roomScaling": {
    "hp": [
-    1.25,
     1.5,
-    1.75,
-    2
+    2.2,
+    3,
+    4
    ],
    "atk": [
     1,
-    1.1,
-    1.2,
-    1.3
+    1.25,
+    1.5,
+    1.8
    ],
    "boss": {
-    "hp": 1.5,
-    "atk": 1
+    "hp": 2.5,
+    "atk": 1.4
    }
+  },
+  "enemyDamage": {
+   "minFraction": 0.35,
+   "defCoef": 0.6
   },
   "roomTransition": 1200,
   "stardust": {
-   "roomClear": 8,
+   "runEnd": 5,
+   "roomClear": 10,
    "bossKill": 40,
-   "runClear": 20,
+   "runClear": 30,
    "firstClearBonus": 60
   },
-  "targetRunMs": 240000
+  "targetRunMs": 240000,
+  "cards": {
+   "startSlots": 2,
+   "maxSlots": 3,
+   "firstKillSignature": true,
+   "dropsPerKill": 1,
+   "shardsPerDuplicate": 1,
+   "shardsPerStar": 3,
+   "maxStars": 3,
+   "legendaryEnabled": false
+  },
+  "talents": {
+   "nodesPerClass": 10,
+   "resetFree": true,
+   "linear": true
+  },
+  "affixes": {
+   "chancePerRoom": 0.5,
+   "maxPerRoom": 1,
+   "onlyAfterStageClear": true,
+   "skipFirstRoom": true
+  },
+  "resume": {
+   "enabled": true,
+   "savePoint": "roomStart"
+  }
  },
  "unlocks": [
   {
@@ -53,7 +109,7 @@
    "id": "classMage",
    "name": "法師加入",
    "desc": "解鎖職業：法師",
-   "cost": 80,
+   "cost": 70,
    "kind": "class",
    "value": "mage"
   },
@@ -61,15 +117,15 @@
    "id": "luckyStar",
    "name": "幸運星",
    "desc": "稀有與史詩強化出現率提高",
-   "cost": 100,
+   "cost": 90,
    "kind": "rareChance",
-   "value": 0.1
+   "value": 0.15
   },
   {
    "id": "classArcher",
    "name": "遊俠加入",
    "desc": "解鎖職業：遊俠",
-   "cost": 120,
+   "cost": 110,
    "kind": "class",
    "value": "archer"
   },
@@ -77,12 +133,98 @@
    "id": "veteran",
    "name": "老練冒險者",
    "desc": "每局開始時先選一個強化",
-   "cost": 160,
+   "cost": 150,
    "kind": "startPerk",
+   "value": 1
+  },
+  {
+   "id": "cardSlot3",
+   "name": "卡匣擴充",
+   "desc": "史詩卡片裝備格 +1",
+   "cost": 120,
+   "kind": "cardSlot",
    "value": 1
   }
  ],
  "startingClasses": [
   "swordsman"
- ]
+ ],
+ "affixes": [
+  {
+   "id": "fog",
+   "name": "濃霧",
+   "desc": "視野縮小，敵人出現前有紫光提示",
+   "effect": {
+    "kind": "fog",
+    "visionMult": 0.6,
+    "warnMs": 800
+   }
+  },
+  {
+   "id": "poisonGround",
+   "name": "毒沼",
+   "desc": "地面兩塊區域持續扣血",
+   "effect": {
+    "kind": "poisonGround",
+    "zones": 2,
+    "dpsFraction": 0.01
+   }
+  },
+  {
+   "id": "treasure",
+   "name": "寶箱房",
+   "desc": "清完多一次三選一",
+   "effect": {
+    "kind": "treasure",
+    "extraPerkPicks": 1
+   }
+  },
+  {
+   "id": "elite",
+   "name": "精英房",
+   "desc": "必定出現精英，星塵 ×2",
+   "effect": {
+    "kind": "elite",
+    "forceElite": true,
+    "stardustMult": 2
+   }
+  },
+  {
+   "id": "rush",
+   "name": "急襲",
+   "desc": "波次間隔減半，敵人 HP -20%",
+   "effect": {
+    "kind": "rush",
+    "waveTimeoutMult": 0.5,
+    "hpMult": 0.8
+   }
+  }
+ ],
+ "elite": {
+  "chanceByChapterOrder": [
+   0,
+   0.15,
+   0.25
+  ],
+  "hpMult": 2.5,
+  "atkMult": 1.4,
+  "sizeMult": 1.3,
+  "stardust": 10,
+  "modifiers": [
+   "shield",
+   "haste",
+   "volatile"
+  ],
+  "shieldHits": 3,
+  "hasteMult": 1.4,
+  "volatilePower": 1,
+  "volatileRadius": 140,
+  "excludeBehaviors": [
+   "turret",
+   "burrower",
+   "bossSlime",
+   "bossTreant",
+   "bossGuardian"
+  ]
+ }
 }
