@@ -130,6 +130,25 @@ def check():
         need(v.count('{') == v.count('}'), f'文字 {k}：大括號不成對')
         want(not re.search(r'TODO|TBD|待補|XXX', v), f'文字 {k}：還有佔位字樣')
 
+    if os.path.exists(os.path.join(DATA, 'cards.json')):
+        check_cards(load('cards'), enemies)
+    if os.path.exists(os.path.join(DATA, 'talents.json')):
+        check_talents(load('talents'), classes)
+    affix_ids = {a['id'] for a in meta.get('affixes', [])}
+    need(len(affix_ids) == len(meta.get('affixes', [])), '房間詞綴 id 重複')
+    if os.path.exists(chapters_path):
+        story_ids = {st['stageId'] for st in load('story')}
+        ch = load('chapters')
+        for st in ch['stages']:
+            for a in st.get('affixes') or []:
+                need(a in affix_ids, f'關卡 {st["id"]}：詞綴 {a} 不在 meta.json 的 affixes')
+            for part, key in (st.get('story') or {}).items():
+                need(key in story_ids, f'關卡 {st["id"]}：story.{part} 指向不存在的劇情 {key}')
+        elite = meta.get('elite')
+        if elite:
+            need(len(elite.get('chanceByChapterOrder', [])) >= len(ch['chapters']),
+                 f'精英怪：chanceByChapterOrder 只有 {len(elite.get("chanceByChapterOrder", []))} 格，少於 {len(ch["chapters"])} 章')
+
     # story portraits
     for st in load('story'):
         for part in ('before', 'after'):
@@ -137,6 +156,50 @@ def check():
                 if line.get('portrait'):
                     want(res_exists(f'Sprites/{line["portrait"]}'), f'劇情 {st["stageId"]}：缺立繪 Sprites/{line["portrait"]}')
                 want(line.get('text', '').strip(), f'劇情 {st["stageId"]}：有空白台詞')
+
+
+def check_cards(t, enemies):
+    """cards.json: every finale boss drops cards, exactly one signature each, sets match their boss."""
+    ids = set()
+    by_boss = {}
+    for c in t['cards']:
+        need(c['id'] not in ids, f'卡片 {c["id"]}：id 重複')
+        ids.add(c['id'])
+        need(enemies.get(c['boss'], {}).get('boss'), f'卡片 {c["id"]}：掉落 Boss {c["boss"]} 不存在或不是 Boss')
+        need(c.get('effects'), f'卡片 {c["id"]}：沒有任何效果')
+        want(c.get('name') and c.get('desc'), f'卡片 {c["id"]}：缺名稱或說明')
+        by_boss.setdefault(c['boss'], []).append(c)
+    finale = set()
+    path = os.path.join(DATA, 'chapters.json')
+    if os.path.exists(path):
+        finale = {(s.get('finale') or {}).get('enemy') for s in load('chapters')['stages']} - {None}
+    for b in finale:
+        want(b in by_boss, f'Boss {b}：是關卡結尾 Boss，但沒有任何卡片可掉')
+    for b, cards in by_boss.items():
+        n = sum(1 for c in cards if c.get('signature'))
+        need(n == 1, f'Boss {b}：招牌卡（signature）有 {n} 張，必須恰好 1 張')
+        if finale:
+            want(b in finale, f'Boss {b}：有卡片，但不是任何關卡的結尾 Boss，玩家拿不到')
+    for st in t.get('sets', []):
+        need(st['boss'] in by_boss, f'套裝 {st["name"]}：Boss {st["boss"]} 沒有卡片')
+        need(st['need'] <= len(by_boss.get(st['boss'], [])), f'套裝 {st["name"]}：需要 {st["need"]} 張，但該 Boss 只有 {len(by_boss.get(st["boss"], []))} 張')
+        need(st.get('effects'), f'套裝 {st["name"]}：沒有任何效果')
+
+
+def check_talents(t, classes):
+    """talents.json: per class, tiers 1..N with no gaps or duplicates."""
+    ids = set()
+    tiers = {}
+    for x in t:
+        need(x['id'] not in ids, f'天賦 {x["id"]}：id 重複')
+        ids.add(x['id'])
+        need(x['classId'] in classes, f'天賦 {x["id"]}：職業 {x["classId"]} 不存在')
+        need(x.get('cost', 0) > 0, f'天賦 {x["id"]}：花費必須大於 0')
+        need(x.get('effects'), f'天賦 {x["id"]}：沒有任何效果')
+        want(x.get('name') and x.get('desc'), f'天賦 {x["id"]}：缺名稱或說明')
+        tiers.setdefault(x['classId'], []).append(x['tier'])
+    for cid, ts in tiers.items():
+        need(sorted(ts) == list(range(1, len(ts) + 1)), f'職業 {cid} 天賦：tier 必須是 1–{len(ts)} 連續不重複，目前是 {sorted(ts)}')
 
 
 def music_keys():
