@@ -29,4 +29,22 @@ export const ENEMIES: Record<string, EnemyDef> = {
 
   wolfLord: { id: 'wolfLord', sprite: 'wolf', tint: 0xd8d8e8, name: '銀牙狼王', hp: 1700, atk: 26, def: 6, mdef: 3, element: 'earth', exp: 260, gold: 200, speed: 190,
     w: 120, h: 70, color: 0xdcdcf0, behavior: 'lunger', attackRange: 320, windup: 500, attackCd: 1900, boss: true, spriteH: 150 },
+
+  // ---- chapter 3: desert ruins (封測 2，11/1 凍結；名稱待美術定稿後可微調，id 不改) ----
+  // 基礎值比第 2 章高一階（蘑菇 170/21 → 木乃伊 170/25、沙蟹 210/23），章內再吃 RUN_STAGES 的倍率。
+  sandworm: { id: 'sandworm', name: '沙蟲', hp: 110, atk: 24, def: 3, mdef: 2, element: 'earth', exp: 30, gold: 16, speed: 90,
+    w: 64, h: 50, color: 0xd9b36b, behavior: 'burrower', attackRange: 90, windup: 420, attackCd: 1700, spriteH: 96,
+    burrow: { triggerRange: 220, emergeDelay: 1200, rest: 4000 } },
+  cactusTurret: { id: 'cactusTurret', name: '仙人掌哨', hp: 140, atk: 22, def: 8, mdef: 4, element: 'earth', exp: 30, gold: 16, speed: 0,
+    w: 60, h: 110, color: 0x5fae5a, behavior: 'turret', attackRange: 560, windup: 500, attackCd: 2500, spriteH: 150, volley: 3 },
+  mummy: { id: 'mummy', name: '小木乃伊', hp: 170, atk: 25, def: 5, mdef: 5, element: 'dark', exp: 36, gold: 18, speed: 75,
+    w: 56, h: 80, color: 0xe8dcc0, behavior: 'reviver', attackRange: 80, windup: 560, attackCd: 1900, spriteH: 112,
+    revive: { delay: 3000, pileHp: 60, fraction: 0.5 } },
+  sandCrab: { id: 'sandCrab', name: '沙蟹', hp: 210, atk: 23, def: 12, mdef: 3, element: 'earth', exp: 38, gold: 20, speed: 110,
+    w: 90, h: 50, color: 0xd98a5a, behavior: 'crab', attackRange: 85, windup: 480, attackCd: 1800, spriteH: 84,
+    facingDef: { front: 0.5, back: 1.6 } },
+  // Boss：砸地震波（跳躍可躲）、雷射掃射（前搖 700 ms 紅線預告、閃避穿過）、HP 50% 石化護甲 4 秒並召 2 木乃伊。
+  ruinGuardian: { id: 'ruinGuardian', name: '遺跡守衛石像', hp: 3400, atk: 34, def: 10, mdef: 8, element: 'neutral', exp: 520, gold: 400, speed: 55,
+    w: 170, h: 200, color: 0xb8a98a, behavior: 'bossGuardian', attackRange: 200, windup: 700, attackCd: 2000, boss: true, spriteH: 320,
+    phases: [{ at: 0.5, action: 'petrify', duration: 4000, spawn: ['mummy', 'mummy'] }, { at: 0.2, action: 'enrage', mult: 1.3 }] },
 };

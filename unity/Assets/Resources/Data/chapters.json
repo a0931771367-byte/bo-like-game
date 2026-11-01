@@ -1,0 +1,186 @@
+{
+ "chapters": [
+  {
+   "id": "grassland",
+   "order": 1,
+   "name": "果凍草原",
+   "bg": "bg_chapter1",
+   "stages": [
+    "grassland-3"
+   ]
+  },
+  {
+   "id": "mistForest",
+   "order": 2,
+   "name": "蘑菇森林",
+   "bg": "bg_chapter2",
+   "stages": [
+    "mistForest-3"
+   ],
+   "unlock": {
+    "bossKill": "jellyKing"
+   },
+   "bossTrack": "boss_treant"
+  },
+  {
+   "id": "desertRuins",
+   "order": 3,
+   "name": "沙漠遺跡",
+   "bg": "bg_chapter3",
+   "stages": [
+    "desertRuins-3"
+   ],
+   "unlock": {
+    "bossKill": "treant"
+   },
+   "bossTrack": "boss_guardian"
+  }
+ ],
+ "stages": [
+  {
+   "id": "grassland-3",
+   "chapterId": "grassland",
+   "index": 3,
+   "name": "布丁巨像之丘",
+   "desc": "果凍怪與野狼出沒的草原，盡頭是暴走的布丁巨像。",
+   "timeOfDay": "day",
+   "combatRooms": 4,
+   "pool": [
+    "meadow",
+    "beetleNest",
+    "wolfAmbush",
+    "emberField"
+   ],
+   "finale": {
+    "kind": "boss",
+    "enemy": "jellyKing",
+    "room": "jellyThrone"
+   },
+   "scaling": {
+    "hp": [
+     1.5,
+     2.2,
+     3,
+     4
+    ],
+    "atk": [
+     1,
+     1.25,
+     1.5,
+     1.8
+    ],
+    "boss": {
+     "hp": 2.5,
+     "atk": 1.4
+    }
+   },
+   "affixes": [
+    "fog",
+    "treasure",
+    "rush"
+   ],
+   "story": {
+    "before": "1-1",
+    "after": "1-1"
+   }
+  },
+  {
+   "id": "mistForest-3",
+   "chapterId": "mistForest",
+   "index": 3,
+   "name": "古樹之心",
+   "desc": "紫霧籠罩的森林，蜜蜂、食人花與毒蘑菇埋伏其中。",
+   "timeOfDay": "dusk",
+   "combatRooms": 4,
+   "pool": [
+    "mistTrail",
+    "sporeHollow",
+    "thornGarden",
+    "wolfDen"
+   ],
+   "finale": {
+    "kind": "boss",
+    "enemy": "treant",
+    "room": "heartOfTheWood"
+   },
+   "scaling": {
+    "hp": [
+     1,
+     1.4,
+     1.9,
+     2.5
+    ],
+    "atk": [
+     0.9,
+     1.05,
+     1.2,
+     1.4
+    ],
+    "boss": {
+     "hp": 1.5,
+     "atk": 1.15
+    }
+   },
+   "affixes": [
+    "fog",
+    "poisonGround",
+    "treasure",
+    "elite",
+    "rush"
+   ],
+   "story": {
+    "before": "2-1",
+    "after": "2-3"
+   }
+  },
+  {
+   "id": "desertRuins-3",
+   "chapterId": "desertRuins",
+   "index": 3,
+   "name": "守衛的祭壇",
+   "desc": "流沙與陵墓之間，沉睡百年的守衛石像再度睜眼。",
+   "timeOfDay": "day",
+   "combatRooms": 4,
+   "pool": [
+    "sandDune",
+    "cactusGrove",
+    "tombHall",
+    "crabShore"
+   ],
+   "finale": {
+    "kind": "boss",
+    "enemy": "ruinGuardian",
+    "room": "guardianAltar"
+   },
+   "scaling": {
+    "hp": [
+     0.8,
+     1.1,
+     1.5,
+     1.9
+    ],
+    "atk": [
+     0.8,
+     0.9,
+     1.05,
+     1.2
+    ],
+    "boss": {
+     "hp": 1.15,
+     "atk": 1
+    }
+   },
+   "affixes": [
+    "fog",
+    "poisonGround",
+    "treasure",
+    "elite",
+    "rush"
+   ],
+   "story": {
+    "before": "3-1",
+    "after": "3-1"
+   }
+  }
+ ]
+}
