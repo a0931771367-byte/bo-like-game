@@ -192,10 +192,14 @@ namespace BoLike.Data
         /// <summary>Per-stage enemy multipliers; null falls back to <see cref="RunRules.roomScaling"/>.</summary>
         public RoomScaling scaling;
         public List<string> affixes = new();
-        public string storyBefore, storyAfter;
+        public string desc;
+        /// <summary>STORY keys played before the first room and after the finale (chapters.json stages[].story).</summary>
+        public StageStoryKeys story;
 
         public bool HasBossRoom => finale != null && finale.kind == FinaleKind.Boss && !string.IsNullOrEmpty(finale.room);
     }
+
+    public class StageStoryKeys { public string before, after; }
 
     public class ChapterTable
     {
