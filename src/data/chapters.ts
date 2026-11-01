@@ -8,15 +8,15 @@ import type { ChapterDef, RunStageDef } from './types';
 export const CHAPTERS: Record<string, ChapterDef> = {
   grassland: {
     id: 'grassland', order: 1, name: '果凍草原', desc: '王都郊外，發狂的果凍怪與野狼。', bg: 'bg_chapter1',
-    stages: ['grassland-3'], music: 'field', ambience: 'amb_ch1_grassland', bossTrack: 'boss',
+    stages: ['grassland-3'], music: 'field', ambience: 'amb_ch1_grassland', bossTrack: 'boss_pudding',
   },
   mistForest: {
     id: 'mistForest', order: 2, name: '蘑菇森林', desc: '紫霧籠罩的林間，飛行的蜜蜂與毒蘑菇。', bg: 'bg_chapter2',
-    stages: ['mistForest-3'], unlock: { bossKill: 'jellyKing' }, music: 'forest', ambience: 'amb_ch2_forest', bossTrack: 'boss',
+    stages: ['mistForest-3'], unlock: { bossKill: 'jellyKing' }, music: 'forest', ambience: 'amb_ch2_forest', bossTrack: 'boss_treant',
   },
   desertRuins: {
     id: 'desertRuins', order: 3, name: '沙漠遺跡', desc: '百年前封印紫霧的古王國遺跡。', bg: 'bg_chapter3',
-    stages: [], unlock: { bossKill: 'treant' }, music: 'field', bossTrack: 'boss',
+    stages: [], unlock: { bossKill: 'treant' }, music: 'desert', ambience: 'amb_ch3_desert', bossTrack: 'boss_guardian',
   },
 };
 

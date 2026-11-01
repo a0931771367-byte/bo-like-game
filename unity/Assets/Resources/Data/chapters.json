@@ -11,7 +11,7 @@
    ],
    "music": "field",
    "ambience": "amb_ch1_grassland",
-   "bossTrack": "boss"
+   "bossTrack": "boss_pudding"
   },
   {
    "id": "mistForest",
@@ -27,7 +27,7 @@
    },
    "music": "forest",
    "ambience": "amb_ch2_forest",
-   "bossTrack": "boss"
+   "bossTrack": "boss_treant"
   },
   {
    "id": "desertRuins",
@@ -39,8 +39,9 @@
    "unlock": {
     "bossKill": "treant"
    },
-   "music": "field",
-   "bossTrack": "boss"
+   "music": "desert",
+   "ambience": "amb_ch3_desert",
+   "bossTrack": "boss_guardian"
   }
  ],
  "stages": [

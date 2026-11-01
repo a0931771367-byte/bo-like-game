@@ -53,6 +53,7 @@ namespace BoLike.Game
         AudioSource musicCur;
         string musicName;
         float musicLoopStart;
+        float musicLoopEnd;
         bool nextLoopScheduled;
         float fadeFrom, fadeTo, fadeT, fadeDur;
         AudioSource fading;
@@ -103,17 +104,35 @@ namespace BoLike.Game
             ["flowerBite"] = new Cue { files = new[] { "sfx_flower_bite" } },
         };
 
-        /// <summary>Music tracks by logical name; loopStart in seconds (0 = whole track loops) is filled in later by the audio team.</summary>
-        readonly Dictionary<string, (string file, float loopStart)> music = new()
+        /// <summary>
+        /// Music tracks by logical name with loop points in seconds (audio/loop-points-final-v1.md). loopStart 0 = the whole
+        /// track loops; otherwise the first play runs from 0 and at loopEnd (0 = track end) hands over to loopStart.
+        /// Phase-1 tracks stay whole-track loops for the beta by the audio team's decision; phase-2 tracks use their final values.
+        /// </summary>
+        readonly Dictionary<string, (string file, float loopStart, float loopEnd)> music = new()
         {
-            ["title"] = ("bgm_title", 0f),
-            ["select"] = ("bgm_select", 0f),
-            ["field"] = ("bgm_ch1_field", 0f),
-            ["intro"] = ("bgm_ch1_intro", 0f),
-            ["boss"] = ("bgm_boss", 0f),
-            ["story"] = ("bgm_story", 0f),
-            ["forest"] = ("bgm_ch2_forest", 0f),
-            ["calm"] = ("bgm_ch2_calm", 0f),
+            ["title"] = ("bgm_title", 0f, 0f),
+            ["select"] = ("bgm_select", 0f, 0f),
+            ["field"] = ("bgm_ch1_field", 0f, 0f),
+            ["intro"] = ("bgm_ch1_intro", 0f, 0f),
+            ["boss"] = ("bgm_boss", 0f, 0f),
+            ["story"] = ("bgm_story", 0f, 0f),
+            ["forest"] = ("bgm_ch2_forest", 0f, 0f),
+            ["calm"] = ("bgm_ch2_calm", 0f, 0f),
+            // Phase 2 (beta 2): second exploration tracks, the desert, and one track per chapter boss.
+            ["field_b"] = ("bgm_ch1_field_b", 27.20f, 194.90f),
+            ["forest_b"] = ("bgm_ch2_forest_b", 14.10f, 112.80f),
+            ["desert"] = ("bgm_ch3_desert", 26.90f, 185.30f),
+            ["boss_pudding"] = ("bgm_boss_pudding", 18.40f, 89.60f),
+            ["boss_treant"] = ("bgm_boss_treant", 17.80f, 176.10f),
+            ["boss_guardian"] = ("bgm_boss_guardian", 13.90f, 76.00f),
+        };
+
+        /// <summary>Phase-2 music key → phase-1 key to play until the new file is in the project.</summary>
+        static readonly Dictionary<string, string> musicFallback = new()
+        {
+            ["field_b"] = "field", ["forest_b"] = "forest", ["desert"] = "field",
+            ["boss_pudding"] = "boss", ["boss_treant"] = "boss", ["boss_guardian"] = "boss",
         };
 
         void Awake()
@@ -185,6 +204,11 @@ namespace BoLike.Game
             if (name == musicName && musicCur != null && musicCur.isPlaying) return;
             if (!music.TryGetValue(name, out var m)) { StopMusic(fadeSeconds); return; }
             var clip = Resources.Load<AudioClip>("Audio/music/" + m.file);
+            if (clip == null && musicFallback.TryGetValue(name, out var fb) && music.TryGetValue(fb, out var fm))
+            {
+                clip = Resources.Load<AudioClip>("Audio/music/" + fm.file); // phase-2 track not delivered yet: play the phase-1 one
+                if (clip != null) m = fm;
+            }
             if (clip == null) { Debug.LogWarning($"[Audio] missing music {m.file}"); StopMusic(fadeSeconds); return; }
             var next = musicCur == musicA ? musicB : musicA;
             if (musicCur != null && musicCur.isPlaying) StartFade(musicCur, fadeSeconds);
@@ -197,6 +221,7 @@ namespace BoLike.Game
             musicCur = next;
             musicName = name;
             musicLoopStart = m.loopStart;
+            musicLoopEnd = m.loopEnd > 0f && m.loopEnd < clip.length ? m.loopEnd : clip.length;
             nextLoopScheduled = false;
         }
 
@@ -246,7 +271,7 @@ namespace BoLike.Game
             // Custom loop point: hand over to the other source at loopStart just before the track ends.
             if (musicCur != null && musicLoopStart > 0f && !nextLoopScheduled && musicCur.clip != null)
             {
-                float remaining = musicCur.clip.length - musicCur.time;
+                float remaining = musicLoopEnd - musicCur.time;
                 if (remaining < 1f)
                 {
                     var next = musicCur == musicA ? musicB : musicA;
@@ -254,12 +279,13 @@ namespace BoLike.Game
                     next.loop = false;
                     next.volume = MusicLevel();
                     next.time = musicLoopStart;
-                    next.PlayScheduled(AudioSettings.dspTime + remaining);
+                    next.PlayScheduled(AudioSettings.dspTime + System.Math.Max(0f, remaining));
                     nextLoopScheduled = true;
                     var finishing = musicCur;
                     musicCur = next;
-                    // The old source simply runs out; clear the flag once the new one is audible.
-                    StartCoroutine(ClearLoopFlag(remaining + 0.05f, finishing));
+                    // The old source is stopped right after the hand-over (it would otherwise play past loopEnd); the
+                    // 40 ms overlap hides the seam, as the audio team asked.
+                    StartCoroutine(ClearLoopFlag(System.Math.Max(0f, remaining) + 0.04f, finishing));
                 }
             }
         }
