@@ -29,6 +29,14 @@ export const STRINGS: Record<string, string> = {
   'hint.potion': 'HP 低了就喝藥水，開局有 2 瓶',
   'hint.door': '清完這一房，門會打開',
 
+  // 章節選單（封測 2 S1）
+  'chapter.pick': '選擇場景',
+  'chapter.locked': '擊敗{boss}解鎖',
+  'chapter.soon': '即將開放',
+  'chapter.cleared': '已通關',
+  'chapter.unlocked': '解鎖新場景：{name}',
+  'chapter.start': '第 {n} 章',
+
   // ---- 升級與技能面板 ----
   'levelup.banner': 'LEVEL UP!',
   'levelup.point': '技能點 +{n}',

@@ -1371,33 +1371,5 @@
   "wolfAmbush",
   "emberField"
  ],
- "boss": "jellyThrone",
- "scenes": [
-  {
-   "id": "grassland",
-   "name": "王都草原",
-   "pool": [
-    "meadow",
-    "beetleNest",
-    "wolfAmbush",
-    "emberField"
-   ],
-   "boss": "jellyThrone"
-  },
-  {
-   "id": "mistForest",
-   "name": "迷霧森林",
-   "pool": [
-    "mistTrail",
-    "sporeHollow",
-    "thornGarden",
-    "wolfDen"
-   ],
-   "boss": "heartOfTheWood"
-  }
- ],
- "sceneOrder": [
-  "grassland",
-  "mistForest"
- ]
+ "boss": "jellyThrone"
 }

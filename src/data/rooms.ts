@@ -156,9 +156,4 @@ export const ROOMS: Record<string, RoomDef> = {
 export const ROOM_POOL = ['meadow', 'beetleNest', 'wolfAmbush', 'emberField'];
 export const BOSS_ROOM = 'jellyThrone';
 
-/** 正式版：每個場景自己的房間池與 Boss，一局依序走過 SCENE_ORDER（封測只跑第一個）。 */
-export const SCENES: Record<string, { name: string; pool: string[]; boss: string }> = {
-  grassland: { name: '王都草原', pool: ROOM_POOL, boss: BOSS_ROOM },
-  mistForest: { name: '迷霧森林', pool: ['mistTrail', 'sporeHollow', 'thornGarden', 'wolfDen'], boss: 'heartOfTheWood' },
-};
-export const SCENE_ORDER = ['grassland', 'mistForest'];
+// 場景／章節表已移到 chapters.ts（CHAPTERS／RUN_STAGES）。

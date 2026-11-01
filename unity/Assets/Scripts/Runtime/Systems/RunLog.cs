@@ -31,6 +31,8 @@ namespace BoLike.Systems
         public string build;
         public string device;
         public string classId;
+        /// <summary>Chapter and stage the run played (S1); older logs have neither.</summary>
+        public string chapterId, stageId;
         public string seed;
         /// <summary>win / lose / abandon</summary>
         public string result;

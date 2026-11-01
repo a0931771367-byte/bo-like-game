@@ -20,6 +20,8 @@ namespace BoLike.Game
         /// <summary>Wave set index per room slot, drawn up front from the seed.</summary>
         public readonly List<int> waveSetByRoom = new();
         public string classId;
+        /// <summary>The stage (chapter + room pool + finale) this run plays; S1 of beta 2.</summary>
+        public string stageId;
         public readonly List<string> roomOrder = new();
         public int roomIndex = -1;
         public readonly List<PerkDef> perks = new();
@@ -33,27 +35,36 @@ namespace BoLike.Game
 
         public string SeedCode => Rng.SeedToCode(seed);
         public RunRules Rules => GameDb.Rules;
-        public bool InBossRoom => roomIndex >= Rules.combatRooms;
-        public string CurrentRoomId => InBossRoom ? GameDb.BossRoom : roomOrder[roomIndex];
+        public RunStageDef Stage => GameDb.RunStage(stageId);
+        public ChapterDef Chapter => GameDb.Chapter(Stage.chapterId);
+        public int CombatRooms => Stage.combatRooms > 0 ? Stage.combatRooms : Rules.combatRooms;
+        /// <summary>Enemy multipliers for this stage, or the global table when the stage has none.</summary>
+        public RoomScaling Scaling => Stage.scaling ?? Rules.roomScaling;
+        public string BossEnemyId => Stage.finale?.enemy;
+        public bool InBossRoom => roomIndex >= CombatRooms && Stage.HasBossRoom;
+        public string CurrentRoomId => InBossRoom ? Stage.finale.room : roomOrder[roomIndex];
         public int CurrentSlot => roomIndex;
         public int CurrentWaveSet => roomIndex < waveSetByRoom.Count ? waveSetByRoom[roomIndex] : 0;
 
-        public static RunState New(string classId, SaveData save, ulong? seed = null)
+        public static RunState New(string classId, SaveData save, ulong? seed = null) => New(classId, save, null, seed);
+
+        public static RunState New(string classId, SaveData save, string stageId, ulong? seed = null)
         {
-            var r = new RunState { seed = seed ?? Rng.NewSeed(), classId = classId };
+            var stage = GameDb.HasRunStage(stageId) ? GameDb.RunStage(stageId) : GameDb.DefaultStage;
+            var r = new RunState { seed = seed ?? Rng.NewSeed(), classId = classId, stageId = stage.id };
             var roomRng = new Rng(r.seed ^ 0x526F6F6DUL);
             r.perkRng = new Rng(r.seed ^ 0x5065726BUL);
             r.rng = new Rng(r.seed ^ 0x436F6D62UL);
-            var pool = new List<string>(GameDb.RoomPool);
+            var pool = new List<string>(stage.pool);
             // Fisher–Yates with the room rng, then take the first combatRooms entries.
             for (int i = pool.Count - 1; i > 0; i--)
             {
                 int j = roomRng.Range(0, i + 1);
                 (pool[i], pool[j]) = (pool[j], pool[i]);
             }
-            for (int i = 0; i < r.Rules.combatRooms && i < pool.Count; i++) r.roomOrder.Add(pool[i]);
+            for (int i = 0; i < r.CombatRooms && i < pool.Count; i++) r.roomOrder.Add(pool[i]);
             foreach (var id in r.roomOrder) r.waveSetByRoom.Add(roomRng.Range(0, System.Math.Max(1, GameDb.Room(id).waveSets.Count)));
-            r.waveSetByRoom.Add(roomRng.Range(0, System.Math.Max(1, GameDb.Room(GameDb.BossRoom).waveSets.Count)));
+            if (stage.HasBossRoom) r.waveSetByRoom.Add(roomRng.Range(0, System.Math.Max(1, GameDb.Room(stage.finale.room).waveSets.Count)));
             r.inv.gold = save.gold;
             r.inv.red = r.Rules.startPotions.red + UnlockValue(save, UnlockKind.StartPotion);
             r.inv.blue = r.Rules.startPotions.blue;

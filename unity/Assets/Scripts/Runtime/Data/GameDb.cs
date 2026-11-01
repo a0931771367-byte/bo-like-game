@@ -30,6 +30,9 @@ namespace BoLike.Data
         static MetaTable meta;
         static StringTable stringTable;
         static SkillUiTable skillUi;
+        static ChapterTable chapterTable;
+        static Dictionary<string, ChapterDef> chapterById;
+        static Dictionary<string, RunStageDef> runStageById;
 
         public static IReadOnlyList<ClassDef> Classes { get { Load(); return classes; } }
         public static IEnumerable<EnemyDef> Enemies { get { Load(); return enemyById.Values; } }
@@ -43,7 +46,11 @@ namespace BoLike.Data
         public static SkillUiTable SkillUi { get { Load(); return skillUi; } }
         public static IReadOnlyList<UnlockDef> Unlocks { get { Load(); return meta.unlocks; } }
         public static IReadOnlyList<string> StartingClasses { get { Load(); return meta.startingClasses; } }
-        public static IReadOnlyList<SceneDef> Scenes { get { Load(); return roomTable.scenes; } }
+        /// <summary>Chapters in play order (chapters.json); beta 2 ships three, the third without stages until its data lands.</summary>
+        public static IReadOnlyList<ChapterDef> Chapters { get { Load(); return chapterTable.chapters; } }
+        public static IReadOnlyList<RunStageDef> RunStages { get { Load(); return chapterTable.stages; } }
+        /// <summary>The stage a run starts in when none is chosen: the first chapter's first stage.</summary>
+        public static RunStageDef DefaultStage { get { Load(); return runStageById[chapterTable.chapters[0].stages[0]]; } }
 
         /// <summary>UI copy by key; returns the key itself when missing so a typo is visible, never a crash.</summary>
         public static string Str(string key)
@@ -62,6 +69,9 @@ namespace BoLike.Data
         public static ClassDef Class(string id) { Load(); return classById[id]; }
         public static EnemyDef Enemy(string id) { Load(); return enemyById[id]; }
         public static StageDef Stage(string id) { Load(); return stageById[id]; }
+        public static ChapterDef Chapter(string id) { Load(); return chapterById[id]; }
+        public static RunStageDef RunStage(string id) { Load(); return runStageById[id]; }
+        public static bool HasRunStage(string id) { Load(); return id != null && runStageById.ContainsKey(id); }
         public static StageStory Story(string stageId) { Load(); return storyById.TryGetValue(stageId, out var s) ? s : null; }
         public static AnimSet Anim(string classId) { Load(); return animById.TryGetValue(classId, out var a) ? a : null; }
 
@@ -81,6 +91,9 @@ namespace BoLike.Data
             roomTable = Read<RoomTable>("rooms");
             roomById = roomTable.rooms.ToDictionary(r => r.id);
             meta = Read<MetaTable>("meta");
+            chapterTable = Read<ChapterTable>("chapters");
+            chapterById = chapterTable.chapters.ToDictionary(c => c.id);
+            runStageById = chapterTable.stages.ToDictionary(st => st.id);
             var uiAsset = Resources.Load<TextAsset>("Data/skillUi");
             skillUi = uiAsset != null ? Parse<SkillUiTable>(uiAsset.text) : new SkillUiTable();
             var strAsset = Resources.Load<TextAsset>("Data/strings");

@@ -23,7 +23,8 @@ await build({
       export { STORY } from './src/data/story';
       export { ANIMS } from './src/data/anims';
       export { PERKS } from './src/data/perks';
-      export { ROOMS, ROOM_POOL, BOSS_ROOM, SCENES, SCENE_ORDER } from './src/data/rooms';
+      export { ROOMS, ROOM_POOL, BOSS_ROOM } from './src/data/rooms';
+      export { CHAPTERS, CHAPTER_ORDER, RUN_STAGES } from './src/data/chapters';
       export { STRINGS, BOSS_LINES } from './src/data/strings';
       export { SKILL_STAT_ROWS, BUFF_STAT_ROWS, SKILL_TYPE_LABEL, ELEMENT_LABEL } from './src/data/skillUi';
       export { RUN_RULES, UNLOCKS, STARTING_CLASSES } from './src/data/meta';
@@ -57,9 +58,9 @@ write(OUT, 'story.json', Object.entries(D.STORY).map(([stageId, s]) => ({ stageI
 write(OUT, 'perks.json', D.PERKS);
 write(OUT, 'rooms.json', {
   rooms: Object.values(D.ROOMS), pool: D.ROOM_POOL, boss: D.BOSS_ROOM,
-  scenes: Object.entries(D.SCENES).map(([id, s]) => ({ id, ...s })), sceneOrder: D.SCENE_ORDER,
 });
 write(OUT, 'strings.json', { strings: D.STRINGS, bossLines: D.BOSS_LINES });
+write(OUT, 'chapters.json', { chapters: D.CHAPTER_ORDER.map((id) => D.CHAPTERS[id]), stages: Object.values(D.RUN_STAGES) });
 write(OUT, 'skillUi.json', { statRows: D.SKILL_STAT_ROWS, buffRows: D.BUFF_STAT_ROWS, typeLabel: D.SKILL_TYPE_LABEL, elementLabel: D.ELEMENT_LABEL });
 write(OUT, 'meta.json', { rules: D.RUN_RULES, unlocks: D.UNLOCKS, startingClasses: D.STARTING_CLASSES });
 write(OUT, 'anims.json', Object.entries(D.ANIMS).map(([classId, a]) => ({ classId, ...a })));

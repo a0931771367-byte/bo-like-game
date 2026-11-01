@@ -18,6 +18,8 @@ namespace BoLike.Game
     {
         public string classId = "swordsman";
         public ulong seedOverride;
+        /// <summary>Stage to play (S1); null = the first chapter's stage.</summary>
+        public string stageId;
 
         World world;
         RunState run;
@@ -43,16 +45,21 @@ namespace BoLike.Game
         /// <summary>Tutorial hints run in a player's first two runs only (growth curve v2 E6).</summary>
         bool hintsOn;
         Enemy boss;
+        /// <summary>Chapter this run's boss kill just opened, shown on the result screen.</summary>
+        ChapterDef unlockedChapter;
         Canvas overlayCanvas;
         GameObject overlay;
         bool paused;
 
-        public static GameController Launch(string classId, ulong seed = 0)
+        public static GameController Launch(string classId, ulong seed = 0) => Launch(classId, null, seed);
+
+        public static GameController Launch(string classId, string stageId, ulong seed = 0)
         {
             var go = new GameObject("Game");
             go.SetActive(false); // Awake runs on AddComponent for an active object; set the fields first
             var gc = go.AddComponent<GameController>();
             gc.classId = classId;
+            gc.stageId = stageId;
             gc.seedOverride = seed;
             go.SetActive(true);
             return gc;
@@ -62,7 +69,8 @@ namespace BoLike.Game
         {
             Application.targetFrameRate = 60;
             save = SaveSystem.Current ?? SaveSystem.Load();
-            run = RunState.New(classId, save, seedOverride == 0 ? null : seedOverride);
+            run = RunState.New(classId, save, stageId, seedOverride == 0 ? null : seedOverride);
+            stageId = run.stageId;
             save.lastSeedCode = run.SeedCode;
             world = new World { Rng = run.rng, Inv = run.inv, Mods = run.mods };
             worldRoot = new GameObject("World").transform;
@@ -103,8 +111,9 @@ namespace BoLike.Game
 
             GameInput.Enable();
             run.startedAt = 0;
-            AudioManager.Instance.PlayMusic("field");
-            AudioManager.Instance.PlayAmbience("amb_ch1_grassland", 0.35f);
+            var chapter = run.Chapter;
+            AudioManager.Instance.PlayMusic(chapter.music ?? "field");
+            if (!string.IsNullOrEmpty(chapter.ambience)) AudioManager.Instance.PlayAmbience(chapter.ambience, 0.35f); else AudioManager.Instance.StopAmbience();
             EnterRoom(0);
         }
 
@@ -124,7 +133,7 @@ namespace BoLike.Game
             roomEnteredAt = world.Now;
             roomLog = new RoomLogEntry { roomId = run.CurrentRoomId, waveSet = run.CurrentWaveSet };
             runLog.rooms.Add(roomLog);
-            CrashLog.Context = $"{classId} seed {run.SeedCode} room {index + 1} {run.CurrentRoomId}/{run.CurrentWaveSet}";
+            CrashLog.Context = $"{classId} {run.stageId} seed {run.SeedCode} room {index + 1} {run.CurrentRoomId}/{run.CurrentWaveSet}";
 
             foreach (var e in world.Enemies) if (views.TryGetValue(e, out var v)) Destroy(v.gameObject);
             foreach (var e in world.Enemies) views.Remove(e);
@@ -141,7 +150,9 @@ namespace BoLike.Game
             if (p.state != FighterState.Dead) p.SetState(FighterState.Idle);
             cam.SnapTo(p.x);
             string label = run.InBossRoom ? room.name : $"第 {index + 1} 房  {room.name}";
-            fx.Banner(label, 0xffffff, 48);
+            // The chapter title card on the first room is the cheapest "something new" cue when a scene unlocks (S1).
+            if (index == 0) fx.Banner($"{GameDb.Str("chapter.start").Replace("{n}", run.Chapter.order.ToString())}  {run.Chapter.name}", 0xfff4de, 56);
+            world.Delay(index == 0 ? 1400 : 0, () => fx.Banner(label, 0xffffff, 48));
             hud.ShowGo(false);
             if (index == 0) world.Delay(700, () => Hint("hint.move"));
         }
@@ -171,7 +182,7 @@ namespace BoLike.Game
                         : spawn.side == Side.Right ? camX + viewW + 60 : camX - 60;
                     x = Mathf.Clamp(x, -80, room.width + 80);
                     float y = run.rng.Between((int)Units.GroundTopPx + 20, (int)Units.GroundBottomPx - 20);
-                    var scaling = run.Rules.roomScaling;
+                    var scaling = run.Scaling;
                     float hpMult = run.InBossRoom ? scaling.boss.hp : scaling.HpAt(slot);
                     float atkMult = run.InBossRoom ? scaling.boss.atk : scaling.AtkAt(slot);
                     if (run.InBossRoom && !def.boss) { hpMult = scaling.HpAt(scaling.hp.Count - 1); atkMult = scaling.AtkAt(scaling.atk.Count - 1); }
@@ -189,7 +200,7 @@ namespace BoLike.Game
                         fx.Banner($"{def.name} 出現！", 0xffb3c6, 56);
                         cam.Shake(0.3f, 0.01f);
                         world.Sfx.Play("bossAppear");
-                        AudioManager.Instance.PlayMusic("boss", 0.3f);
+                        AudioManager.Instance.PlayMusic(run.Chapter.bossTrack ?? "boss", 0.3f);
                     }
                 });
             }
@@ -223,7 +234,12 @@ namespace BoLike.Game
             {
                 run.bossKilled = true;
                 int reward = run.Rules.stardust.bossKill + run.Rules.stardust.runClear + run.Rules.stardust.runEnd;
-                if (!save.bossCleared) { reward += run.Rules.stardust.firstClearBonus; save.bossCleared = true; }
+                // First kill of *this* boss pays the bonus and unlocks the next chapter (S1); the save remembers both.
+                string bossId = run.BossEnemyId ?? (boss != null ? boss.def.id : null);
+                bool firstKill = bossId != null && !save.bossFirstKills.Contains(bossId);
+                if (firstKill) { reward += run.Rules.stardust.firstClearBonus; save.bossFirstKills.Add(bossId); save.bossCleared = true; }
+                if (!save.stagesCleared.Contains(run.stageId)) save.stagesCleared.Add(run.stageId);
+                unlockedChapter = firstKill ? Progress.ChapterUnlockedBy(bossId) : null;
                 AddStardust(reward);
                 fx.Banner("RUN CLEAR!", Colors.Crit, 72);
                 AudioManager.Instance.StopMusic(1.5f);
@@ -409,6 +425,8 @@ namespace BoLike.Game
             runLogged = true;
             runLog.build = BuildInfo.Number;
             runLog.classId = classId;
+            runLog.chapterId = run.Chapter.id;
+            runLog.stageId = run.stageId;
             runLog.seed = run.SeedCode;
             runLog.result = result;
             runLog.roomsCleared = run.roomsCleared;
@@ -507,13 +525,13 @@ namespace BoLike.Game
             var layer = NewOverlay(0.75f);
             UiKit.Text(layer, 0, 110, win ? GameDb.Str("result.clear") : GameDb.Str("result.dead"), 48, win ? Colors.Crit : 0xff9a9a, UiKit.TopCenter, UiKit.TopCenter, TextAnchor.UpperCenter, true);
             if (!win) UiKit.Text(layer, 0, 168, GameDb.Str("result.deadSub"), 18, 0xcfd4e6, UiKit.TopCenter, UiKit.TopCenter, TextAnchor.UpperCenter);
-            string body = $"清除房間 {run.roomsCleared} / {run.Rules.combatRooms}" + (run.bossKilled ? "  ＋ Boss" : "") +
+            string body = $"{run.Chapter.name}  清除房間 {run.roomsCleared} / {run.CombatRooms}" + (run.bossKilled ? "  ＋ Boss" : "") +
                           $"\n獲得星塵 ✦ +{run.stardustEarned}    累計 ✦ {save.stardust}" +
                           $"\n強化：{(run.perks.Count == 0 ? "無" : string.Join("、", run.perks.ConvertAll(p => p.name)))}" +
                           $"\n用時 {RunLog.FormatMs(runLog.totalMs)}    種子 {run.SeedCode}";
             var t = UiKit.Text(layer, 0, 205, body, 22, 0xffffff, UiKit.TopCenter, UiKit.TopCenter, TextAnchor.UpperCenter);
             t.rectTransform.sizeDelta = new Vector2(900, 200);
-            string next = NextUnlockLine(save);
+            string next = unlockedChapter != null ? GameDb.Str("chapter.unlocked").Replace("{name}", unlockedChapter.name) : NextUnlockLine(save);
             if (next != null) UiKit.Text(layer, 0, 330, next, 22, 0xffd36b, UiKit.TopCenter, UiKit.TopCenter, TextAnchor.UpperCenter, true);
             UiKit.Button(layer, -130, 480, 240, 60, "再來一局", 0xf28c28, () => Restart(classId), 24, UiKit.TopCenter, UiKit.TopCenter);
             UiKit.Button(layer, 130, 480, 240, 60, "回標題", 0x2f6fb5, () => Bootstrap.ToTitle(), 24, UiKit.TopCenter, UiKit.TopCenter);
@@ -540,7 +558,7 @@ namespace BoLike.Game
             paused = true;
             var layer = NewOverlay(0.6f);
             UiKit.Text(layer, 0, 160, "暫停", 44, 0xfff4de, UiKit.TopCenter, UiKit.TopCenter, TextAnchor.UpperCenter, true);
-            UiKit.Text(layer, 0, 230, $"種子 {run.SeedCode}   第 {Mathf.Min(run.roomIndex + 1, run.Rules.combatRooms + 1)} 房", 20, 0xcfd4e6, UiKit.TopCenter, UiKit.TopCenter, TextAnchor.UpperCenter);
+            UiKit.Text(layer, 0, 230, $"種子 {run.SeedCode}   第 {Mathf.Min(run.roomIndex + 1, run.CombatRooms + 1)} 房", 20, 0xcfd4e6, UiKit.TopCenter, UiKit.TopCenter, TextAnchor.UpperCenter);
             UiKit.Button(layer, 0, 320, 260, 60, "繼續", 0xf28c28, ClearOverlay, 24, UiKit.TopCenter, UiKit.TopCenter);
             UiKit.Button(layer, -140, 400, 260, 60, world.Player.prog.skillPoints > 0 ? $"技能（{world.Player.prog.skillPoints} 點可用）" : "技能", 0x2f6fb5, () => ShowSkillPanel(0), 22, UiKit.TopCenter, UiKit.TopCenter);
             UiKit.Button(layer, 140, 400, 260, 60, "放棄本局", 0x7a2a2a, () => { run.abandoned = true; finished = true; FinishRunLog("abandon"); ClearOverlay(); ShowResult(false); }, 24, UiKit.TopCenter, UiKit.TopCenter);
@@ -696,7 +714,7 @@ namespace BoLike.Game
             Destroy(cam.gameObject);
             Destroy(hud.gameObject);
             if (touch != null) Destroy(touch.gameObject);
-            Launch(cls);
+            Launch(cls, stageId);
         }
 
         void OnApplicationPause(bool pauseStatus)

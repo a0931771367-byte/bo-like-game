@@ -63,20 +63,58 @@ namespace BoLike.Data
     public class RoomTable
     {
         public List<RoomDef> rooms;
-        /// <summary>Combat rooms a run draws from, without repeats.</summary>
+        /// <summary>Legacy: the first chapter's combat pool and boss room. Runs now read <see cref="RunStageDef"/>.</summary>
         public List<string> pool;
         public string boss;
-        /// <summary>Scene tables (grassland, mistForest …); the beta only runs the first in <see cref="sceneOrder"/>.</summary>
-        public List<SceneDef> scenes;
-        public List<string> sceneOrder;
     }
 
-    public class SceneDef
+    // ---- 章／關／房池（設計部 07 §9；src/data/chapters.ts → Resources/Data/chapters.json） ----
+
+    public enum TimeOfDay { Day, Dusk, Night }
+    public enum FinaleKind { None, MidBoss, Boss }
+
+    public class ChapterDef
     {
-        public string id;
-        public string name;
-        public List<string> pool;
-        public string boss;
+        public string id, name, desc, bg;
+        public int order;
+        /// <summary>Stage ids in unlock order; beta 2 has one per chapter (the boss stage), 1.0 inserts -1 and -2 in front.</summary>
+        public List<string> stages = new();
+        public ChapterUnlock unlock;
+        /// <summary>AudioManager music / ambience keys; bossTrack is the chapter boss's own track (chapter-end bosses only).</summary>
+        public string music, ambience, bossTrack;
+
+        /// <summary>No stages yet (data not delivered): shown in the menu as "coming soon", never startable.</summary>
+        public bool Playable => stages != null && stages.Count > 0;
+    }
+
+    public class ChapterUnlock { public string bossKill; }
+
+    public class StageFinale
+    {
+        public FinaleKind kind;
+        public string enemy, room;
+    }
+
+    public class RunStageDef
+    {
+        public string id, chapterId, name;
+        public int index;
+        public TimeOfDay timeOfDay;
+        public int combatRooms;
+        public List<string> pool = new();
+        public StageFinale finale = new();
+        /// <summary>Per-stage enemy multipliers; null falls back to <see cref="RunRules.roomScaling"/>.</summary>
+        public RoomScaling scaling;
+        public List<string> affixes = new();
+        public string storyBefore, storyAfter;
+
+        public bool HasBossRoom => finale != null && finale.kind == FinaleKind.Boss && !string.IsNullOrEmpty(finale.room);
+    }
+
+    public class ChapterTable
+    {
+        public List<ChapterDef> chapters = new();
+        public List<RunStageDef> stages = new();
     }
 
     public class BossLine { public string enter; public string die; }

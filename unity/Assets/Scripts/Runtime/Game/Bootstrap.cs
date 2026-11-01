@@ -68,11 +68,42 @@ namespace BoLike.Game
                 img.GetComponent<UnityEngine.UI.AspectRatioFitter>().aspectRatio = (float)art.width / art.height;
             }
             var layer = titleLayer = UiKit.Layer(canvas, "Layer");
+            var lockSprite0 = Resources.Load<Sprite>("Icons/skill_locked");
             UiKit.Text(layer, 0, 90, "口袋冒險團", 64, 0xfff4de, UiKit.TopCenter, UiKit.TopCenter, TextAnchor.UpperCenter, true, 4);
             UiKit.Text(layer, 0, 170, "Pocket Adventurers · 封測版", 20, 0xcfd4e6, UiKit.TopCenter, UiKit.TopCenter, TextAnchor.UpperCenter);
             var star = Resources.Load<Sprite>("UI/stardust");
-            if (star != null) UiKit.Sprite(layer, star, -52, 210, 32, 32, UiKit.TopCenter, UiKit.TopCenter);
-            UiKit.Text(layer, 14, 215, star != null ? $"星塵 {save.stardust}" : $"✦ 星塵 {save.stardust}", 22, 0xcfe8ff, UiKit.TopCenter, UiKit.TopCenter, TextAnchor.UpperCenter);
+            if (star != null) UiKit.Sprite(layer, star, -52, 196, 28, 28, UiKit.TopCenter, UiKit.TopCenter);
+            UiKit.Text(layer, 14, 199, star != null ? $"星塵 {save.stardust}" : $"✦ 星塵 {save.stardust}", 20, 0xcfe8ff, UiKit.TopCenter, UiKit.TopCenter, TextAnchor.UpperCenter);
+
+            // Chapter row (S1): every chapter in order. Locked ones say which boss opens them, chapters without data say
+            // "coming soon"; tapping an open one selects it and the class buttons below start a run there.
+            var chapter = Progress.DefaultChapter(save);
+            var chapters = GameDb.Chapters;
+            float cx = -(chapters.Count * 300 - 16) / 2f;
+            foreach (var ch in chapters)
+            {
+                var c = ch;
+                bool open = c.Playable && Progress.ChapterUnlocked(save, c);
+                bool selected = open && c.id == chapter.id;
+                var cb = UiKit.Button(layer, cx, 232, 284, 64, "", selected ? 0xf28c28 : open ? 0x1b1830 : 0x14121f, () =>
+                {
+                    if (!open) { Flash(layer, c.Playable ? GameDb.Str("chapter.locked").Replace("{boss}", UnlockBossName(c)) : GameDb.Str("chapter.soon")); return; }
+                    save.lastChapterId = c.id;
+                    SaveSystem.Save();
+                    AudioManager.Instance.Play("select");
+                    Destroy(title);
+                    ShowTitle();
+                }, 20, UiKit.TopCenter);
+                string sub = !c.Playable ? GameDb.Str("chapter.soon")
+                    : !open ? GameDb.Str("chapter.locked").Replace("{boss}", UnlockBossName(c))
+                    : Progress.ChapterCleared(save, c) ? $"{GameDb.Str("chapter.cleared")} ✓  {c.desc}" : c.desc;
+                UiKit.Text(cb.transform, 0, 6, $"{GameDb.Str("chapter.start").Replace("{n}", c.order.ToString())}  {c.name}", 20, open ? 0xfff4de : 0x9aa0b4, UiKit.TopCenter, UiKit.TopCenter, TextAnchor.UpperCenter, true, 1);
+                var subText = UiKit.Text(cb.transform, 0, 34, sub, 12, open ? 0xe6e9f5 : 0xffd36b, UiKit.TopCenter, UiKit.TopCenter, TextAnchor.UpperCenter, false, 1);
+                subText.rectTransform.sizeDelta = new Vector2(270, 24);
+                if (!open && lockSprite0 != null) UiKit.Sprite(cb.transform, lockSprite0, -118, 16, 32, 32, UiKit.TopCenter, UiKit.TopCenter);
+                cx += 300;
+            }
+            string stageId = Progress.NextStage(save, chapter).id;
 
             // Class row: starting classes plus every class that has a stardust unlock. Locked ones show a lock and the
             // price (growth curve v2 §5); tapping one buys it when the stardust is there, like the shop button below.
@@ -85,31 +116,31 @@ namespace BoLike.Game
                 if (save.unlocks.Contains(u.id)) { unlocked.Add(u.ValueId); shown.Add((u.ValueId, null)); }
                 else shown.Add((u.ValueId, u));
             }
-            var lockSprite = Resources.Load<Sprite>("Icons/skill_locked");
+            var lockSprite = lockSprite0;
             float x = -(shown.Count * 220 - 20) / 2f;
             foreach (var (id, lockedBy) in shown)
             {
                 var cls = GameDb.Class(id);
                 bool locked = lockedBy != null;
-                var btn = UiKit.Button(layer, x, 290, 200, 220, "", locked ? 0x14121f : 0x1b1830, () =>
+                var btn = UiKit.Button(layer, x, 312, 200, 200, "", locked ? 0x14121f : 0x1b1830, () =>
                 {
-                    if (!locked) { StartRun(id); return; }
+                    if (!locked) { StartRun(id, stageId); return; }
                     if (save.stardust < lockedBy.cost) { Flash(layer, GameDb.Str("unlock.notEnough")); return; }
                     Buy(save, lockedBy);
                 }, 22, UiKit.TopCenter);
                 var portrait = SpriteBank.Get($"{id}_front");
                 if (portrait != null)
                 {
-                    var img = UiKit.Sprite(btn.transform, portrait, 0, 14, 150, 140, UiKit.TopCenter, UiKit.TopCenter);
+                    var img = UiKit.Sprite(btn.transform, portrait, 0, 8, 130, 122, UiKit.TopCenter, UiKit.TopCenter);
                     if (locked) img.color = new Color(0.35f, 0.35f, 0.4f, 1f);
                 }
-                if (locked && lockSprite != null) UiKit.Sprite(btn.transform, lockSprite, 0, 50, 72, 72, UiKit.TopCenter, UiKit.TopCenter);
-                UiKit.Text(btn.transform, 0, 165, cls.name, 24, locked ? 0x9aa0b4 : 0xfff4de, UiKit.TopCenter, UiKit.TopCenter, TextAnchor.UpperCenter, true);
-                UiKit.Text(btn.transform, 0, 195, locked ? $"✦ {lockedBy.cost} 解鎖" : cls.role, 12, locked ? 0xffd36b : 0xcfd4e6, UiKit.TopCenter, UiKit.TopCenter, TextAnchor.UpperCenter);
+                if (locked && lockSprite != null) UiKit.Sprite(btn.transform, lockSprite, 0, 40, 72, 72, UiKit.TopCenter, UiKit.TopCenter);
+                UiKit.Text(btn.transform, 0, 142, cls.name, 24, locked ? 0x9aa0b4 : 0xfff4de, UiKit.TopCenter, UiKit.TopCenter, TextAnchor.UpperCenter, true);
+                UiKit.Text(btn.transform, 0, 174, locked ? $"✦ {lockedBy.cost} 解鎖" : cls.role, 12, locked ? 0xffd36b : 0xcfd4e6, UiKit.TopCenter, UiKit.TopCenter, TextAnchor.UpperCenter);
                 x += 220;
             }
             string nextLine = GameController.NextUnlockLine(save);
-            if (nextLine != null) UiKit.Text(layer, 0, 250, nextLine, 16, 0xffd36b, UiKit.TopCenter, UiKit.TopCenter, TextAnchor.UpperCenter);
+            if (nextLine != null) UiKit.Text(layer, 0, 300, nextLine, 14, 0xffd36b, UiKit.TopCenter, UiKit.TopCenter, TextAnchor.UpperCenter);
             ShowUnlockShop(layer, save);
             if (Debug.isDebugBuild || Application.isEditor)
                 UiKit.Button(layer, 0, -12, 150, 32, "種子開局", 0x3a3a4a, () => ShowSeedPanel(layer, unlocked), 14, UiKit.BottomCenter, new Vector2(0.5f, 0));
@@ -215,7 +246,7 @@ namespace BoLike.Game
                 {
                     var code = field.text.Trim();
                     Destroy(title);
-                    GameController.Launch(cid, code.Length == 0 ? 0 : Rng.CodeToSeed(code));
+                    GameController.Launch(cid, Progress.NextStage(SaveSystem.Current, Progress.DefaultChapter(SaveSystem.Current)).id, code.Length == 0 ? 0 : Rng.CodeToSeed(code));
                 }, 20, UiKit.TopCenter);
                 x += 170;
             }
@@ -223,10 +254,18 @@ namespace BoLike.Game
             field.ActivateInputField();
         }
 
-        void StartRun(string classId)
+        void StartRun(string classId, string stageId)
         {
             Destroy(title);
-            GameController.Launch(classId);
+            GameController.Launch(classId, stageId);
+        }
+
+        /// <summary>Name of the boss whose first kill opens a chapter, for the locked label.</summary>
+        static string UnlockBossName(ChapterDef c)
+        {
+            string id = c.unlock?.bossKill;
+            if (string.IsNullOrEmpty(id)) return "";
+            try { return GameDb.Enemy(id).name; } catch (System.Collections.Generic.KeyNotFoundException) { return id; }
         }
     }
 

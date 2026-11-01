@@ -260,3 +260,39 @@ export interface UnlockDef {
   kind: 'class' | 'startPotion' | 'rareChance' | 'startPerk';
   value: string | number;
 }
+
+// ---- 章／關／房池（設計部 07 §9；封測 2 每章 1 關，正式版再插 -1、-2） ----
+
+export type TimeOfDay = 'day' | 'dusk' | 'night';
+
+export interface ChapterDef {
+  id: string;                 // 'grassland' | 'mistForest' | 'desertRuins' | ...
+  order: number;              // 1–8
+  name: string;               // 果凍草原
+  /** 一句話主題，章節選單用。 */
+  desc: string;
+  bg: string;                 // 背景資源 key，同章 3 關共用
+  stages: string[];           // 關 id，順序即解鎖順序；封測 2 可只有 1 個
+  unlock?: { bossKill: string }; // 前一章 Boss id；第 1 章無
+  /** AudioManager 的音樂／環境音 key。 */
+  music: string;
+  ambience?: string;
+  bossTrack?: string;         // 章末 Boss 專屬曲 id（罐子：只給章末與最終 Boss）
+}
+
+export interface StageScaling { hp: number[]; atk: number[]; boss: { hp: number; atk: number } }
+
+export interface RunStageDef {
+  id: string;                 // 'grassland-1' | 'grassland-2' | 'grassland-3'
+  chapterId: string;
+  index: 1 | 2 | 3;           // 前段／後段／Boss 關
+  name: string;               // 郊外草地／黃昏林道／布丁巨像之丘
+  timeOfDay: TimeOfDay;       // 同背景換色調，對應 tint
+  combatRooms: number;        // 封測 2 與正式版都是 4
+  pool: string[];             // 本關可抽的房間 id（≥ combatRooms，不重抽）
+  finale: { kind: 'none' | 'midBoss' | 'boss'; enemy?: string; room?: string };
+  /** 取代全域 roomScaling，每關各自一組 combatRooms 槽；省略時用 RUN_RULES.roomScaling。 */
+  scaling?: StageScaling;
+  affixes: string[];          // 本關允許的房間詞綴 id；[] = 無（第 1 次玩的關）
+  storyBefore?: string; storyAfter?: string; // story.ts 的鍵
+}
