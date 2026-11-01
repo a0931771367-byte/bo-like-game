@@ -23,7 +23,8 @@ await build({
       export { STORY } from './src/data/story';
       export { ANIMS } from './src/data/anims';
       export { PERKS } from './src/data/perks';
-      export { ROOMS, ROOM_POOL, BOSS_ROOM, SCENES, SCENE_ORDER, CHAPTERS, CHAPTER_ORDER, RUN_STAGES } from './src/data/rooms';
+      export { ROOMS, ROOM_POOL, BOSS_ROOM } from './src/data/rooms';
+      export { CHAPTERS, CHAPTER_ORDER, RUN_STAGES } from './src/data/chapters';
       export { CARDS, CARD_SETS } from './src/data/cards';
       export { TALENTS } from './src/data/talents';
       export { STRINGS, BOSS_LINES } from './src/data/strings';
@@ -56,10 +57,7 @@ write(OUT, 'enemies.json', Object.values(D.ENEMIES));
 write(OUT, 'stages.json', Object.values(D.STAGES));
 write(OUT, 'story.json', Object.entries(D.STORY).map(([stageId, s]) => ({ stageId, ...s })));
 write(OUT, 'perks.json', D.PERKS);
-write(OUT, 'rooms.json', {
-  rooms: Object.values(D.ROOMS), pool: D.ROOM_POOL, boss: D.BOSS_ROOM,
-  scenes: Object.entries(D.SCENES).map(([id, s]) => ({ id, ...s })), sceneOrder: D.SCENE_ORDER,
-});
+write(OUT, 'rooms.json', { rooms: Object.values(D.ROOMS), pool: D.ROOM_POOL, boss: D.BOSS_ROOM });
 write(OUT, 'strings.json', { strings: D.STRINGS, bossLines: D.BOSS_LINES });
 write(OUT, 'meta.json', { rules: D.RUN_RULES, unlocks: D.UNLOCKS, startingClasses: D.STARTING_CLASSES, affixes: D.ROOM_AFFIXES, elite: D.ELITE });
 // 封測 2 新表（11/1）。
