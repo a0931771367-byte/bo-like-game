@@ -149,6 +149,8 @@ def check():
             need(len(elite.get('chanceByChapterOrder', [])) >= len(ch['chapters']),
                  f'精英怪：chanceByChapterOrder 只有 {len(elite.get("chanceByChapterOrder", []))} 格，少於 {len(ch["chapters"])} 章')
 
+    check_effect_types(perks)
+
     # story portraits
     for st in load('story'):
         for part in ('before', 'after'):
@@ -200,6 +202,71 @@ def check_talents(t, classes):
         tiers.setdefault(x['classId'], []).append(x['tier'])
     for cid, ts in tiers.items():
         need(sorted(ts) == list(range(1, len(ts) + 1)), f'職業 {cid} 天賦：tier 必須是 1–{len(ts)} 連續不重複，目前是 {sorted(ts)}')
+
+
+def cs_fields(class_name):
+    """Field name -> C# type of a data class in unity/Assets/Scripts/Runtime/Data (public fields only)."""
+    src_dir = os.path.join(ROOT, 'unity', 'Assets', 'Scripts', 'Runtime', 'Data')
+    for fn in os.listdir(src_dir):
+        if not fn.endswith('.cs'):
+            continue
+        with open(os.path.join(src_dir, fn), encoding='utf-8') as f:
+            src = f.read()
+        m = re.search(r'class ' + class_name + r'\b[^{]*\{', src)
+        if not m:
+            continue
+        depth, i = 1, m.end()
+        while depth and i < len(src):
+            depth += {'{': 1, '}': -1}.get(src[i], 0)
+            i += 1
+        body = re.sub(r'\{[^{}]*\}', '', src[m.end():i - 1])  # drop method bodies
+        fields = {}
+        for typ, decl in re.findall(r'public\s+(?!static|const|class|enum)([\w.]+(?:<[^>]*>)?\??)\s+([^;(]+);', body):
+            for part in decl.split(','):
+                name = part.split('=')[0].strip()
+                if re.fullmatch(r'\w+', name):
+                    fields[name] = typ
+        return fields
+    return None
+
+
+def check_types(where, obj, fields):
+    """A JSON value Newtonsoft cannot put in the C# field fails the whole file at load (e.g. 0.3 into an int)."""
+    for k, v in obj.items():
+        t = fields.get(k)
+        if t is None:
+            want(False, f'{where}：欄位 {k} 不在 C# 類別裡，Unity 會直接忽略')
+            continue
+        base = t.rstrip('?')
+        if v is None:
+            need(t.endswith('?') or base in ('string',) or base[0].isupper(), f'{where}：{k} 是 null，但 C# 型別是 {t}')
+        elif base == 'int':
+            need(isinstance(v, int) and not isinstance(v, bool), f'{where}：{k} = {v!r}，C# 是 int，必須是整數（小數會讓整份檔案載入失敗）')
+        elif base in ('float', 'double'):
+            need(isinstance(v, (int, float)) and not isinstance(v, bool), f'{where}：{k} = {v!r}，C# 是 {base}，必須是數字')
+        elif base == 'bool':
+            need(isinstance(v, bool), f'{where}：{k} = {v!r}，C# 是 bool')
+        elif base == 'string':
+            need(isinstance(v, str), f'{where}：{k} = {v!r}，C# 是 string')
+
+
+def check_effect_types(perks):
+    """Every effect object in perks / cards / sets / talents / room affixes against its C# class."""
+    pf = cs_fields('PerkEffect')
+    if pf:
+        groups = [('強化 ' + p['id'], p) for p in perks]
+        if os.path.exists(os.path.join(DATA, 'cards.json')):
+            ct = load('cards')
+            groups += [('卡片 ' + c['id'], c) for c in ct['cards']] + [('套裝 ' + st['name'], st) for st in ct.get('sets', [])]
+        if os.path.exists(os.path.join(DATA, 'talents.json')):
+            groups += [('天賦 ' + x['id'], x) for x in load('talents')]
+        for name, g in groups:
+            for i, e in enumerate(g.get('effects') or []):
+                check_types(f'{name} 效果 {i}', e, pf)
+    af = cs_fields('RoomAffixEffect')
+    if af:
+        for a in load('meta').get('affixes', []):
+            check_types(f'詞綴 {a["id"]}', a.get('effect') or {}, af)
 
 
 def music_keys():
