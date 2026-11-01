@@ -367,6 +367,7 @@ namespace BoLike.Game
                         world.Sfx.Play("eliteAppear");
                         cam.Shake(0.2f, 0.006f);
                     }
+                    if (SpriteBank.PlaceholderTint(def.SpriteId, out _)) fx.Number(x, y - def.h - 40, "暫用圖", 0x9aa0b4); // placeholder art until 11/10 (production milestone)
                     if (rooted)
                     {
                         fx.Dust(x, y, 10, 1.4f);

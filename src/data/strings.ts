@@ -115,6 +115,7 @@ export const STRINGS: Record<string, string> = {
   'card.shards': '碎片 {n}/{need}',
   'card.starUp': '升星！',
   'card.drop': '獲得史詩卡！',
+  'card.soon': '效果即將推出',
   'card.dropDup': '重複卡片 → 碎片 +{n}',
   'card.set': '套裝：{name}',
   'card.setHint': '同一位 Boss 的 2 張卡一起裝備時生效',

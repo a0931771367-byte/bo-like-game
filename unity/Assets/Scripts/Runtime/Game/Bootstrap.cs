@@ -1,5 +1,6 @@
 using BoLike.Core;
 using BoLike.Data;
+using BoLike.Sim;
 using BoLike.Systems;
 using BoLike.UI;
 using UnityEngine;
@@ -330,7 +331,9 @@ namespace BoLike.Game
                 if (owned) UiKit.Text(frame.transform, 0, 300 * k, stars, (int)(34 * k), 0xf2a81d, UiKit.TopCenter, UiKit.TopCenter, TextAnchor.UpperCenter, false, 0);
                 if (owned && prog.stars < GameDb.Rules.cards.maxStars && card.starScale > 0)
                     UiKit.Text(frame.transform, 0, 340 * k, GameDb.Str("card.shards").Replace("{n}", prog.shards.ToString()).Replace("{need}", GameDb.Rules.cards.shardsPerStar.ToString()), (int)(26 * k), 0x5a5a6a, UiKit.TopCenter, UiKit.TopCenter, TextAnchor.UpperCenter, false, 0);
-                var descText = UiKit.Text(frame.transform, 0, 375 * k, owned ? card.desc : GameDb.Str("card.source").Replace("{boss}", GameDb.Enemy(card.boss).name), (int)(22 * k), owned ? 0x3a3a4a : 0x6a6a7a, UiKit.TopCenter, UiKit.TopCenter, TextAnchor.UpperCenter, false, 0);
+                bool implemented = card.effects.TrueForAll(ef => RunMods.Handles(ef.kind));
+                string descStr = !owned ? GameDb.Str("card.source").Replace("{boss}", GameDb.Enemy(card.boss).name) : implemented ? card.desc : card.desc + "（" + GameDb.Str("card.soon") + "）";
+                var descText = UiKit.Text(frame.transform, 0, 375 * k, descStr, (int)(22 * k), owned ? 0x3a3a4a : 0x6a6a7a, UiKit.TopCenter, UiKit.TopCenter, TextAnchor.UpperCenter, false, 0);
                 descText.rectTransform.sizeDelta = new Vector2(cw - 30, 60);
                 string label = !owned ? GameDb.Str("card.locked") : equipped ? GameDb.Str("card.unequip") : GameDb.Str("card.equip");
                 int color = !owned ? 0x3a3a4a : equipped ? 0x7a2a2a : 0xf28c28;

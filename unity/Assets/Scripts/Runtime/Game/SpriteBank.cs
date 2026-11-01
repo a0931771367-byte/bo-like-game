@@ -26,10 +26,39 @@ namespace BoLike.Game
             }
         }
 
+        /// <summary>
+        /// Stand-in art until the real sprites land (罐子 11/1: test the beta with placeholders, art after 11/10):
+        /// desert enemies borrow an existing monster's poses, tinted by <see cref="PlaceholderTint"/>.
+        /// </summary>
+        static readonly Dictionary<string, (string baseId, int tint)> placeholders = new()
+        {
+            ["sandworm"] = ("bug", 0xe0c070),
+            ["cactusTurret"] = ("flower", 0x9bd45a),
+            ["mummy"] = ("jelly", 0xe0d6b0),
+            ["sandCrab"] = ("bug", 0xd98a5a),
+            ["ruinGuardian"] = ("treant", 0xb8a890),
+        };
+
+        /// <summary>True when <paramref name="spriteId"/> is drawn with placeholder art; gives the tint to apply.</summary>
+        public static bool PlaceholderTint(string spriteId, out int tint)
+        {
+            tint = 0xffffff;
+            if (!placeholders.TryGetValue(spriteId, out var ph)) return false;
+            if (Resources.Load<Sprite>($"Sprites/{spriteId}_side") != null) return false; // the real art arrived
+            tint = ph.tint;
+            return true;
+        }
+
         public static Sprite Get(string key)
         {
             if (cache.TryGetValue(key, out var s)) return s;
             s = Resources.Load<Sprite>("Sprites/" + key);
+            if (s == null)
+            {
+                int us = key.LastIndexOf('_');
+                if (us > 0 && placeholders.TryGetValue(key.Substring(0, us), out var ph))
+                    s = Resources.Load<Sprite>($"Sprites/{ph.baseId}{key.Substring(us)}");
+            }
             if (s == null) Debug.LogWarning($"SpriteBank: missing Sprites/{key}");
             cache[key] = s;
             return s;

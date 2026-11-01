@@ -18,6 +18,8 @@ namespace BoLike.Game
         Sprite sideSprite, hurtSprite, knockSprite, downSprite, flatSprite, pileSprite;
         /// <summary>Gold silhouette copies behind an elite's body (design doc 08 §2.6: 金色輪廓).</summary>
         SpriteRenderer[] outlines;
+        /// <summary>Placeholder art (SpriteBank.PlaceholderTint): borrowed poses, tinted so testers can tell the desert enemies apart.</summary>
+        bool placeholder; int placeholderTint;
         MaterialPropertyBlock mpb;
         float bodyScale = 1f;
         AnimSet anim;
@@ -67,12 +69,15 @@ namespace BoLike.Game
             {
                 sideSprite = SpriteBank.Get($"{e.def.SpriteId}_side");
                 body = MakeSprite("Body", view, sideSprite);
-                hurtSprite = PoseOrNull(e.def.SpriteId, "hurt");
-                knockSprite = PoseOrNull(e.def.SpriteId, "knock");
-                downSprite = PoseOrNull(e.def.SpriteId, "down");
-                flatSprite = PoseOrNull(e.def.SpriteId, "flat");
-                pileSprite = PoseOrNull(e.def.SpriteId, "pile"); // 沙蟲 sand pile / 木乃伊 bandage pile (art dept keys)
+                string poseId = e.def.SpriteId;
+                if (SpriteBank.PlaceholderTint(e.def.SpriteId, out placeholderTint)) { placeholder = true; poseId = null; }
+                hurtSprite = poseId != null ? PoseOrNull(poseId, "hurt") : null;
+                knockSprite = poseId != null ? PoseOrNull(poseId, "knock") : null;
+                downSprite = poseId != null ? PoseOrNull(poseId, "down") : null;
+                flatSprite = poseId != null ? PoseOrNull(poseId, "flat") : null;
+                pileSprite = poseId != null ? PoseOrNull(poseId, "pile") : null; // 沙蟲 sand pile / 木乃伊 bandage pile (art dept keys)
                 if (e.def.tint.HasValue) baseTint = Colors.Rgb(e.def.tint.Value);
+                else if (placeholder) baseTint = Colors.Rgb(placeholderTint);
                 float hPx = body.sprite != null ? body.sprite.rect.height : e.def.spriteH;
                 bodyScale = e.def.spriteH / hPx * e.sizeMult;
                 if (e.elite)
@@ -285,7 +290,7 @@ namespace BoLike.Game
             float wob = Mathf.Sin((float)((now + e.phase) / (b == EnemyBehavior.Hopper ? 260 : e.def.boss ? 520 : 380)));
             baseTint = e.Frozen ? Colors.Rgb(Colors.Ice) : e.Weakened ? Colors.Rgb(0xffb0b0) : e.Poisoned ? Colors.Rgb(0xc9a0ff)
                 : e.PetrifiedBoss ? Colors.Rgb(0xc9b28a) : e.Enraged ? Colors.Rgb(0xff9090)
-                : e.def.tint.HasValue ? Colors.Rgb(e.def.tint.Value) : Color.white;
+                : e.def.tint.HasValue ? Colors.Rgb(e.def.tint.Value) : placeholder ? Colors.Rgb(placeholderTint) : Color.white;
             if (sideSprite != null) body.sprite = sideSprite;
             if (e.Burrowed)
             {
