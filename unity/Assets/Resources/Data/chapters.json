@@ -7,7 +7,8 @@
    "bg": "bg_chapter1",
    "stages": [
     "grassland-3"
-   ]
+   ],
+   "bossTrack": "boss_pudding"
   },
   {
    "id": "mistForest",
