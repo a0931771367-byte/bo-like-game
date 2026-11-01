@@ -56,12 +56,12 @@ namespace BoLike.Tests
         [Test]
         public void RunDataLoads()
         {
-            Assert.AreEqual(15, GameDb.Perks.Count);
+            Assert.AreEqual(30, GameDb.Perks.Count, "beta 2: PERKS_NEXT joined the pool");
             Assert.AreEqual(GameDb.Rules.combatRooms, GameDb.RoomPool.Count);
             Assert.AreEqual(RoomKind.Boss, GameDb.Room(GameDb.BossRoom).kind);
             Assert.AreEqual(3, GameDb.Rules.perkChoices);
-            Assert.AreEqual(60f, GameDb.Rules.rarityWeights[PerkRarity.Common]);
-            Assert.AreEqual(1.3f, GameDb.Rules.roomScaling.AtkAt(3), 1e-5);
+            Assert.AreEqual(55f, GameDb.Rules.rarityWeights[PerkRarity.Common]);
+            Assert.AreEqual(1.8f, GameDb.Rules.roomScaling.AtkAt(3), 1e-5);
             CollectionAssert.Contains(GameDb.StartingClasses, "swordsman");
         }
 
