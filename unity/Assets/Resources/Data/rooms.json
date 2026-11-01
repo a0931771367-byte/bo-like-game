@@ -1371,7 +1371,7 @@
    "kind": "combat",
    "width": 1900,
    "bg": "bg_chapter3",
-   "bgGroundY": 540,
+   "bgGroundY": 420,
    "waveSets": [
     [
      {
@@ -1521,7 +1521,7 @@
    "kind": "combat",
    "width": 2000,
    "bg": "bg_chapter3",
-   "bgGroundY": 540,
+   "bgGroundY": 420,
    "tint": 15785128,
    "waveSets": [
     [
@@ -1687,7 +1687,7 @@
    "kind": "combat",
    "width": 1800,
    "bg": "bg_chapter3",
-   "bgGroundY": 540,
+   "bgGroundY": 420,
    "tint": 13154520,
    "waveSets": [
     [
@@ -1853,7 +1853,7 @@
    "kind": "combat",
    "width": 2000,
    "bg": "bg_chapter3",
-   "bgGroundY": 540,
+   "bgGroundY": 420,
    "tint": 16304288,
    "waveSets": [
     [
@@ -2018,8 +2018,8 @@
    "scene": "desertRuins",
    "kind": "boss",
    "width": 1600,
-   "bg": "bg_chapter3",
-   "bgGroundY": 540,
+   "bg": "bg_chapter3_boss",
+   "bgGroundY": 420,
    "tint": 15257768,
    "waveSets": [
     [

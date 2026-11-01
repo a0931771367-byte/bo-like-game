@@ -380,6 +380,11 @@ export interface ChapterDef {
   unlock?: { bossKill: string };
   /** Boss music id (chapter-end and final bosses only). */
   bossTrack?: string;
+  /** One-line theme for the chapter menu (程式部 S1). */
+  desc?: string;
+  /** AudioManager music / ambience keys for the exploration rooms; absent = chapter 1's. */
+  music?: string;
+  ambience?: string;
 }
 
 export interface RunStageDef {
