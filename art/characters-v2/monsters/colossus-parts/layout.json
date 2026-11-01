@@ -1,0 +1,128 @@
+{
+ "canvas": [
+  1506,
+  1911
+ ],
+ "pivot": "bottom-center",
+ "layers": [
+  {
+   "name": "tier_bottom",
+   "left": 45,
+   "top": 1090,
+   "w": 1331,
+   "h": 801
+  },
+  {
+   "name": "crystal_a",
+   "left": 64,
+   "top": 1040,
+   "w": 133,
+   "h": 231
+  },
+  {
+   "name": "tier_mid",
+   "left": 231,
+   "top": 730,
+   "w": 959,
+   "h": 600
+  },
+  {
+   "name": "crystal_b",
+   "left": 1088,
+   "top": 740,
+   "w": 185,
+   "h": 223
+  },
+  {
+   "name": "spoon",
+   "left": 546,
+   "top": 20,
+   "w": 590,
+   "h": 830
+  },
+  {
+   "name": "tier_top",
+   "left": 371,
+   "top": 490,
+   "w": 680,
+   "h": 422
+  },
+  {
+   "name": "crystal_c",
+   "left": 247,
+   "top": 510,
+   "w": 207,
+   "h": 188
+  },
+  {
+   "name": "crystal_d",
+   "left": 1279,
+   "top": 1390,
+   "w": 143,
+   "h": 150
+  },
+  {
+   "name": "eye_L",
+   "left": 412,
+   "top": 920,
+   "w": 277,
+   "h": 260
+  },
+  {
+   "name": "eye_R",
+   "left": 731,
+   "top": 920,
+   "w": 280,
+   "h": 249
+  },
+  {
+   "name": "eye_hurt_L",
+   "left": 407,
+   "top": 920,
+   "w": 288,
+   "h": 255
+  },
+  {
+   "name": "eye_hurt_R",
+   "left": 729,
+   "top": 920,
+   "w": 284,
+   "h": 260
+  },
+  {
+   "name": "smoke_a_L",
+   "left": 52,
+   "top": 570,
+   "w": 438,
+   "h": 321
+  },
+  {
+   "name": "smoke_a_R",
+   "left": 889,
+   "top": 550,
+   "w": 524,
+   "h": 289
+  },
+  {
+   "name": "smoke_b_L",
+   "left": 20,
+   "top": 1070,
+   "w": 382,
+   "h": 205
+  },
+  {
+   "name": "smoke_b_R",
+   "left": 975,
+   "top": 1020,
+   "w": 511,
+   "h": 274
+  },
+  {
+   "name": "smoke_c",
+   "left": 90,
+   "top": 1470,
+   "w": 1041,
+   "h": 418
+  }
+ ]
+}

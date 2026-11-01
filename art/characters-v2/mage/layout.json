@@ -1,0 +1,86 @@
+{
+ "canvas": [
+  995,
+  1525
+ ],
+ "pivot": "bottom-center",
+ "layers": [
+  {
+   "name": "cape",
+   "left": 195,
+   "top": 445,
+   "w": 734,
+   "h": 630
+  },
+  {
+   "name": "hair_back",
+   "left": 286,
+   "top": 20,
+   "w": 552,
+   "h": 479
+  },
+  {
+   "name": "leg_L",
+   "left": 350,
+   "top": 925,
+   "w": 254,
+   "h": 577
+  },
+  {
+   "name": "leg_R",
+   "left": 494,
+   "top": 925,
+   "w": 305,
+   "h": 580
+  },
+  {
+   "name": "body",
+   "left": 345,
+   "top": 430,
+   "w": 433,
+   "h": 565
+  },
+  {
+   "name": "arm_L",
+   "left": 243,
+   "top": 485,
+   "w": 268,
+   "h": 456
+  },
+  {
+   "name": "weapon",
+   "left": 639,
+   "top": 405,
+   "w": 336,
+   "h": 721
+  },
+  {
+   "name": "arm_R",
+   "left": 584,
+   "top": 485,
+   "w": 326,
+   "h": 435
+  },
+  {
+   "name": "head",
+   "left": 345,
+   "top": 95,
+   "w": 433,
+   "h": 408
+  },
+  {
+   "name": "hair_front",
+   "left": 282,
+   "top": 25,
+   "w": 560,
+   "h": 463
+  },
+  {
+   "name": "prop",
+   "left": 20,
+   "top": 315,
+   "w": 404,
+   "h": 282
+  }
+ ]
+}

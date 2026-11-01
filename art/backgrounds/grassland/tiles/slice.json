@@ -1,0 +1,32 @@
+{
+ "ground_grass": {
+  "size": [
+   560,
+   384
+  ],
+  "border_px": {
+   "left": 220,
+   "right": 220
+  }
+ },
+ "platform_grass": {
+  "size": [
+   656,
+   200
+  ],
+  "border_px": {
+   "left": 268,
+   "right": 268
+  }
+ },
+ "platform_jelly": {
+  "size": [
+   776,
+   254
+  ],
+  "border_px": {
+   "left": 328,
+   "right": 328
+  }
+ }
+}

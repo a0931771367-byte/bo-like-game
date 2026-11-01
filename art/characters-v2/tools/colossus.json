@@ -1,0 +1,11 @@
+{"name": "colossus", "out": "monsters/colossus-parts", "src": "tmp/colossus", "canvas": [4000, 4000], "game_h": 900,
+ "map": {"tier_top": 0, "tier_mid": 1, "tier_bottom": 2, "spoon": 3, "eye_L": 4, "eye_R": 5, "eye_hurt_L": 6, "eye_hurt_R": 7,
+         "smoke_a_L": 8, "smoke_a_R": 9, "smoke_b_L": 10, "smoke_b_R": 11, "crystal_a": 12, "crystal_b": 13, "crystal_c": 14, "smoke_c": 15, "crystal_d": 16},
+ "scale": {"tier_top": 0.73, "tier_mid": 0.89, "spoon": 0.65, "eye_L": 0.8, "eye_R": 0.8, "eye_hurt_L": 0.8, "eye_hurt_R": 0.8,
+           "crystal_a": 0.6, "crystal_b": 0.6, "crystal_c": 0.6, "crystal_d": 0.7},
+ "order": ["tier_bottom", "crystal_a", "tier_mid", "crystal_b", "spoon", "tier_top", "crystal_c", "crystal_d", "eye_L", "eye_R", "eye_hurt_L", "eye_hurt_R", "smoke_a_L", "smoke_a_R", "smoke_b_L", "smoke_b_R", "smoke_c"],
+ "hidden": ["eye_hurt_L", "eye_hurt_R"],
+ "layout": {"tier_bottom": [2000, 2400], "tier_mid": [2000, 2040], "tier_top": [2000, 1800], "spoon": [2130, 1330],
+            "eye_L": [1840, 2230], "eye_R": [2160, 2230], "eye_hurt_L": [1840, 2230], "eye_hurt_R": [2160, 2230],
+            "crystal_a": [1420, 2350], "crystal_b": [2470, 2050], "crystal_c": [1640, 1820], "crystal_d": [2640, 2700],
+            "smoke_a_L": [1560, 1880], "smoke_a_R": [2440, 1860], "smoke_b_L": [1500, 2380], "smoke_b_R": [2520, 2330], "smoke_c": [1900, 2780]}}
