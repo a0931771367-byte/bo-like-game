@@ -15,7 +15,10 @@ namespace BoLike.UI
     {
         Canvas canvas;
         RectTransform layer;
-        readonly System.Collections.Generic.List<(Image cover, int skill)> skillCovers = new();
+        readonly System.Collections.Generic.List<(Image cover, Image icon, Image locked, Image level, Button plus, int skill)> skillCovers = new();
+        Image guardCover;
+        /// <summary>A skill button held for half a second (slot index); the game opens the skill panel.</summary>
+        public event System.Action<int> SkillLongPressed;
         World world;
 
         public static TouchControls Create(World world)
@@ -62,7 +65,14 @@ namespace BoLike.UI
             // below-left, guard above-left, the skill row above all of them, potions moved up under the pause button.
             Button(-130, -130, 62, 0xff6a2b, "攻擊", "<Gamepad>/buttonWest", 22);
             Button(-275, -80, 44, 0x4da3ff, "跳", "<Gamepad>/buttonSouth", 20);
-            Button(-255, -200, 40, 0x9be15d, "防", "<Gamepad>/rightTrigger", 20);
+            var guard = Button(-255, -200, 40, 0x9be15d, "防", "<Gamepad>/rightTrigger", 20);
+            // Dodge cooldown ring on the guard/dodge button (design doc 06: every class dodge has a cooldown).
+            guardCover = Circle(0, 0, 40, 0x000000, 0.6f, UiKit.Center, guard.transform);
+            guardCover.type = Image.Type.Filled;
+            guardCover.fillMethod = Image.FillMethod.Radial360;
+            guardCover.fillOrigin = (int)Image.Origin360.Top;
+            guardCover.fillClockwise = false;
+            guardCover.fillAmount = 0;
             Button(-50, 110, 30, 0xff5d5d, "紅", "<Gamepad>/leftTrigger", 14, UiKit.TopRight);
             Button(-120, 110, 30, 0x5d8bff, "藍", "<Gamepad>/select", 14, UiKit.TopRight);
 
@@ -80,9 +90,21 @@ namespace BoLike.UI
                 cover.fillMethod = Image.FillMethod.Radial360;
                 cover.fillOrigin = (int)Image.Origin360.Top;
                 cover.fillClockwise = false;
-                skillCovers.Add((cover, i));
+                var lockSprite = Resources.Load<Sprite>("Icons/skill_locked");
+                Image lockImg = lockSprite != null ? UiKit.Sprite(b.transform, lockSprite, 0, 0, 44, 44, UiKit.Center, UiKit.Center) : null;
+                // Level capsule 28×16 at the bottom-right of the 68 px button, 4 px outside the circle.
+                var levelImg = UiKit.Sprite(b.transform, Hud.SkillLevelBadge(1), 34 - 14 + 4, 34 - 8 + 4, 28, 16, UiKit.Center, UiKit.Center);
+                levelImg.raycastTarget = false;
+                // "+" sits above the button; it is its own Button so a tap opens the panel instead of casting.
+                int slotIdx = i;
+                var plus = UiKit.Button(b.transform, 20, -34, 30, 30, "+", Colors.Crit, () => SkillLongPressed?.Invoke(slotIdx), 22, UiKit.Center, UiKit.Center);
+                plus.gameObject.SetActive(false);
+                skillCovers.Add((cover, icon, lockImg, levelImg, plus, i));
                 var btn = b.gameObject.AddComponent<OnScreenButton>();
                 btn.controlPath = paths[i];
+                var hold = b.gameObject.AddComponent<LongPress>();
+                int slot = i;
+                hold.onLongPress = () => SkillLongPressed?.Invoke(slot);
             }
             Button(-40, 40, 22, 0xffffff, "II", "<Gamepad>/start", 12, UiKit.TopRight);
         }
@@ -96,13 +118,33 @@ namespace BoLike.UI
             return img;
         }
 
-        void Button(float x, float y, float r, int color, string label, string path, int size, Vector2? anchor = null)
+        Image Button(float x, float y, float r, int color, string label, string path, int size, Vector2? anchor = null)
         {
             var img = Circle(x, y, r, color, 0.45f, anchor ?? UiKit.BottomRight);
             img.raycastTarget = true;
             UiKit.Text(img.transform, 0, 0, label, size, 0xffffff, UiKit.Center, UiKit.Center, TextAnchor.MiddleCenter, true);
             var btn = img.gameObject.AddComponent<OnScreenButton>();
             btn.controlPath = path;
+            return img;
+        }
+
+        /// <summary>Fires <see cref="onLongPress"/> once when the pointer is held on the control for <see cref="seconds"/>.</summary>
+        public class LongPress : MonoBehaviour, UnityEngine.EventSystems.IPointerDownHandler, UnityEngine.EventSystems.IPointerUpHandler, UnityEngine.EventSystems.IPointerExitHandler
+        {
+            public float seconds = 0.5f;
+            public System.Action onLongPress;
+            float downAt = -1;
+
+            public void OnPointerDown(UnityEngine.EventSystems.PointerEventData e) => downAt = Time.unscaledTime;
+            public void OnPointerUp(UnityEngine.EventSystems.PointerEventData e) => downAt = -1;
+            public void OnPointerExit(UnityEngine.EventSystems.PointerEventData e) => downAt = -1;
+
+            void Update()
+            {
+                if (downAt < 0 || Time.unscaledTime - downAt < seconds) return;
+                downAt = -1;
+                onLongPress?.Invoke();
+            }
         }
 
         /// <summary>Moves the stick under the first touch in the zone and forwards the drag to the OnScreenStick.</summary>
@@ -167,11 +209,21 @@ namespace BoLike.UI
         {
             var p = world.Player;
             if (p == null) return;
-            foreach (var (cover, i) in skillCovers)
+            if (guardCover != null) guardCover.fillAmount = p.DodgeCooldownLeft > 0 ? Mathf.Min(1, p.DodgeCooldownLeft / p.DodgeCooldownTotal) : 0;
+            foreach (var (cover, icon, lockImg, levelImg, plus, i) in skillCovers)
             {
                 var s = p.cls.skills[i];
                 float left = p.CooldownLeft(s);
-                cover.fillAmount = p.SkillLv(s) > 0 ? (left > 0 ? Mathf.Min(1, left / p.CooldownTotal(s)) : 0) : 0.85f;
+                bool learned = p.SkillLv(s) > 0;
+                bool canSpend = Game.GameController.SkillUpBlocker(p, i) == null;
+                if (plus.gameObject.activeSelf != canSpend) plus.gameObject.SetActive(canSpend);
+                if (canSpend) UiKit.SetAlpha(plus.image, 0.6f + Mathf.PingPong(Time.time * 2.5f, 0.4f));
+                if (learned) levelImg.sprite = Hud.SkillLevelBadge(p.SkillLv(s));
+                UiKit.SetAlpha(levelImg, learned && levelImg.sprite != null ? 1f : 0f);
+                // Locked skills show the lock over a dimmed icon (art spec: icon at 40%); the cooldown cover is for learned ones.
+                cover.fillAmount = learned ? (left > 0 ? Mathf.Min(1, left / p.CooldownTotal(s)) : 0) : (lockImg != null ? 0f : 0.85f);
+                UiKit.SetAlpha(icon, learned ? 1f : 0.4f);
+                if (lockImg != null) UiKit.SetAlpha(lockImg, learned ? 0f : 0.9f);
             }
         }
     }

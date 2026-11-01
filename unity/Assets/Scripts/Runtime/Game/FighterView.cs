@@ -14,6 +14,14 @@ namespace BoLike.Game
         [System.NonSerialized] public Fighter fighter;
         Transform view;
         SpriteRenderer body, shadow, hpBg, hpBar, aura;
+        /// <summary>Art's hit poses for enemies (<id>_hurt/_knock/_down/_flat); null when the monster has none yet.</summary>
+        Sprite sideSprite, hurtSprite, knockSprite, downSprite, flatSprite, pileSprite;
+        /// <summary>ruinGuardian extras (art dept 11/1): _slam 砸地, _beam 雷射起手, _petrify 石化, _phase2 狂怒碎甲.</summary>
+        Sprite slamSprite, beamSprite, petrifySprite, phase2Sprite;
+        /// <summary>Gold silhouette copies behind an elite's body (design doc 08 §2.6: 金色輪廓).</summary>
+        SpriteRenderer[] outlines;
+        /// <summary>Placeholder art (SpriteBank.PlaceholderTint): borrowed poses, tinted so testers can tell the desert enemies apart.</summary>
+        bool placeholder; int placeholderTint;
         MaterialPropertyBlock mpb;
         float bodyScale = 1f;
         AnimSet anim;
@@ -61,10 +69,42 @@ namespace BoLike.Game
             }
             else if (f is Enemy e)
             {
-                body = MakeSprite("Body", view, SpriteBank.Get($"{e.def.SpriteId}_side"));
+                sideSprite = SpriteBank.Get($"{e.def.SpriteId}_side");
+                body = MakeSprite("Body", view, sideSprite);
+                string poseId = e.def.SpriteId;
+                if (SpriteBank.PlaceholderTint(e.def.SpriteId, out placeholderTint)) { placeholder = true; poseId = null; }
+                hurtSprite = poseId != null ? PoseOrNull(poseId, "hurt") : null;
+                knockSprite = poseId != null ? PoseOrNull(poseId, "knock") : null;
+                downSprite = poseId != null ? PoseOrNull(poseId, "down") : null;
+                flatSprite = poseId != null ? PoseOrNull(poseId, "flat") : null;
+                pileSprite = poseId != null ? PoseOrNull(poseId, "pile") : null; // 沙蟲 sand pile / 木乃伊 bandage pile (art dept keys)
+                if (e.def.behavior == EnemyBehavior.BossGuardian && poseId != null)
+                {
+                    slamSprite = PoseOrNull(poseId, "slam");
+                    beamSprite = PoseOrNull(poseId, "beam");
+                    petrifySprite = PoseOrNull(poseId, "petrify");
+                    phase2Sprite = PoseOrNull(poseId, "phase2");
+                }
                 if (e.def.tint.HasValue) baseTint = Colors.Rgb(e.def.tint.Value);
+                else if (placeholder) baseTint = Colors.Rgb(placeholderTint);
                 float hPx = body.sprite != null ? body.sprite.rect.height : e.def.spriteH;
-                bodyScale = e.def.spriteH / hPx;
+                bodyScale = e.def.spriteH / hPx * e.sizeMult;
+                if (e.elite)
+                {
+                    outlines = new SpriteRenderer[4];
+                    var offs = new[] { new Vector2(3, 0), new Vector2(-3, 0), new Vector2(0, 3), new Vector2(0, -3) };
+                    for (int i = 0; i < 4; i++)
+                    {
+                        var o = MakeSprite("Outline" + i, view, sideSprite);
+                        o.material = SpriteBank.FlashMaterial;
+                        o.transform.localPosition = new Vector3(offs[i].x * Space.Scale, offs[i].y * Space.Scale, 0);
+                        var pb = new MaterialPropertyBlock();
+                        pb.SetFloat(FlashId, 1f);
+                        pb.SetColor(FlashColorId, Colors.Rgb(0xffd36b));
+                        o.SetPropertyBlock(pb);
+                        outlines[i] = o;
+                    }
+                }
                 if (!e.def.boss)
                 {
                     hpBg = MakeSprite("HpBg", view, SpriteBank.Pixel);
@@ -79,6 +119,12 @@ namespace BoLike.Game
             body.color = baseTint;
             SetBodyScale(1, 1);
             Sync();
+        }
+
+        static Sprite PoseOrNull(string spriteId, string pose)
+        {
+            // Quiet lookup: monsters without the pose art yet fall back to the old rotate/squash, without a warning per pose.
+            return Resources.Load<Sprite>($"Sprites/{spriteId}_{pose}");
         }
 
         static SpriteRenderer MakeSprite(string name, Transform parent, Sprite sprite)
@@ -121,6 +167,14 @@ namespace BoLike.Game
             var c = baseTint;
             c.a = alpha;
             body.color = c;
+            if (outlines != null)
+                foreach (var o in outlines)
+                {
+                    o.sprite = body.sprite;
+                    o.transform.localScale = body.transform.localScale;
+                    o.sortingOrder = order - 1;
+                    o.color = new Color(1, 1, 1, alpha);
+                }
             bool flashing = f.Now < f.flashUntil;
             body.GetPropertyBlock(mpb);
             mpb.SetFloat(FlashId, flashing ? 1f : 0f);
@@ -192,7 +246,20 @@ namespace BoLike.Game
                 case FighterState.Jump: sy = 1.08f; sx = 0.95f; lean = 5; break;
                 case FighterState.Cast: sy = 1.05f + Mathf.Sin(t / 50f) * 0.02f; lean = -4; break;
                 case FighterState.CastEnd: sx = 1.1f; lean = 8; break;
-                case FighterState.Dodge: lean = 22; sx = 1.1f; sy = 0.9f; break;
+                case FighterState.Dodge:
+                {
+                    float u = Mathf.Clamp01(t / p.dodgeMs);
+                    switch (p.Dodge.kind)
+                    {
+                        case DodgeKind.Blink: sx = 1 - 0.25f * u; sy = 1 + 0.15f * u; break;                     // mage: gathers, then vanishes (alpha below)
+                        case DodgeKind.Roll: lean = 360f * u; bob = Mathf.Sin(u * Mathf.PI) * 28f; break;        // archer: forward roll
+                        case DodgeKind.JetDash: lean = 24; sx = 1.15f; sy = 0.92f; break;                         // merchant: jet slide
+                        case DodgeKind.ShadowStep: lean = 32; sx = 1.15f; sy = 0.88f; break;                      // thief: low dash
+                        case DodgeKind.GraceStep: lean = 8; bob = 10 + Mathf.Sin(u * Mathf.PI) * 8; sy = 1.04f; break; // acolyte: glides
+                        default: lean = -8; sx = 1.12f; sy = 0.96f; break;                                        // swordsman: shield forward
+                    }
+                    break;
+                }
                 case FighterState.Hurt: lean = -14; sx = 0.92f; break;
                 case FighterState.Knock: lean = -45; break;
                 case FighterState.Down:
@@ -202,8 +269,18 @@ namespace BoLike.Game
             foreach (var b in p.buffs)
                 if (b.eff.endure || (b.hits ?? 0) > 0 || b.eff.atkMult.HasValue || b.eff.allStats.HasValue || b.eff.aspdMult.HasValue) { glow = b; break; }
             aura.color = glow != null ? Colors.Rgb(glow.color, 0.6f + Mathf.Sin((float)(now / 90)) * 0.3f) : new Color(0, 0, 0, 0);
+            if (now < p.glowUntil)
+            {
+                // Level-up: golden aura that swells and fades over the glow time.
+                float g = Mathf.Clamp01((float)(p.glowUntil - now) / 1500f);
+                aura.color = Colors.Rgb(Colors.Crit, 0.35f + 0.5f * g + Mathf.Sin((float)(now / 70)) * 0.15f);
+                aura.transform.localScale = new Vector3(110f / 128f * (1.1f + 0.3f * (1 - g)), 150f / 128f * (1.1f + 0.3f * (1 - g)), 1);
+            }
+            else aura.transform.localScale = new Vector3(110f / 128f, 150f / 128f, 1);
             bool blink = now < p.invulnUntil && p.state != FighterState.Dodge;
-            alpha = p.Hidden ? 0.3f : blink ? ((int)(now / 60) % 2 == 1 ? 0.35f : 1f) : p.state == FighterState.Dodge ? 0.6f : 1f;
+            alpha = p.Hidden ? 0.3f : blink ? ((int)(now / 60) % 2 == 1 ? 0.35f : 1f)
+                : p.state == FighterState.Dodge ? (p.Dodge.kind == DodgeKind.Blink ? Mathf.Clamp01(1 - t / p.dodgeMs)
+                    : p.Dodge.kind == DodgeKind.ShadowStep ? 0.5f : p.Dodge.kind == DodgeKind.ShieldDash ? 1f : 0.6f) : 1f;
         }
 
         // ---------- enemy ----------
@@ -220,6 +297,54 @@ namespace BoLike.Game
             double now = e.Now;
             var b = e.def.behavior;
             float wob = Mathf.Sin((float)((now + e.phase) / (b == EnemyBehavior.Hopper ? 260 : e.def.boss ? 520 : 380)));
+            baseTint = e.Frozen ? Colors.Rgb(Colors.Ice) : e.Weakened ? Colors.Rgb(0xffb0b0) : e.Poisoned ? Colors.Rgb(0xc9a0ff)
+                : e.PetrifiedBoss ? Colors.Rgb(0xc9b28a) : e.Enraged ? Colors.Rgb(0xff9090)
+                : e.def.tint.HasValue ? Colors.Rgb(e.def.tint.Value) : placeholder ? Colors.Rgb(placeholderTint) : Color.white;
+            if (sideSprite != null) body.sprite = sideSprite;
+            if (e.Enraged && phase2Sprite != null) body.sprite = phase2Sprite; // the hit poses below still override while they last
+            if (e.PetrifiedBoss && petrifySprite != null) { body.sprite = petrifySprite; return; }
+            if (e.state == FighterState.Stomp && slamSprite != null) { body.sprite = slamSprite; sy = t < 520 ? 1 + t / 520f * 0.06f : 0.96f; return; }
+            if (e.state == FighterState.Beam && beamSprite != null) { body.sprite = beamSprite; lean = t < 700 ? -3 : 4; return; }
+            if (e.Burrowed)
+            {
+                // Sand pile: the pile pose when the art has one, else the body squashed flat; it shakes while about to emerge.
+                if (pileSprite != null) body.sprite = pileSprite; else { sy = 0.3f; sx = 1.25f; }
+                if (e.EmergeAt > 0) { float sh = Mathf.Sin((float)(now / 25)); lean = sh * 6; sx *= 1 + sh * 0.05f; }
+                return;
+            }
+            if (e.Pile)
+            {
+                if (pileSprite != null) body.sprite = pileSprite;
+                else if (flatSprite != null) body.sprite = flatSprite;
+                else sy = 0.35f;
+                shadow.color = new Color(0, 0, 0, 0.28f);
+                return;
+            }
+            // Art-drawn hit poses (art dept 10/30): no rotation tricks when the pose exists.
+            if (e.state == FighterState.Hurt && hurtSprite != null) { body.sprite = hurtSprite; sx = 0.96f; return; }
+            if (e.state == FighterState.Knock && knockSprite != null)
+            {
+                body.sprite = knockSprite;
+                lean = Mathf.Clamp(-e.vz / 40f, -15f, 15f); // leans back while rising, forward while falling
+                return;
+            }
+            if (e.state == FighterState.Down && downSprite != null)
+            {
+                body.sprite = downSprite;
+                sy = Mathf.Lerp(0.85f, 1f, Mathf.Clamp01(t / 120f)); // landing rebound
+                return;
+            }
+            if (e.state == FighterState.Dying && flatSprite != null)
+            {
+                // down 120 ms → flat 120 ms → fade 200 ms; the shadow fades with the body.
+                float ms = (float)(now - e.dyingSince);
+                body.sprite = ms < 120 && downSprite != null ? downSprite : flatSprite;
+                float k = Mathf.Clamp01((ms - 240f) / 200f);
+                alpha = 1 - k;
+                shadow.color = new Color(0, 0, 0, 0.28f * (1 - k));
+                shadow.transform.localScale = new Vector3(shadow.transform.localScale.x * (1 - 0.5f * k), shadow.transform.localScale.y * (1 - 0.5f * k), 1);
+                return;
+            }
             switch (e.state)
             {
                 case FighterState.Idle:
@@ -237,6 +362,7 @@ namespace BoLike.Game
                 case FighterState.Lunge: lean = 14; sx = 1.1f; break;
                 case FighterState.Slam: sy = 1.25f; sx = 0.85f; break;
                 case FighterState.Stomp: sy = t < 520 ? 1 + t / 520f * 0.18f : 0.85f; sx = t < 520 ? 1 - t / 520f * 0.08f : 1.15f; break;
+                case FighterState.Beam: sx = 1.08f; lean = t < 700 ? -4 : 6; break;
                 case FighterState.Hurt: lean = -10; sx = 0.92f; break;
                 case FighterState.Knock: lean = -60; break;
                 case FighterState.Down: lean = -90; sy = 0.6f; break;
@@ -253,8 +379,6 @@ namespace BoLike.Game
             }
             if (b == EnemyBehavior.Flyer) sy *= 1 + Mathf.Sin((float)(now / 45)) * 0.02f;
             else if (e.Airborne && e.state != FighterState.Knock && e.state != FighterState.Slam) { sy = 1.1f; sx = 0.92f; }
-            baseTint = e.Frozen ? Colors.Rgb(Colors.Ice) : e.Weakened ? Colors.Rgb(0xffb0b0) : e.Poisoned ? Colors.Rgb(0xc9a0ff)
-                : e.def.tint.HasValue ? Colors.Rgb(e.def.tint.Value) : Color.white;
         }
     }
 }

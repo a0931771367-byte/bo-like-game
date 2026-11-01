@@ -19,6 +19,8 @@ namespace BoLike.Game
             public float minGapMs = 30f;
             public float lastPlayed = -1000f;
             public AudioClip[] clips;
+            /// <summary>Cue to play instead when none of this cue's files exist in Resources (e.g. audio not yet delivered).</summary>
+            public string fallback;
         }
 
         const string PrefMuted = "audio.muted";
@@ -51,6 +53,7 @@ namespace BoLike.Game
         AudioSource musicCur;
         string musicName;
         float musicLoopStart;
+        float musicLoopEnd;
         bool nextLoopScheduled;
         float fadeFrom, fadeTo, fadeT, fadeDur;
         AudioSource fading;
@@ -70,6 +73,14 @@ namespace BoLike.Game
             ["dodge"] = new Cue { files = new[] { "sfx_dodge" } },
             ["guard"] = new Cue { files = new[] { "sfx_guard" }, volume = 0.8f },
             ["hurt"] = new Cue { files = new[] { "sfx_hurt" }, minGapMs = 120f },
+            // 11/1 罐子：每職業受傷音不同（音效部 sfx-final-v1 第七節）。Player 以 "hurt_<classId>" 呼叫，
+            // 檔案尚未進專案時自動退回通用 sfx_hurt（見 Play 的 fallback）。sfx_hurt 保留給陷阱等非敵人傷害。
+            ["hurt_swordsman"] = new Cue { files = new[] { "sfx_hurt_swordsman" }, pitchVar = 0.04f, minGapMs = 120f, fallback = "hurt" },
+            ["hurt_mage"] = new Cue { files = new[] { "sfx_hurt_mage" }, pitchVar = 0.04f, minGapMs = 120f, fallback = "hurt" },
+            ["hurt_merchant"] = new Cue { files = new[] { "sfx_hurt_artificer" }, pitchVar = 0.04f, minGapMs = 120f, fallback = "hurt" },
+            ["hurt_acolyte"] = new Cue { files = new[] { "sfx_hurt_priest" }, pitchVar = 0.04f, minGapMs = 120f, fallback = "hurt" },
+            ["hurt_thief"] = new Cue { files = new[] { "sfx_hurt_assassin" }, pitchVar = 0.04f, minGapMs = 120f, fallback = "hurt" },
+            ["hurt_archer"] = new Cue { files = new[] { "sfx_hurt_ranger" }, pitchVar = 0.04f, minGapMs = 120f, fallback = "hurt" },
             ["jump"] = new Cue { files = new[] { "sfx_jump" }, volume = 0.6f },
             ["land"] = new Cue { files = new[] { "sfx_step_dirt_01", "sfx_step_dirt_02", "sfx_step_dirt_03", "sfx_step_dirt_04" }, volume = 0.7f, pitchVar = 0.1f },
             ["step"] = new Cue { files = new[] { "sfx_step_grass_01", "sfx_step_grass_02", "sfx_step_grass_03", "sfx_step_grass_04" }, volume = 0.45f, pitchVar = 0.12f, minGapMs = 150f },
@@ -91,19 +102,67 @@ namespace BoLike.Game
             ["wolfGrowl"] = new Cue { files = new[] { "sfx_wolf_growl" } },
             ["bugChirp"] = new Cue { files = new[] { "sfx_bug_chirp" }, volume = 0.6f },
             ["flowerBite"] = new Cue { files = new[] { "sfx_flower_bite" } },
+            // Beta 2 (audio/phase2-assets-v1.md): card drop, card activations (sfx_card_fx_<cardId>), elite, talents, dialog.
+            ["cardAppear"] = new Cue { files = new[] { "sfx_card_appear" }, pitchVar = 0f, fallback = "levelup" },
+            ["cardStarUp"] = new Cue { files = new[] { "sfx_card_starup" }, pitchVar = 0f, fallback = "cardAppear" },
+            ["card_jellyCrown"] = new Cue { files = new[] { "sfx_card_fx_jellyCrown" }, minGapMs = 150f, fallback = "jellyBounce" },
+            ["card_bouncyShell"] = new Cue { files = new[] { "sfx_card_fx_bouncyShell" }, minGapMs = 150f, fallback = "guard" },
+            ["card_splitCore"] = new Cue { files = new[] { "sfx_card_fx_splitCore" }, minGapMs = 150f, fallback = "jellyBounce" },
+            ["card_sugarRush"] = new Cue { files = new[] { "sfx_card_fx_sugarRush" }, fallback = "potion" },
+            ["card_thornHeart"] = new Cue { files = new[] { "sfx_card_fx_thornHeart" }, minGapMs = 150f, fallback = "skill" },
+            ["card_sporeBreath"] = new Cue { files = new[] { "sfx_card_fx_sporeBreath" }, minGapMs = 1000f, fallback = "heal" },
+            ["card_beeGuard"] = new Cue { files = new[] { "sfx_card_fx_beeGuard" }, minGapMs = 150f, volume = 0.63f, fallback = "bugChirp" }, // poison-on-hit fires often: 150 ms gap, −4 dB (audio dept 11/1)
+            ["card_ancientRing"] = new Cue { files = new[] { "sfx_card_fx_ancientRing" }, minGapMs = 150f, fallback = "guard" },
+            ["card_guardianEye"] = new Cue { files = new[] { "sfx_card_fx_guardianEye" }, minGapMs = 150f, fallback = "thunder" },
+            ["card_stoneArmor"] = new Cue { files = new[] { "sfx_card_fx_stoneArmor" }, fallback = "guard" },
+            ["card_quicksandStep"] = new Cue { files = new[] { "sfx_card_fx_quicksandStep" }, minGapMs = 150f, fallback = "dodge" },
+            ["card_ruinTreasure"] = new Cue { files = new[] { "sfx_card_fx_ruinTreasure" }, minGapMs = 150f, volume = 0.6f, fallback = "gold" },
+            ["eliteAppear"] = new Cue { files = new[] { "sfx_elite_appear" }, fallback = "bossGrowl" },
+            // Desert ruins enemies (design doc 08 §2.5 / audio list): fall back to existing cues until the files land.
+            ["wormEmerge"] = new Cue { files = new[] { "sfx_worm_emerge" }, fallback = "land" },
+            ["mummyRevive"] = new Cue { files = new[] { "sfx_mummy_revive" }, fallback = "buff" },
+            ["pileBreak"] = new Cue { files = new[] { "sfx_pile_break" }, fallback = "hitHeavy" },
+            ["crabShellHit"] = new Cue { files = new[] { "sfx_crab_shell_hit" }, minGapMs = 80f, fallback = "guard" },
+            ["guardianQuake"] = new Cue { files = new[] { "sfx_guardian_quake" }, fallback = "bossStomp" },
+            ["guardianBeamWarn"] = new Cue { files = new[] { "sfx_guardian_beam_warn" }, fallback = "cast" },
+            ["guardianBeam"] = new Cue { files = new[] { "sfx_guardian_beam" }, fallback = "thunder" },
+            ["guardianPetrify"] = new Cue { files = new[] { "sfx_guardian_petrify" }, fallback = "ice" },
+            ["talentBuy"] = new Cue { files = new[] { "sfx_talent_unlock" }, fallback = "buff" },
+            ["talentReset"] = new Cue { files = new[] { "sfx_talent_reset" }, fallback = "select" },
+            ["classUnlock"] = new Cue { files = new[] { "sfx_class_unlock" }, fallback = "levelup" },
+            ["dialogBlip"] = new Cue { files = new[] { "sfx_dialog_blip" }, volume = 0.5f, minGapMs = 40f, fallback = "text" },
+            ["dialogNarrator"] = new Cue { files = new[] { "sfx_dialog_narrator" }, volume = 0.6f, minGapMs = 300f, fallback = "text" },
         };
 
-        /// <summary>Music tracks by logical name; loopStart in seconds (0 = whole track loops) is filled in later by the audio team.</summary>
-        readonly Dictionary<string, (string file, float loopStart)> music = new()
+        /// <summary>
+        /// Music tracks by logical name with loop points in seconds (audio/loop-points-final-v1.md). loopStart 0 = the whole
+        /// track loops; otherwise the first play runs from 0 and at loopEnd (0 = track end) hands over to loopStart.
+        /// Phase-1 tracks stay whole-track loops for the beta by the audio team's decision; phase-2 tracks use their final values.
+        /// </summary>
+        readonly Dictionary<string, (string file, float loopStart, float loopEnd)> music = new()
         {
-            ["title"] = ("bgm_title", 0f),
-            ["select"] = ("bgm_select", 0f),
-            ["field"] = ("bgm_ch1_field", 0f),
-            ["intro"] = ("bgm_ch1_intro", 0f),
-            ["boss"] = ("bgm_boss", 0f),
-            ["story"] = ("bgm_story", 0f),
-            ["forest"] = ("bgm_ch2_forest", 0f),
-            ["calm"] = ("bgm_ch2_calm", 0f),
+            ["title"] = ("bgm_title", 0f, 0f),
+            ["select"] = ("bgm_select", 0f, 0f),
+            ["field"] = ("bgm_ch1_field", 0f, 0f),
+            ["intro"] = ("bgm_ch1_intro", 0f, 0f),
+            ["boss"] = ("bgm_boss", 0f, 0f),
+            ["story"] = ("bgm_story", 0f, 0f),
+            ["forest"] = ("bgm_ch2_forest", 0f, 0f),
+            ["calm"] = ("bgm_ch2_calm", 0f, 0f),
+            // Phase 2 (beta 2): second exploration tracks, the desert, and one track per chapter boss.
+            ["field_b"] = ("bgm_ch1_field_b", 27.20f, 194.90f),
+            ["forest_b"] = ("bgm_ch2_forest_b", 14.10f, 112.80f),
+            ["desert"] = ("bgm_ch3_desert", 26.90f, 185.30f),
+            ["boss_pudding"] = ("bgm_boss_pudding", 18.40f, 89.60f),
+            ["boss_treant"] = ("bgm_boss_treant", 17.80f, 176.10f),
+            ["boss_guardian"] = ("bgm_boss_guardian", 13.90f, 76.00f),
+        };
+
+        /// <summary>Phase-2 music key → phase-1 key to play until the new file is in the project.</summary>
+        static readonly Dictionary<string, string> musicFallback = new()
+        {
+            ["field_b"] = "field", ["forest_b"] = "forest", ["desert"] = "field",
+            ["boss_pudding"] = "boss", ["boss_treant"] = "boss", ["boss_guardian"] = "boss",
         };
 
         void Awake()
@@ -137,9 +196,13 @@ namespace BoLike.Game
             float now = Time.unscaledTime * 1000f;
             if (now - cue.lastPlayed < cue.minGapMs) return;
             cue.lastPlayed = now;
-            cue.clips ??= LoadAll("Audio/sfx/", cue.files);
+            cue.clips ??= LoadAll("Audio/sfx/", cue.files, quiet: cue.fallback != null);
             var clip = cue.clips[Random.Range(0, cue.clips.Length)];
-            if (clip == null) return;
+            if (clip == null)
+            {
+                if (cue.fallback != null && cue.fallback != name) { cue.lastPlayed = -1000f; Play(cue.fallback, volume); }
+                return;
+            }
             var src = FreeSource();
             src.pitch = 1f + Random.Range(-cue.pitchVar, cue.pitchVar);
             src.PlayOneShot(clip, cue.volume * volume * sfxVolume);
@@ -153,13 +216,13 @@ namespace BoLike.Game
             return extra;
         }
 
-        static AudioClip[] LoadAll(string dir, string[] files)
+        static AudioClip[] LoadAll(string dir, string[] files, bool quiet = false)
         {
             var clips = new AudioClip[files.Length];
             for (int i = 0; i < files.Length; i++)
             {
                 clips[i] = Resources.Load<AudioClip>(dir + files[i]);
-                if (clips[i] == null) Debug.LogWarning($"[Audio] missing clip Resources/{dir}{files[i]}");
+                if (clips[i] == null && !quiet) Debug.LogWarning($"[Audio] missing clip Resources/{dir}{files[i]}");
             }
             return clips;
         }
@@ -171,6 +234,11 @@ namespace BoLike.Game
             if (name == musicName && musicCur != null && musicCur.isPlaying) return;
             if (!music.TryGetValue(name, out var m)) { StopMusic(fadeSeconds); return; }
             var clip = Resources.Load<AudioClip>("Audio/music/" + m.file);
+            if (clip == null && musicFallback.TryGetValue(name, out var fb) && music.TryGetValue(fb, out var fm))
+            {
+                clip = Resources.Load<AudioClip>("Audio/music/" + fm.file); // phase-2 track not delivered yet: play the phase-1 one
+                if (clip != null) m = fm;
+            }
             if (clip == null) { Debug.LogWarning($"[Audio] missing music {m.file}"); StopMusic(fadeSeconds); return; }
             var next = musicCur == musicA ? musicB : musicA;
             if (musicCur != null && musicCur.isPlaying) StartFade(musicCur, fadeSeconds);
@@ -183,6 +251,7 @@ namespace BoLike.Game
             musicCur = next;
             musicName = name;
             musicLoopStart = m.loopStart;
+            musicLoopEnd = m.loopEnd > 0f && m.loopEnd < clip.length ? m.loopEnd : clip.length;
             nextLoopScheduled = false;
         }
 
@@ -232,7 +301,7 @@ namespace BoLike.Game
             // Custom loop point: hand over to the other source at loopStart just before the track ends.
             if (musicCur != null && musicLoopStart > 0f && !nextLoopScheduled && musicCur.clip != null)
             {
-                float remaining = musicCur.clip.length - musicCur.time;
+                float remaining = musicLoopEnd - musicCur.time;
                 if (remaining < 1f)
                 {
                     var next = musicCur == musicA ? musicB : musicA;
@@ -240,12 +309,13 @@ namespace BoLike.Game
                     next.loop = false;
                     next.volume = MusicLevel();
                     next.time = musicLoopStart;
-                    next.PlayScheduled(AudioSettings.dspTime + remaining);
+                    next.PlayScheduled(AudioSettings.dspTime + System.Math.Max(0f, remaining));
                     nextLoopScheduled = true;
                     var finishing = musicCur;
                     musicCur = next;
-                    // The old source simply runs out; clear the flag once the new one is audible.
-                    StartCoroutine(ClearLoopFlag(remaining + 0.05f, finishing));
+                    // The old source is stopped right after the hand-over (it would otherwise play past loopEnd); the
+                    // 40 ms overlap hides the seam, as the audio team asked.
+                    StartCoroutine(ClearLoopFlag(System.Math.Max(0f, remaining) + 0.04f, finishing));
                 }
             }
         }

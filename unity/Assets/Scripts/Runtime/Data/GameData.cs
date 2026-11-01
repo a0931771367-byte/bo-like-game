@@ -11,7 +11,9 @@ namespace BoLike.Data
     public enum StatKey { Str, Agi, Vit, Int, Dex, Luk }
     public enum SkillType { Melee, Aoe, Projectile, Buff, Debuff, Wall, Strikes, Heal, Dash, Passive }
     public enum Weapon { Sword, Staff, Axe, Mace, Dagger, Bow }
-    public enum EnemyBehavior { Hopper, Melee, Lunger, BossSlime, Flyer, Turret, BossTreant }
+    /// <summary>Burrower/Reviver/Crab/BossGuardian are the desert ruins behaviours (design doc 08 §2.5); until each is
+    /// implemented the enemy AI treats it as Melee so the data loads and the rooms stay playable.</summary>
+    public enum EnemyBehavior { Hopper, Melee, Lunger, BossSlime, Flyer, Turret, BossTreant, Burrower, Reviver, Crab, BossGuardian }
     public enum Passive { DoubleAttack, GoldFind }
     public enum Side { Left, Right }
 
@@ -88,6 +90,26 @@ namespace BoLike.Data
             buffByLevel == null || buffByLevel.Count == 0 ? null : buffByLevel[Math.Clamp(level, 1, buffByLevel.Count) - 1];
     }
 
+    public enum DodgeKind { ShieldDash, Blink, Roll, JetDash, GraceStep, ShadowStep }
+
+    /// <summary>Per-class dodge (design doc 06). Distances px, times ms; invulnerable for <see cref="invuln"/> ms from the press.</summary>
+    public class DodgeDef
+    {
+        public DodgeDef Clone() => (DodgeDef)MemberwiseClone();
+        public DodgeKind kind;
+        public string name, desc;
+        public float distance, duration, invuln, cooldown;
+        public bool passThrough;
+        /// <summary>Enemies touched during the dash are pushed back this far (no damage).</summary>
+        public float knock;
+        /// <summary>Fraction of max HP restored when an attack is avoided by the invulnerability.</summary>
+        public float onAvoidHeal;
+        /// <summary>Attacks and skills may start this many ms before <see cref="duration"/> ends.</summary>
+        public float cancelWindow;
+
+        public static readonly DodgeDef Default = new() { kind = DodgeKind.Roll, name = "閃避", desc = "", distance = 166, duration = 260, invuln = 260, cooldown = 0 };
+    }
+
     public class ClassDef
     {
         public string id, name, role;
@@ -98,7 +120,22 @@ namespace BoLike.Data
         public Stats baseStats;
         public List<ComboHit> combo;
         public ComboHit air;
+        public DodgeDef dodge;
         public List<SkillDef> skills;
+
+        public DodgeDef Dodge => dodge ?? DodgeDef.Default;
+    }
+
+    /// <summary>Skill panel rows exported from src/data/skillUi.ts: which Scaling fields to show and how.</summary>
+    public class SkillUiTable
+    {
+        public List<SkillStatRow> statRows = new();
+        public List<BuffStatRow> buffRows = new();
+        public Dictionary<string, string> typeLabel = new();
+        public Dictionary<string, string> elementLabel = new();
+
+        public class SkillStatRow { public string field, label, format; public List<string> onlyTypes; }
+        public class BuffStatRow { public string field, label, format; }
     }
 
     public class EnemyDef
@@ -113,9 +150,25 @@ namespace BoLike.Data
         public EnemyBehavior behavior;
         public float attackRange, windup, attackCd, spriteH;
         public bool boss;
+        // Desert ruins behaviours (design doc 08 §2.5); null/0 on every other enemy.
+        public BurrowDef burrow;
+        public ReviveDef revive;
+        public FacingDef facingDef;
+        /// <summary>Turret: needles per attack (1 = the old single shot), 120 ms apart.</summary>
+        public int volley;
+        public List<PhaseDef> phases;
 
         public string SpriteId => string.IsNullOrEmpty(sprite) ? id : sprite;
     }
+
+    /// <summary>沙蟲: hides as a sand pile until the player is within triggerRange, bursts out emergeDelay ms later, hides again after rest ms without a target.</summary>
+    public class BurrowDef { public float triggerRange = 220, emergeDelay = 1200, rest = 4000; }
+    /// <summary>木乃伊: dies into a bandage pile of pileHp that revives once with fraction HP after delay ms unless broken.</summary>
+    public class ReviveDef { public float delay = 3000, pileHp = 60, fraction = 0.5f; }
+    /// <summary>沙蟹: damage multiplier by where the hit comes from.</summary>
+    public class FacingDef { public float front = 0.5f, back = 1.6f; }
+    /// <summary>Boss phase at an HP fraction: petrify (duration ms, invulnerable, spawns) or enrage (ATK × mult).</summary>
+    public class PhaseDef { public float at; public string action; public float duration, mult; public List<string> spawn; }
 
     public class SpawnDef
     {

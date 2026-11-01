@@ -43,6 +43,84 @@ namespace BoLike.Sim
         public double potionReadyAt;
         public int dodgeDir = 1;
         public float dodgeMs = DodgeMsDefault, dodgeSpeed = DodgeSpeedDefault;
+        /// <summary>Level-up body glow (view) until this sim time.</summary>
+        public double glowUntil;
+        /// <summary>Dodge cooldown (design doc 06): the next dodge may start at this sim time.</summary>
+        public double dodgeReadyAt;
+        // ---- epic card state (S2) ----
+        /// <summary>firstHitImmune: the first hit of the room has been absorbed.</summary>
+        public bool firstHitTaken;
+        double idleSince;
+        /// <summary>lowHpShield (石化護甲): petrified until this time; immobile and invulnerable.</summary>
+        public double petrifiedUntil, petrifyReadyAt, petrifyAuraAt;
+        public bool Petrified => Now < petrifiedUntil;
+
+        /// <summary>Called by the room flow when a new room starts: per-room card state resets here.</summary>
+        public void OnRoomStart()
+        {
+            firstHitTaken = false;
+            idleSince = Now;
+            killStacks = 0;
+            var m = Mods;
+            roomBuffUntil = m.roomStartBuffMs > 0 ? Now + m.roomStartBuffMs : 0;
+            if (m.roomStartSpFraction > 0) sp = Math.Max(sp, maxSp * m.roomStartSpFraction);
+            if (m.roomStartHiddenMs > 0)
+            {
+                buffs.RemoveAll(b => b.id == "talent.hidden");
+                buffs.Add(new ActiveBuff { id = "talent.hidden", name = "隱身", color = 0x9aa0b4, until = Now + m.roomStartHiddenMs, eff = new BuffEffect { hidden = true } });
+                Recompute();
+            }
+        }
+
+        // ---- talent state (S3) ----
+        int killStacks;
+        double roomBuffUntil, counterUntil, guardInvulnReadyAt, lastSkillAt;
+        Element? lastSkillElement;
+        bool spEmptyArmed;
+        /// <summary>Damage multiplier for the next skill cast (元素共鳴, 過載); consumed by ExecuteSkill.</summary>
+        float skillMultOnce = 1f;
+
+        /// <summary>反彈: projectiles aimed at the player bounce back while dodging (or guarding, with onGuard).</summary>
+        public bool ReflectsProjectiles => Mods.reflectProjectile && (state == FighterState.Dodge || (Mods.reflectOnGuard && state == FighterState.Guard));
+
+        /// <summary>Normal-attack multipliers from talents and perks that depend on the moment: room-start buff, kill stacks, counter window.</summary>
+        float MomentaryAtkMult()
+        {
+            float k = 1f;
+            var m = Mods;
+            if (roomBuffUntil > Now) k *= m.roomStartBuffMult;
+            if (m.killStackPerKill > 0) k *= 1f + Math.Min(m.killStackMax, m.killStackPerKill * killStacks);
+            if (counterUntil > Now) { k *= m.counterMult; counterUntil = 0; }
+            return k;
+        }
+        bool dodgeHealUsed, dodgeTeleported;
+        /// <summary>The class dodge with any dodgeOverride card/talent applied (passThrough, knock); kind and animation never change.</summary>
+        public DodgeDef Dodge
+        {
+            get
+            {
+                var dd = cls.Dodge;
+                DodgeDef over = null;
+                var m = Mods;
+                if (m.dodgeInvulnAdd != 0 || m.dodgeDistanceMult != 1f || m.dodgeCooldownAdd != 0)
+                {
+                    over = dd.Clone();
+                    over.invuln = Math.Max(0, over.invuln + m.dodgeInvulnAdd);
+                    over.distance *= m.dodgeDistanceMult;
+                    over.cooldown = Math.Max(0, over.cooldown + m.dodgeCooldownAdd);
+                }
+                foreach (var e in m.raw)
+                {
+                    if (e.kind != PerkEffectKind.DodgeOverride) continue;
+                    over ??= dd.Clone();
+                    if (e.passThrough.HasValue) over.passThrough = e.passThrough.Value;
+                    if (e.knock > 0) over.knock = e.knock;
+                }
+                return over ?? dd;
+            }
+        }
+        public float DodgeCooldownLeft => (float)Math.Max(0, dodgeReadyAt - Now);
+        public float DodgeCooldownTotal => Math.Max(1, Dodge.cooldown);
         public SkillDef casting;
         bool shotFired;
         double lastStepAt, lastGhostAt;
@@ -160,9 +238,27 @@ namespace BoLike.Sim
                 hp = Math.Min(maxHp, hp + (float)d.hpRegen * dt);
                 ExpireBuffs();
                 TryPotions();
+                UpdateCardEffects(dt);
             }
             var (xMin, xMax) = world.PlayerBounds();
             bool grounded = !Airborne;
+            if (Petrified)
+            {
+                // 石化護甲: a statue for the duration — no input, no movement; the aura (set bonus) hurts enemies around it once a second.
+                vx = vy = 0;
+                if (state != FighterState.Guard) SetState(FighterState.Guard);
+                if (Mods.lowHpShieldAura > 0 && Now >= petrifyAuraAt)
+                {
+                    petrifyAuraAt = Now + 1000;
+                    int dmg = Math.Max(1, (int)StatFormulas.JsRound(d.atk * Mods.lowHpShieldAura));
+                    foreach (var e in world.Enemies)
+                        if (!e.dead && Math.Abs(e.x - x) < 170 && Math.Abs(e.y - y) < 90)
+                            e.TakeHit(new HitInfo { damage = dmg, dir = Math.Sign(e.x - x) == 0 ? 1 : Math.Sign(e.x - x), source = this, element = Element.Earth });
+                    Fx.Ring(x, y, 170, 0xc9b28a, y - 1);
+                }
+                if (Physics(dt, xMin, xMax)) OnLand(grounded);
+                return;
+            }
 
             switch (state)
             {
@@ -209,9 +305,7 @@ namespace BoLike.Sim
                     break;
                 }
                 case FighterState.Dodge:
-                    vx = dodgeDir * dodgeSpeed * (1 - stateTime / dodgeMs * 0.6f);
-                    vy = MoveY * 200;
-                    if (stateTime >= dodgeMs) SetState(FighterState.Idle);
+                    UpdateDodge(dt);
                     break;
                 case FighterState.Cast:
                     vx *= 0.8f;
@@ -249,12 +343,8 @@ namespace BoLike.Sim
 
             bool landed = Physics(dt, xMin, xMax);
             if (landed) OnLand(grounded);
-            if (state == FighterState.Walk && Now - lastStepAt > 280)
-            {
-                lastStepAt = Now;
-                Fx.Dust(x - facing * 10, y, 2, 0.6f);
-            }
-            if (state == FighterState.Dodge && Now - lastGhostAt > 40)
+            // (Footstep dust puffs were removed: on the phone they read as small explosions under the feet.)
+            if (state == FighterState.Dodge && Dodge.kind != DodgeKind.Blink && Now - lastGhostAt > 40)
             {
                 lastGhostAt = Now;
                 Fx.Ghost(this);
@@ -315,16 +405,134 @@ namespace BoLike.Sim
         {
             float mx = MoveX;
             if (Math.Abs(mx) < 0.5f) return false;
+            if (Now < dodgeReadyAt) return false; // on cooldown: the button falls through to guard
+            var dd = Dodge;
             dodgeDir = mx > 0 ? 1 : -1;
-            dodgeMs = DodgeMsDefault;
-            dodgeSpeed = DodgeSpeedDefault;
-            invulnUntil = Now + DodgeMsDefault;
+            facing = dodgeDir;
+            dodgeMs = Math.Max(1, dd.duration);
+            // Blink stands still for its wind-up and teleports at the end; everything else covers `distance` over `duration`.
+            dodgeSpeed = dd.kind == DodgeKind.Blink ? 0 : dd.distance / (dodgeMs / 1000f) / 0.7f; // the speed curve below averages 0.7×
+            invulnUntil = Now + dd.invuln;
+            dodgeReadyAt = Now + dd.cooldown;
+            dodgeHealUsed = dodgeTeleported = dodgeEnded = false;
+            struck.Clear();
             SetState(FighterState.Dodge);
-            Fx.Aura(x, y - 20, 0xffffff);
-            Fx.Dust(x, y, 5);
-            Sfx.Play("dodge");
+            switch (dd.kind)
+            {
+                case DodgeKind.Blink:
+                    Fx.Aura(x, y - 20, cls.accent);
+                    Sfx.Play("cast", 0.7f);
+                    break;
+                case DodgeKind.ShieldDash:
+                    Fx.Dust(x, y, 5);
+                    Sfx.Play("guard", 0.8f);
+                    break;
+                case DodgeKind.GraceStep:
+                    Fx.Ring(x, y, 70, 0xfff2b3, y - 1);
+                    Fx.Aura(x, y - 20, 0xfff2b3);
+                    Sfx.Play("dodge");
+                    break;
+                case DodgeKind.JetDash:
+                    Fx.Dust(x - dodgeDir * 20, y, 6, 1.2f);
+                    Sfx.Play("dodge");
+                    break;
+                default:
+                    Fx.Aura(x, y - 20, 0xffffff);
+                    Fx.Dust(x, y, 5);
+                    Sfx.Play("dodge");
+                    break;
+            }
             return true;
         }
+
+        /// <summary>Per-frame dodge behaviour: movement, the blink teleport, dash shoves and the cancel window.</summary>
+        void UpdateDodge(float dt)
+        {
+            var dd = Dodge;
+            if (dd.kind == DodgeKind.Blink)
+            {
+                vx = 0; vy = 0;
+                if (!dodgeTeleported && stateTime >= dodgeMs)
+                {
+                    dodgeTeleported = true;
+                    Fx.Ghost(this);
+                    var (min, max) = world.PlayerBounds();
+                    x = Math.Clamp(x + dodgeDir * dd.distance, min, max);
+                    Fx.Ring(x, y, 60, cls.accent, y - 1);
+                    Fx.Spark(x, y - 60, cls.accent, 1.2f);
+                    OnDodgeEnd();
+                    SetState(FighterState.Idle);
+                }
+                return;
+            }
+            vx = dodgeDir * dodgeSpeed * (1 - stateTime / dodgeMs * 0.6f);
+            vy = MoveY * 200;
+            if (dd.kind == DodgeKind.JetDash && Now - lastStepAt > 50) { lastStepAt = Now; Fx.Dust(x - dodgeDir * 24, y, 1, 0.9f); }
+            if (dd.knock > 0)
+                foreach (var e in world.Enemies)
+                {
+                    if (e.dead || struck.Contains(e)) continue;
+                    if (Math.Abs(e.x - x) < (w + e.w) / 2 && Math.Abs(e.y - y) < 44)
+                    {
+                        struck.Add(e);
+                        e.Shove(dodgeDir, dd.knock);
+                        Fx.Spark(e.x, e.y - e.h / 2, 0xffffff, 0.8f);
+                    }
+                }
+            // Roll / shadow step: the last `cancelWindow` ms can flow straight into an attack or skill.
+            if (dd.cancelWindow > 0 && stateTime >= dodgeMs - dd.cancelWindow)
+            {
+                if (GameInput.Consume(GameAction.Attack)) { vx = 0; OnDodgeEnd(); StartAttack(0); return; }
+                if (TrySkill()) { OnDodgeEnd(); return; }
+            }
+            if (stateTime >= dodgeMs) { OnDodgeEnd(); SetState(FighterState.Idle); }
+        }
+
+        bool dodgeEnded;
+
+        /// <summary>
+        /// Where the dodge ends, dodgeOverride landings leave a zone (荊棘之心 thorn wall, 流沙步伐 quicksand, talents'
+        /// ice burst / spike trap); afterDodgeBuff (talents) starts its timer. Runs once per dodge.
+        /// </summary>
+        void OnDodgeEnd()
+        {
+            if (dodgeEnded) return;
+            dodgeEnded = true;
+            foreach (var e in Mods.raw)
+            {
+                if (e.kind == PerkEffectKind.AfterDodgeBuff && e.duration > 0) afterDodgeUntil = Now + e.duration;
+                if (e.kind != PerkEffectKind.DodgeOverride || e.landing == null) continue;
+                var l = e.landing;
+                float radius = l.radius > 0 ? l.radius : 90;
+                switch (l.what)
+                {
+                    case "thornWall":
+                        world.SpawnZone(new ZoneOpts { owner = this, x = x, y = y, radius = radius, duration = l.duration, color = 0x6fcf5a, what = "thornWall", slow = l.slow > 0 ? l.slow : 1f, damage = Math.Max(1, (int)StatFormulas.JsRound(d.atk * (l.power > 0 ? l.power : 0.5f))), element = Element.Earth });
+                        Sfx.Play("card_thornHeart");
+                        break;
+                    case "quicksand":
+                        world.SpawnZone(new ZoneOpts { owner = this, x = x, y = y, radius = radius, duration = l.duration, color = 0xe0c070, what = "quicksand", slow = l.slow > 0 ? l.slow : 0.5f });
+                        Sfx.Play("card_quicksandStep");
+                        break;
+                    case "iceBurst":
+                        world.StrikeCircle(this, Enemies, x, y, radius, tt => { var hit = MakeHit((Enemy)tt, l.power > 0 ? l.power : 0.8f, Element.Water, true, 40, 0, 100); hit.freeze = l.duration; return hit; }, true);
+                        Fx.Ring(x, y, radius, Colors.Ice, y - 1);
+                        Sfx.Play("ice");
+                        break;
+                    case "decoy":
+                        world.DecoyX = x; world.DecoyY = y; world.DecoyUntil = Now + l.duration;
+                        world.SpawnZone(new ZoneOpts { owner = this, x = x, y = y, radius = 40, duration = l.duration, color = 0x9aa0b4, what = "decoy" });
+                        Fx.Ghost(this);
+                        break;
+                    case "spikeTrap":
+                        world.SpawnZone(new ZoneOpts { owner = this, x = x, y = y, radius = radius, duration = l.duration, color = 0xb0b0b0, what = "spikeTrap", rootMs = 1000, damage = Math.Max(1, (int)StatFormulas.JsRound(d.atk * (l.power > 0 ? l.power : 0.6f))) });
+                        break;
+                }
+            }
+        }
+
+        /// <summary>afterDodgeBuff (talents): the window after a dodge in which ASPD / extra arrows apply.</summary>
+        public double afterDodgeUntil;
 
         void Decel(float dt)
         {
@@ -338,12 +546,14 @@ namespace BoLike.Sim
         public (float startup, float active, float recovery) Timing(ComboHit h)
         {
             float s = (float)d.aspd;
+            if (afterDodgeUntil > Now) foreach (var e in Mods.raw) if (e.kind == PerkEffectKind.AfterDodgeBuff && e.aspdMult > 0) s *= e.aspdMult;
             return (h.startup / s, h.active / s, h.recovery / s);
         }
 
         void StartAttack(int i)
         {
             combo = i;
+            comboSpawned = false;
             queued = false;
             struck.Clear();
             shotFired = false;
@@ -405,24 +615,73 @@ namespace BoLike.Sim
         {
             if (shotFired) return;
             shotFired = true;
+            int step = combo;
             void Fire(float zOff) => world.SpawnProjectile(new ProjectileOpts
             {
                 owner = this, x = x + facing * 30, y = y, z = z + 70 + zOff, dir = facing,
                 speed = ArrowSpeed, color = cls.accent, range = h.range, arrow = true, pierce = Mods.pierceAdd,
-                make = tt => MakeHit((Enemy)tt, h.power, Element.Neutral, false, h.knock, h.launch, h.stun),
+                make = tt => { var hit = MakeHit((Enemy)tt, h.power, Element.Neutral, false, h.knock, h.launch, h.stun); OnComboHit((Enemy)tt, step); return hit; },
             });
             Fire(0);
-            for (int i = 0; i < Mods.projectileAdd; i++) Fire(-12 * (i + 1));
+            int extra = Mods.projectileAdd;
+            if (afterDodgeUntil > Now) foreach (var e in Mods.raw) if (e.kind == PerkEffectKind.AfterDodgeBuff) extra += e.extraProjectiles; // 雙射
+            for (int i = 0; i < extra; i++) Fire(-12 * (i + 1));
             Sfx.Play("arrow");
             Fx.Spark(x + facing * 36, y - 70 - z, cls.accent, 0.6f);
             float da = PassiveValue(Passive.DoubleAttack);
             if (da > 0 && Rng.Chance(da)) world.Delay(80, () => { if (!dead) Fire(-12); });
         }
 
+        bool comboSpawned;
+
+        /// <summary>
+        /// Epic-card combo hooks (S2): onComboHitSpawn drops a sticky blob or fires a piercing beam on combo hit `hit`
+        /// (1-based, 0 = the finisher), once per swing; comboDebuff weakens the target when the finisher lands.
+        /// </summary>
+        void OnComboHit(Enemy t, int step)
+        {
+            bool finisher = step == cls.combo.Count - 1;
+            foreach (var e in Mods.raw)
+            {
+                if (e.kind == PerkEffectKind.ComboDebuff && finisher && e.defMult < 1f)
+                    t.ApplyDefDown(1f - e.defMult, e.duration);
+                if (e.kind != PerkEffectKind.OnComboHitSpawn || comboSpawned) continue;
+                bool match = e.hit == 0 ? finisher : e.hit == step + 1;
+                if (!match) continue;
+                comboSpawned = true;
+                if (e.what == "stickyBlob")
+                {
+                    world.SpawnZone(new ZoneOpts { owner = this, x = t.x, y = t.y, radius = e.radius > 0 ? e.radius : 70, duration = e.duration > 0 ? e.duration : 1200, color = 0xff9ad0, what = "stickyBlob", rootMs = e.duration > 0 ? e.duration : 1200 });
+                    Sfx.Play("card_jellyCrown");
+                }
+                else if (e.what == "beam")
+                {
+                    float power = e.power > 0 ? e.power : 1f;
+                    world.SpawnProjectile(new ProjectileOpts
+                    {
+                        owner = this, x = x + facing * 30, y = y, z = z + 60, dir = facing, speed = 2200, color = 0xffe08a, range = 1100, pierce = 99,
+                        make = tt => MakeHit((Enemy)tt, power, Element.Holy, true, 60, 0, 120),
+                    });
+                    Fx.Slash(x + facing * 200, y - 60 - z, facing, 0xffe08a, 220, y);
+                    Sfx.Play("card_guardianEye");
+                }
+            }
+        }
+
         /// <summary>A normal-attack hit, with the thief's double-attack passive rolled in.</summary>
         HitInfo NormalHit(Enemy t, ComboHit h)
         {
-            var hit = MakeHit(t, h.power, Element.Neutral, false, h.knock, h.launch, h.stun);
+            float power = h.power * MomentaryAtkMult();
+            foreach (var e in Mods.raw) if (e.kind == PerkEffectKind.ComboHitMult && e.hit == combo + 1 && e.mult > 0) power *= e.mult; // 重擊收尾
+            var hit = MakeHit(t, power, Element.Neutral, false, h.knock, h.launch, h.stun);
+            foreach (var e in Mods.raw)
+            {
+                // onHitStatus (冰封之觸 / 燃燒之刃): a chance per hit to freeze, burn or poison.
+                if (e.kind != PerkEffectKind.OnHitStatus || !Rng.Chance(e.chance)) continue;
+                if (e.status == "freeze") hit.freeze = Math.Max(hit.freeze, e.duration);
+                else { hit.poison = new Poison { dps = Math.Max(1, e.value), duration = e.duration }; Sfx.Play("card_beeGuard"); } // 蜜蜂衛隊 / 燃燒之刃 share the buzz
+            }
+            OnComboHit(t, combo);
             float da = PassiveValue(Passive.DoubleAttack);
             if (da > 0 && Rng.Chance(da))
             {
@@ -467,12 +726,22 @@ namespace BoLike.Sim
                 if (s.type == SkillType.Passive) { world.Toast($"「{s.name}」是被動技能，已自動生效"); continue; }
                 if (CooldownLeft(s) > 0) continue;
                 int cost = SkillCost(s);
+                bool free = spEmptyArmed && Mods.spEmptyFreeMult > 0; // 過載: the cast after hitting 0 SP is free and hits harder
+                if (free) cost = 0;
                 if (sp < cost) { Fx.Number(x, y - 120, "SP 不足", Colors.Sp); continue; }
                 int gold = SkillGold(s);
                 if (Inv.gold < gold) { Fx.Number(x, y - 120, "金幣不足", Colors.Gold); continue; }
                 if (gold > 0) { Inv.gold -= gold; Fx.Number(x, y - 150, $"-{gold} G", Colors.Gold); }
                 sp -= cost;
+                skillMultOnce = 1f;
+                if (free) { spEmptyArmed = false; skillMultOnce *= Mods.spEmptyFreeMult; Fx.Number(x, y - 150, "過載！", Colors.Sp, true); }
+                else if (sp <= 0.5f && Mods.spEmptyFreeMult > 0) spEmptyArmed = true;
+                // 元素共鳴: a different element than the previous cast, inside the window, hits harder.
+                if (Mods.resonanceMult > 1f && lastSkillElement.HasValue && lastSkillElement != s.element && s.element != Element.Neutral && Now - lastSkillAt <= Mods.resonanceWindow)
+                { skillMultOnce *= Mods.resonanceMult; Fx.Number(x, y - 170, "共鳴！", s.color, true); }
+                lastSkillElement = s.element; lastSkillAt = Now;
                 cooldowns[s.id] = Now + CooldownTotal(s);
+                if (Mods.cooldownResetChance > 0 && Rng.Chance(Mods.cooldownResetChance)) { cooldowns[s.id] = Now; Fx.Number(x, y - 190, "冷卻重置", Colors.Buff); } // 時間裂隙
                 if (MoveX != 0) facing = MoveX > 0 ? 1 : -1;
                 casting = s;
                 struck.Clear();
@@ -503,7 +772,8 @@ namespace BoLike.Sim
         bool ExecuteSkill(SkillDef s)
         {
             int L = SkillLv(s);
-            float power = s.power.At(L);
+            float power = s.power.At(L) * skillMultOnce * Mods.skillPower;
+            skillMultOnce = 1f;
             var el = s.element;
             var fx = Fx;
             var buffEff = s.BuffAt(L);
@@ -684,9 +954,50 @@ namespace BoLike.Sim
 
         // ---------- receiving damage ----------
 
+        /// <summary>孢子呼吸 (idleRegen): standing still for a while regenerates HP per second.</summary>
+        void UpdateCardEffects(float dt)
+        {
+            bool still = (state == FighterState.Idle || state == FighterState.Guard) && Math.Abs(vx) + Math.Abs(vy) < 1 && !Airborne;
+            if (!still || Petrified) idleSince = Now;
+            else if (Mods.idleRegenFraction > 0 && Now - idleSince >= Mods.idleRegenAfter && hp < maxHp)
+                hp = Math.Min(maxHp, hp + maxHp * Mods.idleRegenFraction * dt);
+        }
+
+        /// <summary>Damage from a ground hazard (毒沼): no knockback, no guard, blocked by invulnerability, petrify and hiding; can kill.</summary>
+        public void TakeGroundDamage(int dmg, int color)
+        {
+            if (dead || dmg <= 0 || Now < invulnUntil || Petrified || Hidden) return;
+            hp -= dmg;
+            Fx.Number(x, y - 110 - z, $"{dmg}", Colors.Poison);
+            Flash(color, 90);
+            Sfx.Play("hurt");
+            world.RaisePlayerHurt();
+            if (hp <= 0)
+            {
+                hp = 0;
+                dead = true;
+                vz = 420;
+                z = 1;
+                vx = -facing * 120;
+                SetState(FighterState.Knock);
+            }
+        }
+
         public override bool TakeHit(HitInfo h)
         {
-            if (dead || Now < invulnUntil || state == FighterState.Dodge) return false;
+            if (dead) return false;
+            if (Petrified) { Fx.Spark(x, y - 60 - z, 0xc9b28a); return false; }
+            if (Now < invulnUntil || state == FighterState.Dodge)
+            {
+                // Grace step (acolyte): avoiding an attack with the dodge's invulnerability heals a little, once per dodge.
+                if (Dodge.onAvoidHeal > 0 && !dodgeHealUsed && Now < invulnUntil)
+                {
+                    dodgeHealUsed = true;
+                    int v = (int)StatFormulas.JsRound(maxHp * Dodge.onAvoidHeal);
+                    if (v > 0 && hp < maxHp) { hp = Math.Min(maxHp, hp + v); Fx.Number(x, y - 120 - z, $"+{v}", Colors.Heal); Fx.Aura(x, y, 0xfff2b3); }
+                }
+                return false;
+            }
             var fx = Fx;
             ActiveBuff shield = null;
             foreach (var b in buffs) if ((b.hits ?? 0) > 0) { shield = b; break; }
@@ -703,10 +1014,31 @@ namespace BoLike.Sim
                 fx.Number(x, y - 110 - z, "MISS", Colors.Miss);
                 return false;
             }
+            if (Mods.firstHitImmune && !firstHitTaken)
+            {
+                // 古樹年輪: the first hit of every room deals no damage.
+                firstHitTaken = true;
+                fx.Ring(x, y, 90, 0x9be15d, y - 1);
+                fx.Number(x, y - 120 - z, "年輪", 0x9be15d);
+                Sfx.Play("card_ancientRing");
+                return true;
+            }
             bool guarding = state == FighterState.Guard && Math.Sign(h.source.x - x) == facing;
             if (guarding)
             {
-                int dmg = Math.Max(1, (int)StatFormulas.JsRound(h.damage * 0.25));
+                var m = Mods;
+                // 不屈 (guardInvuln): a low-HP block becomes a short invulnerability, on a cooldown.
+                if (m.guardInvulnMs > 0 && hp < maxHp * m.guardInvulnFraction && Now >= guardInvulnReadyAt)
+                {
+                    guardInvulnReadyAt = Now + m.guardInvulnCooldown;
+                    invulnUntil = Now + m.guardInvulnMs;
+                    fx.Ring(x, y, 110, Colors.Guard, y - 1);
+                    fx.Number(x, y - 140 - z, "不屈！", Colors.Guard, true);
+                    Sfx.Play("guard");
+                    return false;
+                }
+                if (m.counterWindow > 0) counterUntil = Now + m.counterWindow; // 反擊: the next normal hit in the window is boosted
+                int dmg = Math.Max(1, (int)StatFormulas.JsRound(h.damage * m.guardDamageMult));
                 hp = Math.Max(1, hp - dmg);
                 vx = h.dir * 160;
                 fx.Spark(x + facing * 25, y - 60, Colors.Guard);
@@ -715,12 +1047,32 @@ namespace BoLike.Sim
                 return true;
             }
             hp -= h.damage;
+            world.RaisePlayerHurt();
+            // 彈力外殼 (onHurtKnock): a chance to shove the attacker away.
+            if (Mods.onHurtKnock > 0 && h.source is Enemy attacker && Rng.Chance(Mods.onHurtKnockChance))
+            {
+                attacker.Shove(Math.Sign(attacker.x - x) == 0 ? facing : Math.Sign(attacker.x - x), Mods.onHurtKnock);
+                fx.Ring(x, y, 70, 0xffc6e0, y - 1);
+                Sfx.Play("card_bouncyShell");
+            }
             fx.Number(x, y - 110 - z, $"{h.damage}", Colors.Hp, h.damage > maxHp * 0.2f);
             fx.Spark(x, y - 55 - z, 0xff7070);
             Flash(0xff4444, 90);
             fx.Shake(90, 0.005f);
-            Sfx.Play("hurt");
+            Sfx.Play(h.source != null ? "hurt_" + cls.id : "hurt"); // 敵人造成的傷害用職業專屬受傷音；陷阱等用通用音
             if (casting != null) { casting = null; if (state == FighterState.Cast) SetState(FighterState.CastEnd); }
+            // 石化護甲 (lowHpShield): dropping under the threshold turns the player to stone — invulnerable, immobile — on a cooldown.
+            if (hp > 0 && Mods.lowHpShieldDuration > 0 && hp < maxHp * Mods.lowHpShieldFraction && Now >= petrifyReadyAt)
+            {
+                petrifiedUntil = Now + Mods.lowHpShieldDuration;
+                petrifyReadyAt = Now + Mods.lowHpShieldCooldown;
+                petrifyAuraAt = Now + 400;
+                vx = vy = 0;
+                casting = null;
+                fx.Ring(x, y, 120, 0xc9b28a, y - 1);
+                fx.Number(x, y - 150 - z, "石化！", 0xc9b28a, true);
+                Sfx.Play("card_stoneArmor");
+            }
             if (hp <= 0)
             {
                 if (Mods.reviveFraction > 0 && !Mods.reviveUsed)
@@ -771,6 +1123,8 @@ namespace BoLike.Sim
         /// <summary>Heal on kill and death explosions (perks); called by the world when an enemy dies to the player.</summary>
         public void OnKilled(Enemy e)
         {
+            killStacks++;
+            if (Mods.onKillSp > 0 && !dead) sp = Math.Min(maxSp, sp + maxSp * Mods.onKillSp);
             if (Mods.onKillHeal > 0 && !dead)
             {
                 int v = (int)StatFormulas.JsRound(maxHp * Mods.onKillHeal);
@@ -785,6 +1139,7 @@ namespace BoLike.Sim
                 {
                     Fx.Ring(ex, ey, r, 0xff8a5a, ey - 1);
                     Fx.Spark(ex, ey - 40, 0xff8a5a, 1.5f);
+                    Sfx.Play("card_splitCore"); // 分裂之核 (and the chain-explosion perk) share the burst
                     world.StrikeCircle(this, Enemies, ex, ey, r, tt =>
                     {
                         var h = MakeHit((Enemy)tt, power, Element.Neutral, false, 220, 0, 350);

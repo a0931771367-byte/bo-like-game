@@ -1,0 +1,131 @@
+{
+ "statRows": [
+  {
+   "field": "power",
+   "label": "威力",
+   "format": "mult"
+  },
+  {
+   "field": "count",
+   "label": "發數",
+   "format": "int"
+  },
+  {
+   "field": "duration",
+   "label": "持續",
+   "format": "seconds"
+  },
+  {
+   "field": "heal",
+   "label": "回復",
+   "format": "percent"
+  },
+  {
+   "field": "poison",
+   "label": "每秒毒傷",
+   "format": "int"
+  },
+  {
+   "field": "stunChance",
+   "label": "暈眩機率",
+   "format": "percent"
+  },
+  {
+   "field": "freezeChance",
+   "label": "凍結機率",
+   "format": "percent"
+  },
+  {
+   "field": "defDown",
+   "label": "減少防禦",
+   "format": "percent"
+  },
+  {
+   "field": "dashDistance",
+   "label": "距離",
+   "format": "px"
+  },
+  {
+   "field": "passiveValue",
+   "label": "機率／加成",
+   "format": "percent",
+   "onlyTypes": [
+    "passive"
+   ]
+  },
+  {
+   "field": "sp",
+   "label": "SP 消耗",
+   "format": "int"
+  },
+  {
+   "field": "goldCost",
+   "label": "金幣消耗",
+   "format": "int"
+  }
+ ],
+ "buffRows": [
+  {
+   "field": "atkMult",
+   "label": "攻擊力",
+   "format": "multPercent"
+  },
+  {
+   "field": "matkMult",
+   "label": "魔攻",
+   "format": "multPercent"
+  },
+  {
+   "field": "aspdMult",
+   "label": "攻速",
+   "format": "multPercent"
+  },
+  {
+   "field": "moveMult",
+   "label": "移速",
+   "format": "multPercent"
+  },
+  {
+   "field": "allStats",
+   "label": "全屬性",
+   "format": "int"
+  },
+  {
+   "field": "shieldHits",
+   "label": "吸收次數",
+   "format": "int"
+  },
+  {
+   "field": "endure",
+   "label": "受擊不硬直",
+   "format": "flag"
+  },
+  {
+   "field": "hidden",
+   "label": "隱身",
+   "format": "flag"
+  }
+ ],
+ "typeLabel": {
+  "melee": "近戰",
+  "aoe": "範圍",
+  "projectile": "投射",
+  "buff": "增益",
+  "debuff": "減益",
+  "wall": "結界",
+  "strikes": "連擊",
+  "heal": "治癒",
+  "dash": "位移",
+  "passive": "被動"
+ },
+ "elementLabel": {
+  "neutral": "無",
+  "fire": "火",
+  "water": "水",
+  "wind": "風",
+  "earth": "地",
+  "holy": "聖",
+  "dark": "暗",
+  "poison": "毒"
+ }
+}

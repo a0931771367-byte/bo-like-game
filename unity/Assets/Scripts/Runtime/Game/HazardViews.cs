@@ -122,4 +122,63 @@ namespace BoLike.Game
             }
         }
     }
+
+    /// <summary>A card zone on the ground (S2): a soft ellipse in the zone's colour that breathes and fades out at the end.</summary>
+    public class ZoneView : MonoBehaviour
+    {
+        Zone z;
+        SpriteRenderer disc, rim;
+        float fadeStart = -1;
+
+        public static ZoneView Create(Zone z, Transform parent)
+        {
+            var go = new GameObject("Zone");
+            go.transform.SetParent(parent, false);
+            var v = go.AddComponent<ZoneView>();
+            v.z = z;
+            v.Build();
+            return v;
+        }
+
+        void Build()
+        {
+            transform.position = Space.ToWorld(z.o.x, z.o.y);
+            disc = Make("Disc", SpriteBank.SoftCircle, Colors.Rgb(z.o.color, 0.55f), Space.OrderGround + 2);
+            rim = Make("Rim", SpriteBank.Circle, Colors.Rgb(z.o.color, 0.35f), Space.OrderGround + 1);
+            Scale(1f);
+        }
+
+        SpriteRenderer Make(string name, Sprite sprite, Color c, int order)
+        {
+            var go = new GameObject(name);
+            go.transform.SetParent(transform, false);
+            var sr = go.AddComponent<SpriteRenderer>();
+            sr.sprite = sprite;
+            sr.color = c;
+            sr.sortingOrder = order;
+            return sr;
+        }
+
+        void Scale(float k)
+        {
+            float d = z.o.radius * 2 * Space.Scale / 0.64f; // SoftCircle/Circle are 64 px wide at 100 px per unit
+            disc.transform.localScale = new Vector3(d * k, d * 0.62f * k, 1);
+            rim.transform.localScale = new Vector3(d * 1.08f * k, d * 0.67f * k, 1);
+        }
+
+        void LateUpdate()
+        {
+            if (z.done)
+            {
+                if (fadeStart < 0) fadeStart = Time.time;
+                float f = (Time.time - fadeStart) / 0.25f;
+                if (f >= 1) { Destroy(gameObject); return; }
+                foreach (var sr in new[] { disc, rim }) { var c = sr.color; c.a *= 1 - f * 0.2f; sr.color = c; }
+                return;
+            }
+            float breathe = 1f + Mathf.Sin(Time.time * 6f) * 0.04f;
+            float shrink = z.o.what == "stickyBlob" ? 1f : Mathf.Lerp(1f, 0.85f, z.Progress); // walls and sand settle as they expire
+            Scale(breathe * shrink);
+        }
+    }
 }

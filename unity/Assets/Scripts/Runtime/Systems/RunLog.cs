@@ -16,7 +16,14 @@ namespace BoLike.Systems
         public int clearMs;
         public int hpAtClear, maxHp;
         public int potionsLeft;
+        /// <summary>Run level when the room was cleared (0 when it was not).</summary>
+        public int levelAtClear;
+        /// <summary>The perk cards offered after this room, in the order shown; the one taken is <see cref="perk"/>.</summary>
+        public List<string> offered = new();
         public string perk;
+        /// <summary>Room affix id (design doc 08 §2.6), null when none; whether the room had an elite.</summary>
+        public string affix;
+        public bool elite;
     }
 
     /// <summary>One run, appended as a line of JSON to runs.jsonl next to the save.</summary>
@@ -27,15 +34,27 @@ namespace BoLike.Systems
         public string build;
         public string device;
         public string classId;
+        /// <summary>Chapter and stage the run played (S1); older logs have neither.</summary>
+        public string chapterId, stageId;
         public string seed;
         /// <summary>win / lose / abandon</summary>
         public string result;
         public int roomsCleared;
         public bool bossKilled;
+        /// <summary>Times the run was continued from a snapshot after the app was closed (S5); 0 = played in one go.</summary>
+        public int resumes;
+        /// <summary>Epic card the boss dropped this run (S2), null when none.</summary>
+        public string cardDrop;
+        /// <summary>Cards equipped when the run started.</summary>
+        public List<string> cardsEquipped = new();
+        /// <summary>Talent nodes the class had learned when the run started (S3).</summary>
+        public List<string> talents = new();
         public int totalMs;
         public int stardust;
         public int level;
         public List<string> perks = new();
+        /// <summary>Skill ids the player spent skill points on, in order (one entry per point).</summary>
+        public List<string> skillUps = new();
         public List<RoomLogEntry> rooms = new();
     }
 

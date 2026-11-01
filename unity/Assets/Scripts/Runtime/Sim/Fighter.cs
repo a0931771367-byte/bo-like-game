@@ -7,6 +7,8 @@ namespace BoLike.Sim
     {
         Idle, Walk, Guard, Attack, Jump, AirAttack, Dodge, Cast, CastEnd, Hurt, Knock, Down, Dead,
         Windup, Lunge, Slam, Stomp, Recover, Frozen, Dying,
+        /// <summary>遺跡守衛 laser sweep: 700 ms red-line telegraph, then the beam.</summary>
+        Beam,
     }
 
     /// <summary>
@@ -25,6 +27,8 @@ namespace BoLike.Sim
         public bool dead;
         /// <summary>Targets already struck by the current attack.</summary>
         public readonly HashSet<Fighter> struck = new();
+        /// <summary>False for the dead, and for enemies that cannot be targeted right now (burrowed 沙蟲); true for a breakable 繃帶堆.</summary>
+        public virtual bool CanBeHit => !dead;
         public readonly float w, h;
         public abstract Team Team { get; }
         public readonly World world;

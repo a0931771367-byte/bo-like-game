@@ -56,12 +56,12 @@ namespace BoLike.Tests
         [Test]
         public void RunDataLoads()
         {
-            Assert.AreEqual(15, GameDb.Perks.Count);
+            Assert.AreEqual(29, GameDb.Perks.Count, "beta 2: PERKS_NEXT joined the pool (comboMaster held back)");
             Assert.AreEqual(GameDb.Rules.combatRooms, GameDb.RoomPool.Count);
             Assert.AreEqual(RoomKind.Boss, GameDb.Room(GameDb.BossRoom).kind);
             Assert.AreEqual(3, GameDb.Rules.perkChoices);
-            Assert.AreEqual(60f, GameDb.Rules.rarityWeights[PerkRarity.Common]);
-            Assert.AreEqual(1.3f, GameDb.Rules.roomScaling.AtkAt(3), 1e-5);
+            Assert.AreEqual(55f, GameDb.Rules.rarityWeights[PerkRarity.Common]);
+            Assert.AreEqual(1.8f, GameDb.Rules.roomScaling.AtkAt(3), 1e-5);
             CollectionAssert.Contains(GameDb.StartingClasses, "swordsman");
         }
 
@@ -71,7 +71,7 @@ namespace BoLike.Tests
             var tough = GameDb.Perk("toughBody").effects[0];
             Assert.AreEqual(PerkEffectKind.Mult, tough.kind);
             Assert.AreEqual(MultTarget.MaxHp, tough.target);
-            Assert.AreEqual(1.2f, tough.value, 1e-5);
+            Assert.AreEqual(1.25f, tough.value, 1e-5); // growth curve v2 / design 11-1 value
             var phoenix = GameDb.Perk("phoenix").effects[0];
             Assert.AreEqual(PerkEffectKind.Revive, phoenix.kind);
             Assert.AreEqual(1500f, phoenix.invuln);
@@ -91,7 +91,7 @@ namespace BoLike.Tests
                 Assert.AreEqual(RoomKind.Combat, GameDb.Room(id).kind, id);
             foreach (var u in GameDb.Unlocks.Where(u => u.kind == UnlockKind.Class))
                 Assert.NotNull(GameDb.Class(u.ValueId), u.id);
-            Assert.AreEqual(0.1f, GameDb.Unlocks.First(u => u.kind == UnlockKind.RareChance).ValueNumber, 1e-5);
+            Assert.AreEqual(0.15f, GameDb.Unlocks.First(u => u.kind == UnlockKind.RareChance).ValueNumber, 1e-5);
             foreach (var p in GameDb.Perks)
                 foreach (var c in p.classes)
                     Assert.NotNull(GameDb.Class(c), p.id);

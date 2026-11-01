@@ -6,7 +6,7 @@
   "desc": "果凍怪與野狼出沒的草原，適合熟悉操作。",
   "width": 4200,
   "bg": "bg_chapter1",
-  "bgGroundY": 528,
+  "bgGroundY": 420,
   "waves": [
    {
     "triggerX": 500,
@@ -102,7 +102,7 @@
   "desc": "夕陽下的林道，火焰果凍與鐵甲蟲成群出現。",
   "width": 4800,
   "bg": "bg_chapter1",
-  "bgGroundY": 528,
+  "bgGroundY": 420,
   "tint": 16757896,
   "waves": [
    {
@@ -254,7 +254,7 @@
   "desc": "夜狼群的地盤，深處有銀牙狼王鎮守。",
   "width": 5200,
   "bg": "bg_chapter1",
-  "bgGroundY": 528,
+  "bgGroundY": 420,
   "tint": 8028364,
   "waves": [
    {
@@ -411,7 +411,7 @@
   "desc": "紫霧籠罩的林間，蜜蜂與食人花埋伏其中。",
   "width": 4800,
   "bg": "bg_chapter2",
-  "bgGroundY": 546,
+  "bgGroundY": 420,
   "waves": [
    {
     "triggerX": 500,
@@ -577,7 +577,7 @@
   "desc": "潮濕的窪地長滿毒蘑菇，霧氣越來越濃。",
   "width": 5200,
   "bg": "bg_chapter2",
-  "bgGroundY": 546,
+  "bgGroundY": 420,
   "tint": 12576472,
   "waves": [
    {
@@ -759,7 +759,7 @@
   "desc": "森林深處的巨木正在發出紫光，樹精母體在此等待。",
   "width": 5600,
   "bg": "bg_chapter2",
-  "bgGroundY": 546,
+  "bgGroundY": 420,
   "tint": 11058376,
   "waves": [
    {

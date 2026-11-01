@@ -1,5 +1,6 @@
 using BoLike.Core;
 using BoLike.Data;
+using BoLike.Sim;
 using BoLike.Systems;
 using BoLike.UI;
 using UnityEngine;
@@ -23,6 +24,7 @@ namespace BoLike.Game
             DontDestroyOnLoad(gameObject);
             Application.targetFrameRate = 60;
             Screen.sleepTimeout = SleepTimeout.NeverSleep;
+            CrashLog.Start(BuildInfo.Number);
             SaveSystem.Load();
             GameDb.Load();
             UiKit.EnsureEventSystem(); // UI buttons need one on every platform, not only touch devices
@@ -66,30 +68,117 @@ namespace BoLike.Game
                 img.gameObject.AddComponent<UnityEngine.UI.AspectRatioFitter>().aspectMode = UnityEngine.UI.AspectRatioFitter.AspectMode.EnvelopeParent;
                 img.GetComponent<UnityEngine.UI.AspectRatioFitter>().aspectRatio = (float)art.width / art.height;
             }
-            var layer = UiKit.Layer(canvas, "Layer");
+            var layer = titleLayer = UiKit.Layer(canvas, "Layer");
+            var lockSprite0 = Resources.Load<Sprite>("Icons/skill_locked");
             UiKit.Text(layer, 0, 90, "口袋冒險團", 64, 0xfff4de, UiKit.TopCenter, UiKit.TopCenter, TextAnchor.UpperCenter, true, 4);
             UiKit.Text(layer, 0, 170, "Pocket Adventurers · 封測版", 20, 0xcfd4e6, UiKit.TopCenter, UiKit.TopCenter, TextAnchor.UpperCenter);
             var star = Resources.Load<Sprite>("UI/stardust");
-            if (star != null) UiKit.Sprite(layer, star, -52, 210, 32, 32, UiKit.TopCenter, UiKit.TopCenter);
-            UiKit.Text(layer, 14, 215, star != null ? $"星塵 {save.stardust}" : $"✦ 星塵 {save.stardust}", 22, 0xcfe8ff, UiKit.TopCenter, UiKit.TopCenter, TextAnchor.UpperCenter);
+            if (star != null) UiKit.Sprite(layer, star, -52, 196, 28, 28, UiKit.TopCenter, UiKit.TopCenter);
+            UiKit.Text(layer, 14, 199, star != null ? $"星塵 {save.stardust}" : $"✦ 星塵 {save.stardust}", 20, 0xcfe8ff, UiKit.TopCenter, UiKit.TopCenter, TextAnchor.UpperCenter);
 
+            // Chapter row (S1): every chapter in order. Locked ones say which boss opens them, chapters without data say
+            // "coming soon"; tapping an open one selects it and the class buttons below start a run there.
+            var chapter = Progress.DefaultChapter(save);
+            var chapters = GameDb.Chapters;
+            float cx = -(chapters.Count * 300 - 16) / 2f;
+            foreach (var ch in chapters)
+            {
+                var c = ch;
+                bool ready = Progress.ChapterReady(c);
+                bool open = ready && Progress.ChapterUnlocked(save, c);
+                bool selected = open && c.id == chapter.id;
+                var cb = UiKit.Button(layer, cx, 232, 284, 64, "", selected ? 0xf28c28 : open ? 0x1b1830 : 0x14121f, () =>
+                {
+                    if (!open) { Flash(layer, ready ? GameDb.Str("chapter.locked").Replace("{boss}", UnlockBossName(c)) : GameDb.Str("chapter.soon")); return; }
+                    save.lastChapterId = c.id;
+                    SaveSystem.Save();
+                    AudioManager.Instance.Play("select");
+                    Destroy(title);
+                    ShowTitle();
+                }, 20, UiKit.TopCenter);
+                string sub = !ready ? GameDb.Str("chapter.soon")
+                    : !open ? GameDb.Str("chapter.locked").Replace("{boss}", UnlockBossName(c))
+                    : Progress.ChapterCleared(save, c) ? $"{GameDb.Str("chapter.cleared")} ✓  {c.desc}" : c.desc;
+                UiKit.Text(cb.transform, 0, 6, $"{GameDb.Str("chapter.start").Replace("{n}", c.order.ToString())}  {c.name}", 20, open ? 0xfff4de : 0x9aa0b4, UiKit.TopCenter, UiKit.TopCenter, TextAnchor.UpperCenter, true, 1);
+                var subText = UiKit.Text(cb.transform, 0, 34, sub, 12, open ? 0xe6e9f5 : 0xffd36b, UiKit.TopCenter, UiKit.TopCenter, TextAnchor.UpperCenter, false, 1);
+                subText.rectTransform.sizeDelta = new Vector2(270, 24);
+                if (!open && lockSprite0 != null) UiKit.Sprite(cb.transform, lockSprite0, -118, 16, 32, 32, UiKit.TopCenter, UiKit.TopCenter);
+                cx += 300;
+            }
+            string stageId = Progress.NextStage(save, chapter).id;
+
+            // Class row: starting classes plus every class that has a stardust unlock. Locked ones show a lock and the
+            // price (growth curve v2 §5); tapping one buys it when the stardust is there, like the shop button below.
             var unlocked = new System.Collections.Generic.List<string>(GameDb.StartingClasses);
+            var shown = new System.Collections.Generic.List<(string id, UnlockDef unlock)>();
+            foreach (var id in unlocked) shown.Add((id, null));
             foreach (var u in GameDb.Unlocks)
-                if (u.kind == UnlockKind.Class && save.unlocks.Contains(u.id) && !unlocked.Contains(u.ValueId)) unlocked.Add(u.ValueId);
-            float x = -(unlocked.Count * 220 - 20) / 2f;
-            foreach (var id in unlocked)
+            {
+                if (u.kind != UnlockKind.Class || unlocked.Contains(u.ValueId)) continue;
+                if (save.unlocks.Contains(u.id)) { unlocked.Add(u.ValueId); shown.Add((u.ValueId, null)); }
+                else shown.Add((u.ValueId, u));
+            }
+            var lockSprite = lockSprite0;
+            float x = -(shown.Count * 220 - 20) / 2f;
+            foreach (var (id, lockedBy) in shown)
             {
                 var cls = GameDb.Class(id);
-                var btn = UiKit.Button(layer, x, 290, 200, 220, "", 0x1b1830, () => StartRun(id), 22, UiKit.TopCenter);
+                bool locked = lockedBy != null;
+                var btn = UiKit.Button(layer, x, 312, 200, 200, "", locked ? 0x14121f : 0x1b1830, () =>
+                {
+                    if (!locked) { StartRun(id, stageId); return; }
+                    if (save.stardust < lockedBy.cost) { Flash(layer, GameDb.Str("unlock.notEnough")); return; }
+                    Buy(save, lockedBy);
+                }, 22, UiKit.TopCenter);
                 var portrait = SpriteBank.Get($"{id}_front");
-                if (portrait != null) UiKit.Sprite(btn.transform, portrait, 0, 14, 150, 140, UiKit.TopCenter, UiKit.TopCenter);
-                UiKit.Text(btn.transform, 0, 165, cls.name, 24, 0xfff4de, UiKit.TopCenter, UiKit.TopCenter, TextAnchor.UpperCenter, true);
-                UiKit.Text(btn.transform, 0, 195, cls.role, 12, 0xcfd4e6, UiKit.TopCenter, UiKit.TopCenter, TextAnchor.UpperCenter);
+                if (portrait != null)
+                {
+                    var img = UiKit.Sprite(btn.transform, portrait, 0, 8, 130, 122, UiKit.TopCenter, UiKit.TopCenter);
+                    if (locked) img.color = new Color(0.35f, 0.35f, 0.4f, 1f);
+                }
+                if (locked && lockSprite != null) UiKit.Sprite(btn.transform, lockSprite, 0, 40, 72, 72, UiKit.TopCenter, UiKit.TopCenter);
+                UiKit.Text(btn.transform, 0, 142, cls.name, 24, locked ? 0x9aa0b4 : 0xfff4de, UiKit.TopCenter, UiKit.TopCenter, TextAnchor.UpperCenter, true);
+                UiKit.Text(btn.transform, 0, 174, locked ? $"✦ {lockedBy.cost} 解鎖" : cls.role, 12, locked ? 0xffd36b : 0xcfd4e6, UiKit.TopCenter, UiKit.TopCenter, TextAnchor.UpperCenter);
                 x += 220;
             }
+            // Resume (S5): a run saved at a room start continues from that room; discarding it just drops the snapshot
+            // (the stardust it earned is already banked).
+            var snap = save.runSnapshot;
+            bool canResume = snap != null && GameDb.HasRunStage(snap.stageId) && snap.classId != null && unlocked.Contains(snap.classId);
+            if (canResume)
+            {
+                UiKit.Button(layer, -70, 296, 300, 34, GameDb.Str("chapter.resume").Replace("{n}", (snap.roomIndex + 1).ToString()), 0xf28c28, () =>
+                {
+                    AudioManager.Instance.Play("select");
+                    Destroy(title);
+                    GameController.Resume(snap);
+                }, 16, UiKit.TopCenter);
+                UiKit.Button(layer, 160, 296, 140, 34, GameDb.Str("chapter.resumeDiscard"), 0x7a2a2a, () =>
+                {
+                    save.runSnapshot = null;
+                    SaveSystem.Save();
+                    Destroy(title);
+                    ShowTitle();
+                }, 14, UiKit.TopCenter);
+            }
+            else if (snap != null) { save.runSnapshot = null; SaveSystem.Save(); } // stale snapshot (data removed): drop it quietly
+            string nextLine = GameController.NextUnlockLine(save);
+            if (nextLine != null && !canResume) UiKit.Text(layer, 0, 300, nextLine, 14, 0xffd36b, UiKit.TopCenter, UiKit.TopCenter, TextAnchor.UpperCenter);
             ShowUnlockShop(layer, save);
             if (Debug.isDebugBuild || Application.isEditor)
                 UiKit.Button(layer, 0, -12, 150, 32, "種子開局", 0x3a3a4a, () => ShowSeedPanel(layer, unlocked), 14, UiKit.BottomCenter, new Vector2(0.5f, 0));
+            if (Feedback.Available)
+                UiKit.Button(layer, -170, -12, 150, 32, "封測問卷", 0x2f6fb5, () => Feedback.Open(BuildInfo.Number, "title", save.lastSeedCode ?? "-", 0), 14, UiKit.BottomCenter, new Vector2(0.5f, 0));
+            if (GameDb.Cards.Count > 0)
+            {
+                var (ownedCards, totalCards) = Cards.Collection(save);
+                UiKit.Button(layer, 170, -12, 150, 32, $"{GameDb.Str("card.title")} {ownedCards}/{totalCards}", ownedCards > 0 ? 0x8a4fd1 : 0x3a3a4a, () => ShowCardBook(layer, save), 14, UiKit.BottomCenter, new Vector2(0.5f, 0));
+            }
+            if (GameDb.Talents.Count > 0)
+            {
+                int ownedTalents = save.talents.Count;
+                UiKit.Button(layer, 340, -12, 150, 32, $"{GameDb.Str("talent.title")} {ownedTalents}/{GameDb.Talents.Count}", ownedTalents > 0 ? 0x2f8f5f : 0x3a3a4a, () => ShowTalents(layer, save, unlocked, unlocked[0]), 14, UiKit.BottomCenter, new Vector2(0.5f, 0));
+            }
             UiKit.Text(layer, -16, -12, $"v{Application.version} ({BuildInfo.Number}) {BuildInfo.Commit}", 12, 0x9aa0b4, UiKit.BottomRight, UiKit.BottomRight, TextAnchor.LowerRight, false, 1);
 #if BOLIKE_QA || DEVELOPMENT_BUILD || UNITY_EDITOR
             // Hidden QA entry for beta builds only (BuildIos sets BOLIKE_QA; the App Store menu item does not, since
@@ -120,18 +209,48 @@ namespace BoLike.Game
                 float bx = -(GameDb.Unlocks.Count * 180 - 20) / 2f + i * 180;
                 var btn = UiKit.Button(layer, bx, y, 160, 70, "", owned ? 0x2f6fb5 : afford ? 0xf28c28 : 0x3a3a4a, () =>
                 {
-                    if (owned || save.stardust < unlock.cost) return;
-                    save.stardust -= unlock.cost;
-                    save.unlocks.Add(unlock.id);
-                    SaveSystem.Save();
-                    Destroy(title);
-                    ShowTitle();
+                    if (owned) return;
+                    if (save.stardust < unlock.cost) { Flash(layer, GameDb.Str("unlock.notEnough")); return; }
+                    Buy(save, unlock);
                 }, 16, UiKit.TopCenter);
                 UiKit.Text(btn.transform, 0, 8, u.name, 16, 0xffffff, UiKit.TopCenter, UiKit.TopCenter, TextAnchor.UpperCenter, true, 1);
                 UiKit.Text(btn.transform, 0, 30, owned ? "已解鎖" : $"✦ {u.cost}", 13, 0xffffff, UiKit.TopCenter, UiKit.TopCenter, TextAnchor.UpperCenter, false, 1);
                 UiKit.Text(btn.transform, 0, 48, u.desc, 10, 0xe0e0e0, UiKit.TopCenter, UiKit.TopCenter, TextAnchor.UpperCenter, false, 1);
                 i++;
             }
+        }
+
+        /// <summary>Spends stardust on an unlock and rebuilds the title with a short purchase flash.</summary>
+        void Buy(SaveData save, UnlockDef unlock)
+        {
+            save.stardust -= unlock.cost;
+            save.unlocks.Add(unlock.id);
+            SaveSystem.Save();
+            AudioManager.Instance.Play("buff");
+            Destroy(title);
+            ShowTitle();
+            Flash(titleLayer, $"已解鎖：{unlock.name}");
+        }
+
+        RectTransform titleLayer;
+
+        Text flashText;
+        float flashUntil;
+
+        /// <summary>One-line notice on the title screen (not enough stardust, purchase done) that fades after a moment.</summary>
+        void Flash(RectTransform layer, string msg)
+        {
+            if (flashText == null || flashText.transform.parent != layer)
+                flashText = UiKit.Text(layer, 0, 622, "", 18, 0xfff2b3, UiKit.TopCenter, UiKit.TopCenter, TextAnchor.UpperCenter, true, 2);
+            flashText.text = msg;
+            UiKit.SetAlpha(flashText, 1);
+            flashUntil = Time.unscaledTime + 2.2f;
+        }
+
+        void Update()
+        {
+            if (flashText != null && flashUntil > 0 && Time.unscaledTime > flashUntil - 0.5f)
+                UiKit.SetAlpha(flashText, Mathf.Clamp01((flashUntil - Time.unscaledTime) / 0.5f));
         }
 
         /// <summary>Debug/QA: start a run from a seed code so a reported run can be replayed (editor and development builds).</summary>
@@ -160,7 +279,7 @@ namespace BoLike.Game
                 {
                     var code = field.text.Trim();
                     Destroy(title);
-                    GameController.Launch(cid, code.Length == 0 ? 0 : Rng.CodeToSeed(code));
+                    GameController.Launch(cid, Progress.NextStage(SaveSystem.Current, Progress.DefaultChapter(SaveSystem.Current)).id, code.Length == 0 ? 0 : Rng.CodeToSeed(code));
                 }, 20, UiKit.TopCenter);
                 x += 170;
             }
@@ -168,10 +287,173 @@ namespace BoLike.Game
             field.ActivateInputField();
         }
 
-        void StartRun(string classId)
+        /// <summary>
+        /// Card book (S2, design doc 07 §3): every epic card in boss order; owned ones show stars and can be equipped into
+        /// the account's slots (2, 3 with the cardSlot unlock), unowned ones say which boss drops them. Set bonuses light
+        /// up when two cards of one boss are worn.
+        /// </summary>
+        void ShowCardBook(RectTransform layer, SaveData save)
+        {
+            var dim = UiKit.Dim(layer, 0.88f);
+            var panel = dim.transform;
+            int slots = Cards.Slots(save);
+            UiKit.Text(panel, 0, 26, GameDb.Str("card.title"), 34, 0xfff4de, UiKit.TopCenter, UiKit.TopCenter, TextAnchor.UpperCenter, true);
+            UiKit.Text(panel, 0, 70, GameDb.Str("card.slots").Replace("{n}", save.equippedCards.Count.ToString()).Replace("{max}", slots.ToString()), 18, 0xcfe8ff, UiKit.TopCenter, UiKit.TopCenter, TextAnchor.UpperCenter);
+            var frameSprite = Resources.Load<Sprite>("UI/card_epic");
+            var lockSprite = Resources.Load<Sprite>("Icons/skill_locked");
+            var cards = GameDb.Cards;
+            int cols = 6;
+            float cw = 158, ch = cw * 520 / 360, gap = 14, k = cw / 360f;
+            int rows = (cards.Count + cols - 1) / cols;
+            float x0 = -(cols * cw + (cols - 1) * gap) / 2f;
+            for (int i = 0; i < cards.Count; i++)
+            {
+                var card = cards[i];
+                var prog = save.Card(card.id);
+                bool owned = prog != null;
+                bool equipped = Cards.Equipped(save, card.id);
+                float cx = x0 + (i % cols) * (cw + gap), cy = 100 + (i / cols) * (ch + gap + 6);
+                Image frame = frameSprite != null
+                    ? UiKit.Sprite(panel, frameSprite, cx, cy, cw, ch, UiKit.TopCenter, UiKit.TopLeft)
+                    : UiKit.Rect(panel, cx, cy, cw, ch, 0x8a4fd1, 0.95f, UiKit.TopCenter, UiKit.TopLeft);
+                if (frameSprite != null) { frame.type = Image.Type.Sliced; frame.preserveAspect = false; }
+                if (!owned) frame.color = new Color(0.45f, 0.45f, 0.5f, 1f);
+                var portrait = SpriteBank.Get(string.IsNullOrEmpty(card.icon) ? GameDb.Enemy(card.boss).SpriteId + "_side" : card.icon);
+                if (portrait != null)
+                {
+                    var img = UiKit.Sprite(frame.transform, portrait, 0, 36 * k, 190 * k, 190 * k, UiKit.TopCenter, UiKit.TopCenter);
+                    img.preserveAspect = true;
+                    if (!owned) img.color = new Color(0.3f, 0.3f, 0.35f, 1f);
+                }
+                if (!owned && lockSprite != null) UiKit.Sprite(frame.transform, lockSprite, 0, 90 * k, 110 * k, 110 * k, UiKit.TopCenter, UiKit.TopCenter);
+                UiKit.Text(frame.transform, 0, 250 * k, card.name, (int)(40 * k), owned ? 0x2b2140 : 0x6a6a7a, UiKit.TopCenter, UiKit.TopCenter, TextAnchor.UpperCenter, true, 0);
+                string stars = owned ? new string('★', prog.stars) + new string('☆', System.Math.Max(0, GameDb.Rules.cards.maxStars - prog.stars)) : "";
+                if (owned) UiKit.Text(frame.transform, 0, 300 * k, stars, (int)(34 * k), 0xf2a81d, UiKit.TopCenter, UiKit.TopCenter, TextAnchor.UpperCenter, false, 0);
+                if (owned && prog.stars < GameDb.Rules.cards.maxStars && card.starScale > 0)
+                    UiKit.Text(frame.transform, 0, 340 * k, GameDb.Str("card.shards").Replace("{n}", prog.shards.ToString()).Replace("{need}", GameDb.Rules.cards.shardsPerStar.ToString()), (int)(26 * k), 0x5a5a6a, UiKit.TopCenter, UiKit.TopCenter, TextAnchor.UpperCenter, false, 0);
+                bool implemented = card.effects.TrueForAll(ef => RunMods.Handles(ef.kind));
+                string descStr = !owned ? GameDb.Str("card.source").Replace("{boss}", GameDb.Enemy(card.boss).name) : implemented ? card.desc : card.desc + "（" + GameDb.Str("card.soon") + "）";
+                var descText = UiKit.Text(frame.transform, 0, 375 * k, descStr, (int)(22 * k), owned ? 0x3a3a4a : 0x6a6a7a, UiKit.TopCenter, UiKit.TopCenter, TextAnchor.UpperCenter, false, 0);
+                descText.rectTransform.sizeDelta = new Vector2(cw - 30, 60);
+                string label = !owned ? GameDb.Str("card.locked") : equipped ? GameDb.Str("card.unequip") : GameDb.Str("card.equip");
+                int color = !owned ? 0x3a3a4a : equipped ? 0x7a2a2a : 0xf28c28;
+                var cid = card.id;
+                UiKit.Button(frame.transform, 0, -14, cw - 36, 30, label, color, () =>
+                {
+                    if (!owned) return;
+                    if (Cards.Equipped(save, cid)) Cards.Unequip(save, cid);
+                    else if (!Cards.Equip(save, cid)) { Flash((RectTransform)dim.transform, GameDb.Str("card.slotsFull")); return; }
+                    SaveSystem.Save();
+                    AudioManager.Instance.Play("select");
+                    Destroy(dim.gameObject);
+                    ShowCardBook(layer, save);
+                }, 13, UiKit.BottomCenter, UiKit.BottomCenter);
+                if (equipped) UiKit.Rect(frame.transform, 0, 0, cw, 6, 0xf28c28, 1f, UiKit.TopCenter, UiKit.TopCenter);
+            }
+            float footY = 100 + rows * (ch + gap + 6) + 4;
+            var sets = Cards.ActiveSets(save);
+            string setLine = sets.Count > 0
+                ? string.Join("   ", sets.ConvertAll(st => GameDb.Str("card.set").Replace("{name}", st.name) + "：" + st.desc))
+                : GameDb.Str("card.setHint");
+            UiKit.Text(panel, 0, footY, setLine, 15, sets.Count > 0 ? 0xffd36b : 0x9aa0b4, UiKit.TopCenter, UiKit.TopCenter, TextAnchor.UpperCenter, sets.Count > 0, 1);
+            UiKit.Button(panel, 0, -14, 180, 40, "關閉", 0x2f6fb5, () => Destroy(dim.gameObject), 18, UiKit.BottomCenter, UiKit.BottomCenter);
+        }
+
+        /// <summary>
+        /// Talent page (S3, design doc 08 §2.3): one tab per unlocked class, ten nodes bought in order with stardust,
+        /// keystones (★) marked, and a free reset that refunds everything spent on the class.
+        /// </summary>
+        void ShowTalents(RectTransform layer, SaveData save, System.Collections.Generic.List<string> classes, string classId)
+        {
+            var dim = UiKit.Dim(layer, 0.9f);
+            var panel = dim.transform;
+            var nodes = GameDb.TalentsFor(classId);
+            var cls = GameDb.Class(classId);
+            UiKit.Text(panel, 0, 22, GameDb.Str("talent.title"), 34, 0xfff4de, UiKit.TopCenter, UiKit.TopCenter, TextAnchor.UpperCenter, true);
+            UiKit.Text(panel, -16, 28, $"✦ {save.stardust}", 20, 0xffd36b, UiKit.TopRight, UiKit.TopRight, TextAnchor.UpperRight, true);
+            // Class tabs.
+            float tabW = 150, tabX = -(classes.Count * (tabW + 10) - 10) / 2f;
+            for (int i = 0; i < classes.Count; i++)
+            {
+                var cid = classes[i];
+                var c = GameDb.Class(cid);
+                bool hasLine = GameDb.TalentsFor(cid).Count > 0;
+                UiKit.Button(panel, tabX + i * (tabW + 10), 68, tabW, 36, c.name + (hasLine ? "" : "（籌備中）"), cid == classId ? 0xf28c28 : hasLine ? 0x2f6fb5 : 0x3a3a4a, () =>
+                {
+                    if (cid == classId) return;
+                    AudioManager.Instance.Play("select");
+                    Destroy(dim.gameObject);
+                    ShowTalents(layer, save, classes, cid);
+                }, 16, UiKit.TopCenter, UiKit.TopLeft);
+            }
+            int ownedCount = Talents.OwnedFor(save, classId).Count;
+            UiKit.Text(panel, 0, 112, GameDb.Str("talent.progress").Replace("{n}", ownedCount.ToString()) + (ownedCount >= nodes.Count && nodes.Count > 0 ? "  " + GameDb.Str("talent.owned") : ""), 16, 0xcfe8ff, UiKit.TopCenter, UiKit.TopCenter, TextAnchor.UpperCenter);
+            // Nodes: two rows of five, connected left to right.
+            int cols = 5;
+            float nw = 220, nh = 150, gap = 16;
+            float x0 = -(cols * nw + (cols - 1) * gap) / 2f;
+            var next = Talents.Next(save, classId);
+            for (int i = 0; i < nodes.Count; i++)
+            {
+                var t = nodes[i];
+                bool owned = Talents.Owned(save, t);
+                bool isNext = next != null && next.id == t.id;
+                bool afford = save.stardust >= t.cost;
+                float nx = x0 + (i % cols) * (nw + gap), ny = 140 + (i / cols) * (nh + gap + 10);
+                int color = owned ? 0x2f8f5f : isNext ? (afford ? 0xf28c28 : 0x6a4a2a) : 0x2a2a3a;
+                var box = UiKit.Rect(panel, nx, ny, nw, nh, color, 0.95f, UiKit.TopCenter, UiKit.TopLeft);
+                if (t.keystone) UiKit.Rect(box.transform, 0, 0, nw, 5, 0xffd36b, 1f, UiKit.TopCenter, UiKit.TopCenter);
+                if (i % cols != cols - 1 && i + 1 < nodes.Count) UiKit.Rect(panel, nx + nw, ny + nh / 2 - 2, gap, 4, owned ? 0x2f8f5f : 0x3a3a4a, 1f, UiKit.TopCenter, UiKit.TopLeft);
+                UiKit.Text(box.transform, 0, 10, $"{t.tier}. {t.name}" + (t.keystone ? " ★" : ""), 18, owned || isNext ? 0xffffff : 0x8a8a9a, UiKit.TopCenter, UiKit.TopCenter, TextAnchor.UpperCenter, true, 1);
+                var desc = UiKit.Text(box.transform, 0, 38, t.desc, 13, owned || isNext ? 0xf0f0f0 : 0x8a8a9a, UiKit.TopCenter, UiKit.TopCenter, TextAnchor.UpperCenter, false, 0);
+                desc.rectTransform.sizeDelta = new Vector2(nw - 20, 64);
+                if (t.keystone) UiKit.Text(box.transform, 0, 100, GameDb.Str("talent.keystone"), 11, 0xffd36b, UiKit.TopCenter, UiKit.TopCenter, TextAnchor.UpperCenter, false, 0);
+                string label = owned ? GameDb.Str("talent.owned") : isNext ? GameDb.Str("talent.buy").Replace("{cost}", t.cost.ToString()) : GameDb.Str("talent.needPrev");
+                var node = t;
+                UiKit.Button(box.transform, 0, -8, nw - 24, 28, label, owned ? 0x1f5f3f : isNext && afford ? 0xd9731a : 0x3a3a4a, () =>
+                {
+                    string why = Talents.Blocker(save, node);
+                    if (why != null) { Flash((RectTransform)dim.transform, GameDb.Str(why)); return; }
+                    Talents.Buy(save, node);
+                    SaveSystem.Save();
+                    AudioManager.Instance.Play("talentBuy");
+                    Destroy(dim.gameObject);
+                    ShowTalents(layer, save, classes, classId);
+                }, 13, UiKit.BottomCenter, UiKit.BottomCenter);
+            }
+            int spent = Talents.Spent(save, classId);
+            if (spent > 0)
+            {
+                UiKit.Button(panel, -110, -14, 200, 40, GameDb.Str("talent.reset"), 0x7a2a2a, () =>
+                {
+                    var confirm = UiKit.Dim((RectTransform)dim.transform, 0.85f);
+                    UiKit.Text(confirm.transform, 0, 280, GameDb.Str("talent.resetConfirm").Replace("{n}", spent.ToString()), 20, 0xfff4de, UiKit.TopCenter, UiKit.TopCenter, TextAnchor.UpperCenter, true);
+                    UiKit.Button(confirm.transform, -110, 340, 200, 44, "確定重置", 0xd9731a, () =>
+                    {
+                        Talents.Reset(save, classId);
+                        SaveSystem.Save();
+                        AudioManager.Instance.Play("talentReset");
+                        Destroy(dim.gameObject);
+                        ShowTalents(layer, save, classes, classId);
+                    }, 18, UiKit.TopCenter);
+                    UiKit.Button(confirm.transform, 110, 340, 200, 44, "取消", 0x3a3a4a, () => Destroy(confirm.gameObject), 18, UiKit.TopCenter);
+                }, 18, UiKit.BottomCenter, UiKit.BottomCenter);
+            }
+            UiKit.Button(panel, spent > 0 ? 110 : 0, -14, 180, 40, "關閉", 0x2f6fb5, () => Destroy(dim.gameObject), 18, UiKit.BottomCenter, UiKit.BottomCenter);
+        }
+
+        void StartRun(string classId, string stageId)
         {
             Destroy(title);
-            GameController.Launch(classId);
+            GameController.Launch(classId, stageId);
+        }
+
+        /// <summary>Name of the boss whose first kill opens a chapter, for the locked label.</summary>
+        static string UnlockBossName(ChapterDef c)
+        {
+            string id = c.unlock?.bossKill;
+            if (string.IsNullOrEmpty(id)) return "";
+            try { return GameDb.Enemy(id).name; } catch (System.Collections.Generic.KeyNotFoundException) { return id; }
         }
     }
 

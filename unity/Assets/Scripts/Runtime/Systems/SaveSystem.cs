@@ -34,10 +34,11 @@ namespace BoLike.Systems
     /// <summary>
     /// Version 1 is the Phaser save (same fields, so its export code imports here).
     /// Version 2 adds the Roguelite meta progress.
+    /// Version 3 (beta 2) adds chapter progress; cards, talents, story and the run snapshot follow in S2–S5.
     /// </summary>
     public class SaveData
     {
-        public const int CurrentVersion = 2;
+        public const int CurrentVersion = 3;
 
         public int version = CurrentVersion;
         public Dictionary<string, ClassProgress> classes = new();
@@ -53,12 +54,68 @@ namespace BoLike.Systems
         public bool bossCleared;
         /// <summary>Seed code of the most recent run (for the debug seed panel and bug reports).</summary>
         public string lastSeedCode;
+        /// <summary>Tutorial hints already shown (strings.json hint.* keys); hints only run in the first two runs anyway.</summary>
+        public List<string> hintsSeen = new();
+
+        // v3: chapter progress (S1). Chapter unlocks are derived from bossFirstKills, never stored.
+        /// <summary>Stage ids (chapters.json) cleared at least once.</summary>
+        public List<string> stagesCleared = new();
+        /// <summary>Boss enemy ids killed at least once; a chapter opens when its unlock.bossKill is here.</summary>
+        public List<string> bossFirstKills = new();
+        /// <summary>Chapter the player last picked on the title screen.</summary>
+        public string lastChapterId;
+        /// <summary>The run in progress, written at every room start and cleared when the run ends (S5 續局). Null = none.</summary>
+        public RunSnapshot runSnapshot;
+        /// <summary>Epic cards owned, account-wide (S2); any class can equip them.</summary>
+        public List<CardProgress> cards = new();
+        /// <summary>Equipped card ids, at most <see cref="Cards.Slots"/> of them.</summary>
+        public List<string> equippedCards = new();
+        /// <summary>Story beats already shown ("&lt;stageId&gt;:before" / ":after"); a beat plays once per account (S4).</summary>
+        public List<string> storySeen = new();
+        /// <summary>Talent node ids bought (S3), across classes.</summary>
+        public List<string> talents = new();
+
+        public CardProgress Card(string id) => cards.Find(c => c.id == id);
 
         public ClassProgress ProgressFor(ClassDef cls)
         {
             if (!classes.TryGetValue(cls.id, out var p) || p == null) classes[cls.id] = p = ClassProgress.New(cls);
             return p;
         }
+    }
+
+    /// <summary>One owned epic card: stars 1–3 and the shards collected toward the next star.</summary>
+    public class CardProgress
+    {
+        public string id;
+        public int stars = 1;
+        public int shards;
+    }
+
+    /// <summary>
+    /// Everything needed to continue a run from the start of its current room (design doc 08 §1.3): the seed replays
+    /// the room order, wave sets and perk offers; the rest is the player's state when the room began.
+    /// </summary>
+    public class RunSnapshot
+    {
+        public int version = 1;
+        public string classId, stageId, seedCode;
+        /// <summary>Index of the room to resume at; the player restarts it from its door.</summary>
+        public int roomIndex;
+        /// <summary>Perk ids in the order they were taken; replayed through DrawPerks/TakePerk so later offers match.</summary>
+        public List<string> perks = new();
+        public ClassProgress prog;
+        public int hp, sp;
+        public int red, blue, gold;
+        public int stardustEarned, roomsCleared;
+        public bool reviveUsed;
+        /// <summary>Simulation ms played before this room, so the run's total time survives the restart.</summary>
+        public int elapsedMs;
+        public List<RoomLogEntry> rooms = new();
+        public List<string> skillUps = new();
+        /// <summary>How many times this run has been resumed (for runs.jsonl).</summary>
+        public int resumes;
+        public string savedAt;
     }
 
     /// <summary>
@@ -82,7 +139,32 @@ namespace BoLike.Systems
         {
             var s = LoadFrom(PathOnDisk);
             if (s == null) PreserveUnreadable(PathOnDisk);
+            else BackupOlderVersion(PathOnDisk);
             return Current = s ?? new SaveData();
+        }
+
+        /// <summary>
+        /// Keeps a copy of a save written by an older format as save.v&lt;n&gt;.json before the first write migrates it,
+        /// so a tester can go back to the previous build without losing progress (QA gate D). One copy per version.
+        /// </summary>
+        public static void BackupOlderVersion(string path)
+        {
+            try
+            {
+                if (!File.Exists(path)) return;
+                int v = VersionOf(File.ReadAllText(path, Encoding.UTF8));
+                if (v <= 0 || v >= SaveData.CurrentVersion) return;
+                string keep = Path.Combine(Path.GetDirectoryName(path), $"save.v{v}.json");
+                if (!File.Exists(keep)) File.Copy(path, keep);
+            }
+            catch (Exception e) { Debug.LogWarning($"Could not back up older save {path}: {e.Message}"); }
+        }
+
+        /// <summary>The version field of a raw save file, or 0 when it has none.</summary>
+        public static int VersionOf(string json)
+        {
+            try { return JsonConvert.DeserializeAnonymousType(json, new { version = 0 })?.version ?? 0; }
+            catch (JsonException) { return 0; }
         }
 
         public static void PreserveUnreadable(string path)
@@ -134,6 +216,21 @@ namespace BoLike.Systems
             s.potions ??= new();
             s.cleared ??= new();
             s.unlocks ??= new();
+            s.hintsSeen ??= new();
+            s.stagesCleared ??= new();
+            s.bossFirstKills ??= new();
+            s.cards ??= new();
+            s.storySeen ??= new();
+            s.talents ??= new();
+            s.equippedCards ??= new();
+            s.cards.RemoveAll(c => c == null || string.IsNullOrEmpty(c.id));
+            // v2 -> v3: the single bossCleared flag becomes the first boss's first kill and the first stage's clear.
+            if (s.version < 3 && s.bossCleared)
+            {
+                var first = GameDb.DefaultStage;
+                if (!string.IsNullOrEmpty(first.finale?.enemy) && !s.bossFirstKills.Contains(first.finale.enemy)) s.bossFirstKills.Add(first.finale.enemy);
+                if (!s.stagesCleared.Contains(first.id)) s.stagesCleared.Add(first.id);
+            }
             // A null entry (hand-edited or truncated file) is dropped so ProgressFor rebuilds it instead of returning null.
             foreach (var k in s.classes.Where(kv => kv.Value == null).Select(kv => kv.Key).ToList()) s.classes.Remove(k);
             foreach (var kv in s.classes)
@@ -141,7 +238,7 @@ namespace BoLike.Systems
                 kv.Value.skillLv ??= new();
                 if (kv.Value.stats == null && GameDbHasClass(kv.Key)) kv.Value.stats = GameDb.Class(kv.Key).baseStats.Clone();
             }
-            s.version = SaveData.CurrentVersion; // v1 -> v2: new fields keep their defaults
+            s.version = SaveData.CurrentVersion; // older versions: new fields keep their defaults
             return s;
         }
 
