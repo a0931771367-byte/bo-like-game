@@ -19,6 +19,8 @@ namespace BoLike.Game
             public float minGapMs = 30f;
             public float lastPlayed = -1000f;
             public AudioClip[] clips;
+            /// <summary>Cue to play instead when none of this cue's files exist in Resources (e.g. audio not yet delivered).</summary>
+            public string fallback;
         }
 
         const string PrefMuted = "audio.muted";
@@ -70,6 +72,14 @@ namespace BoLike.Game
             ["dodge"] = new Cue { files = new[] { "sfx_dodge" } },
             ["guard"] = new Cue { files = new[] { "sfx_guard" }, volume = 0.8f },
             ["hurt"] = new Cue { files = new[] { "sfx_hurt" }, minGapMs = 120f },
+            // 11/1 罐子：每職業受傷音不同（音效部 sfx-final-v1 第七節）。Player 以 "hurt_<classId>" 呼叫，
+            // 檔案尚未進專案時自動退回通用 sfx_hurt（見 Play 的 fallback）。sfx_hurt 保留給陷阱等非敵人傷害。
+            ["hurt_swordsman"] = new Cue { files = new[] { "sfx_hurt_swordsman" }, pitchVar = 0.04f, minGapMs = 120f, fallback = "hurt" },
+            ["hurt_mage"] = new Cue { files = new[] { "sfx_hurt_mage" }, pitchVar = 0.04f, minGapMs = 120f, fallback = "hurt" },
+            ["hurt_merchant"] = new Cue { files = new[] { "sfx_hurt_artificer" }, pitchVar = 0.04f, minGapMs = 120f, fallback = "hurt" },
+            ["hurt_acolyte"] = new Cue { files = new[] { "sfx_hurt_priest" }, pitchVar = 0.04f, minGapMs = 120f, fallback = "hurt" },
+            ["hurt_thief"] = new Cue { files = new[] { "sfx_hurt_assassin" }, pitchVar = 0.04f, minGapMs = 120f, fallback = "hurt" },
+            ["hurt_archer"] = new Cue { files = new[] { "sfx_hurt_ranger" }, pitchVar = 0.04f, minGapMs = 120f, fallback = "hurt" },
             ["jump"] = new Cue { files = new[] { "sfx_jump" }, volume = 0.6f },
             ["land"] = new Cue { files = new[] { "sfx_step_dirt_01", "sfx_step_dirt_02", "sfx_step_dirt_03", "sfx_step_dirt_04" }, volume = 0.7f, pitchVar = 0.1f },
             ["step"] = new Cue { files = new[] { "sfx_step_grass_01", "sfx_step_grass_02", "sfx_step_grass_03", "sfx_step_grass_04" }, volume = 0.45f, pitchVar = 0.12f, minGapMs = 150f },
@@ -137,9 +147,13 @@ namespace BoLike.Game
             float now = Time.unscaledTime * 1000f;
             if (now - cue.lastPlayed < cue.minGapMs) return;
             cue.lastPlayed = now;
-            cue.clips ??= LoadAll("Audio/sfx/", cue.files);
+            cue.clips ??= LoadAll("Audio/sfx/", cue.files, quiet: cue.fallback != null);
             var clip = cue.clips[Random.Range(0, cue.clips.Length)];
-            if (clip == null) return;
+            if (clip == null)
+            {
+                if (cue.fallback != null && cue.fallback != name) { cue.lastPlayed = -1000f; Play(cue.fallback, volume); }
+                return;
+            }
             var src = FreeSource();
             src.pitch = 1f + Random.Range(-cue.pitchVar, cue.pitchVar);
             src.PlayOneShot(clip, cue.volume * volume * sfxVolume);
@@ -153,13 +167,13 @@ namespace BoLike.Game
             return extra;
         }
 
-        static AudioClip[] LoadAll(string dir, string[] files)
+        static AudioClip[] LoadAll(string dir, string[] files, bool quiet = false)
         {
             var clips = new AudioClip[files.Length];
             for (int i = 0; i < files.Length; i++)
             {
                 clips[i] = Resources.Load<AudioClip>(dir + files[i]);
-                if (clips[i] == null) Debug.LogWarning($"[Audio] missing clip Resources/{dir}{files[i]}");
+                if (clips[i] == null && !quiet) Debug.LogWarning($"[Audio] missing clip Resources/{dir}{files[i]}");
             }
             return clips;
         }

@@ -804,7 +804,7 @@ namespace BoLike.Sim
             fx.Spark(x, y - 55 - z, 0xff7070);
             Flash(0xff4444, 90);
             fx.Shake(90, 0.005f);
-            Sfx.Play("hurt");
+            Sfx.Play(h.source != null ? "hurt_" + cls.id : "hurt"); // 敵人造成的傷害用職業專屬受傷音；陷阱等用通用音
             if (casting != null) { casting = null; if (state == FighterState.Cast) SetState(FighterState.CastEnd); }
             if (hp <= 0)
             {
