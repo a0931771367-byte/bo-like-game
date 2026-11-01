@@ -963,6 +963,26 @@ namespace BoLike.Sim
                 hp = Math.Min(maxHp, hp + maxHp * Mods.idleRegenFraction * dt);
         }
 
+        /// <summary>Damage from a ground hazard (毒沼): no knockback, no guard, blocked by invulnerability, petrify and hiding; can kill.</summary>
+        public void TakeGroundDamage(int dmg, int color)
+        {
+            if (dead || dmg <= 0 || Now < invulnUntil || Petrified || Hidden) return;
+            hp -= dmg;
+            Fx.Number(x, y - 110 - z, $"{dmg}", Colors.Poison);
+            Flash(color, 90);
+            Sfx.Play("hurt");
+            world.RaisePlayerHurt();
+            if (hp <= 0)
+            {
+                hp = 0;
+                dead = true;
+                vz = 420;
+                z = 1;
+                vx = -facing * 120;
+                SetState(FighterState.Knock);
+            }
+        }
+
         public override bool TakeHit(HitInfo h)
         {
             if (dead) return false;

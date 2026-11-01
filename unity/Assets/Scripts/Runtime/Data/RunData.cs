@@ -287,6 +287,7 @@ namespace BoLike.Data
         public LevelUp levelUp = new();
         public CardRules cards = new();
         public TalentRules talents = new();
+        public AffixRules affixes = new();
         public EnemyDamage enemyDamage = new();
         public PotionCount startPotions;
         public float roomClearHeal;
@@ -298,10 +299,56 @@ namespace BoLike.Data
         public class PotionCount { public int red, blue; }
     }
 
+    /// <summary>One room affix's parameters (meta.ts ROOM_AFFIXES); which fields matter depends on <see cref="kind"/>:
+    /// fog (visionMult, warnMs), poisonGround (zones, dpsFraction), treasure (extraPerkPicks), elite (forceElite, stardustMult), rush (waveTimeoutMult, hpMult).</summary>
+    public class RoomAffixEffect
+    {
+        public string kind;
+        public float visionMult = 1f, warnMs, dpsFraction, waveTimeoutMult = 1f, hpMult = 1f, stardustMult = 1f;
+        public int zones, extraPerkPicks;
+        public bool forceElite;
+    }
+
+    public class RoomAffixDef
+    {
+        public string id, name, desc;
+        public RoomAffixEffect effect = new();
+    }
+
+    /// <summary>Elite enemies (meta.ts ELITE): one per room at most, gold outline, bigger, one modifier.</summary>
+    public class EliteRules
+    {
+        public List<float> chanceByChapterOrder = new();
+        public float hpMult = 2.5f, atkMult = 1.4f, sizeMult = 1.3f;
+        public int stardust = 10;
+        /// <summary>shield | haste | volatile</summary>
+        public List<string> modifiers = new();
+        public int shieldHits = 3;
+        public float hasteMult = 1.4f, volatilePower = 1f, volatileRadius = 140f;
+        public List<EnemyBehavior> excludeBehaviors = new();
+
+        public float ChanceFor(int chapterOrder)
+        {
+            if (chanceByChapterOrder == null || chanceByChapterOrder.Count == 0) return 0f;
+            return chanceByChapterOrder[System.Math.Clamp(chapterOrder - 1, 0, chanceByChapterOrder.Count - 1)];
+        }
+
+        public bool Eligible(EnemyDef def) => def != null && !def.boss && (excludeBehaviors == null || !excludeBehaviors.Contains(def.behavior));
+    }
+
+    public class AffixRules
+    {
+        public float chancePerRoom = 0.5f;
+        public int maxPerRoom = 1;
+        public bool onlyAfterStageClear = true, skipFirstRoom = true;
+    }
+
     public class MetaTable
     {
         public RunRules rules;
         public List<UnlockDef> unlocks;
+        public List<RoomAffixDef> affixes = new();
+        public EliteRules elite = new();
         /// <summary>Classes available before any unlock.</summary>
         public List<string> startingClasses;
     }

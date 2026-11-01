@@ -16,6 +16,8 @@ namespace BoLike.Game
         SpriteRenderer body, shadow, hpBg, hpBar, aura;
         /// <summary>Art's hit poses for enemies (<id>_hurt/_knock/_down/_flat); null when the monster has none yet.</summary>
         Sprite sideSprite, hurtSprite, knockSprite, downSprite, flatSprite;
+        /// <summary>Gold silhouette copies behind an elite's body (design doc 08 §2.6: 金色輪廓).</summary>
+        SpriteRenderer[] outlines;
         MaterialPropertyBlock mpb;
         float bodyScale = 1f;
         AnimSet anim;
@@ -71,7 +73,23 @@ namespace BoLike.Game
                 flatSprite = PoseOrNull(e.def.SpriteId, "flat");
                 if (e.def.tint.HasValue) baseTint = Colors.Rgb(e.def.tint.Value);
                 float hPx = body.sprite != null ? body.sprite.rect.height : e.def.spriteH;
-                bodyScale = e.def.spriteH / hPx;
+                bodyScale = e.def.spriteH / hPx * e.sizeMult;
+                if (e.elite)
+                {
+                    outlines = new SpriteRenderer[4];
+                    var offs = new[] { new Vector2(3, 0), new Vector2(-3, 0), new Vector2(0, 3), new Vector2(0, -3) };
+                    for (int i = 0; i < 4; i++)
+                    {
+                        var o = MakeSprite("Outline" + i, view, sideSprite);
+                        o.material = SpriteBank.FlashMaterial;
+                        o.transform.localPosition = new Vector3(offs[i].x * Space.Scale, offs[i].y * Space.Scale, 0);
+                        var pb = new MaterialPropertyBlock();
+                        pb.SetFloat(FlashId, 1f);
+                        pb.SetColor(FlashColorId, Colors.Rgb(0xffd36b));
+                        o.SetPropertyBlock(pb);
+                        outlines[i] = o;
+                    }
+                }
                 if (!e.def.boss)
                 {
                     hpBg = MakeSprite("HpBg", view, SpriteBank.Pixel);
@@ -134,6 +152,14 @@ namespace BoLike.Game
             var c = baseTint;
             c.a = alpha;
             body.color = c;
+            if (outlines != null)
+                foreach (var o in outlines)
+                {
+                    o.sprite = body.sprite;
+                    o.transform.localScale = body.transform.localScale;
+                    o.sortingOrder = order - 1;
+                    o.color = new Color(1, 1, 1, alpha);
+                }
             bool flashing = f.Now < f.flashUntil;
             body.GetPropertyBlock(mpb);
             mpb.SetFloat(FlashId, flashing ? 1f : 0f);

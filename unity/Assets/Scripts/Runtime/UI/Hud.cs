@@ -13,7 +13,7 @@ namespace BoLike.UI
         World world;
         Canvas canvas;
         RectTransform layer;
-        Image hpBar, spBar, expBar, bossBar, bossFrame, flashImg;
+        Image hpBar, spBar, expBar, bossBar, bossFrame, flashImg, fogImg;
         Text hpText, spText, lvText, goldText, potText, buffText, toastText, goText, comboText, bossName, stardustText;
         readonly List<(Image bg, Image cover, Image label, Text key, Image locked, Image level, Button plus)> skillCd = new();
         float toastUntil, comboUntil, comboPop, flashUntil, flashDur, flashAlpha;
@@ -82,6 +82,11 @@ namespace BoLike.UI
             goText = UiKit.Text(layer, -60, 300, "GO →", 44, Colors.Crit, UiKit.TopRight, UiKit.TopRight, TextAnchor.UpperRight, true);
             UiKit.SetAlpha(goText, 0);
 
+            fogImg = UiKit.Rect(layer, 0, 0, 10, 10, 0x1a0f2e, 0f);
+            var fogRt = fogImg.rectTransform;
+            fogRt.anchorMin = Vector2.zero; fogRt.anchorMax = Vector2.one; fogRt.offsetMin = Vector2.zero; fogRt.offsetMax = Vector2.zero;
+            fogImg.raycastTarget = false;
+            fogImg.transform.SetAsFirstSibling();
             flashImg = UiKit.Rect(layer, 0, 0, 10, 10, 0xffffff, 0f);
             var frt = flashImg.rectTransform;
             frt.anchorMin = Vector2.zero; frt.anchorMax = Vector2.one; frt.offsetMin = Vector2.zero; frt.offsetMax = Vector2.zero;
@@ -131,6 +136,9 @@ namespace BoLike.UI
             t.transform.SetAsLastSibling();
             banners.Add((t, Time.time + 1.9f, Time.time));
         }
+
+        /// <summary>濃霧 room affix: a purple haze over the field (0 = clear). Sits under the HUD widgets.</summary>
+        public void SetFog(float alpha) => UiKit.SetAlpha(fogImg, alpha);
 
         public void ScreenFlash(float alpha, float seconds)
         {

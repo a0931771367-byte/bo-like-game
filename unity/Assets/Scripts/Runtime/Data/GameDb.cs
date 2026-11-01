@@ -49,6 +49,11 @@ namespace BoLike.Data
         public static SkillUiTable SkillUi { get { Load(); return skillUi; } }
         public static IReadOnlyList<UnlockDef> Unlocks { get { Load(); return meta.unlocks; } }
         public static IReadOnlyList<string> StartingClasses { get { Load(); return meta.startingClasses; } }
+        /// <summary>Room affixes (meta.json affixes); empty on older data.</summary>
+        public static IReadOnlyList<RoomAffixDef> Affixes { get { Load(); return meta.affixes ?? new List<RoomAffixDef>(); } }
+        public static bool HasAffix(string id) { Load(); return id != null && meta.affixes != null && meta.affixes.Exists(a => a.id == id); }
+        public static RoomAffixDef Affix(string id) { Load(); return meta.affixes.Find(a => a.id == id); }
+        public static EliteRules Elite { get { Load(); return meta.elite ?? new EliteRules(); } }
         /// <summary>Chapters in play order (chapters.json); beta 2 ships three, the third without stages until its data lands.</summary>
         public static IReadOnlyList<ChapterDef> Chapters { get { Load(); return chapterTable.chapters; } }
         public static IReadOnlyList<RunStageDef> RunStages { get { Load(); return chapterTable.stages; } }

@@ -21,6 +21,9 @@ namespace BoLike.Systems
         /// <summary>The perk cards offered after this room, in the order shown; the one taken is <see cref="perk"/>.</summary>
         public List<string> offered = new();
         public string perk;
+        /// <summary>Room affix id (design doc 08 §2.6), null when none; whether the room had an elite.</summary>
+        public string affix;
+        public bool elite;
     }
 
     /// <summary>One run, appended as a line of JSON to runs.jsonl next to the save.</summary>

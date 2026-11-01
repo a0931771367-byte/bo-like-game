@@ -141,6 +141,9 @@ namespace BoLike.Sim
         /// <summary>Damage per 350 ms tick to enemies inside; 0 = none.</summary>
         public int damage;
         public Element element = Element.Neutral;
+        /// <summary>毒沼 (room affix): hurts the player standing inside instead of enemies, this fraction of max HP per second.</summary>
+        public bool hurtsPlayer;
+        public float playerDpsFraction;
     }
 
     /// <summary>
@@ -170,6 +173,17 @@ namespace BoLike.Sim
         {
             double now = world.Now;
             if (now > until) { done = true; return; }
+            if (o.hurtsPlayer)
+            {
+                var p = world.Player;
+                if (p == null || p.dead || p.z > 60f) return;
+                float pdx = p.x - o.x, pdy = (p.y - o.y) * 1.6f;
+                if (pdx * pdx + pdy * pdy > o.radius * o.radius) return;
+                if (lastTick.TryGetValue(p, out var lastP) && now - lastP < 500) return;
+                lastTick[p] = now;
+                p.TakeGroundDamage(Math.Max(1, (int)Math.Round(p.maxHp * o.playerDpsFraction * 0.5f)), o.color);
+                return;
+            }
             for (int i = 0; i < targets.Count; i++)
             {
                 var t = targets[i];

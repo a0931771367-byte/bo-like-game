@@ -47,6 +47,10 @@ namespace BoLike.Game
         /// <summary>Tutorial hints run in a player's first two runs only (growth curve v2 E6).</summary>
         bool hintsOn;
         Enemy boss;
+        /// <summary>Room affix in effect (design doc 08 §2.6), null when none; extra perk picks 寶箱房 still owes; which spawn (by order) becomes the elite.</summary>
+        RoomAffixDef affix;
+        int extraPerkPicks, spawnSerial, eliteSerial = -1;
+        bool AffixIs(string kind) => affix != null && affix.effect.kind == kind;
         /// <summary>Chapter this run's boss kill just opened, shown on the result screen.</summary>
         ChapterDef unlockedChapter;
         /// <summary>Epic card this run's boss kill dropped (S2), revealed on the result screen.</summary>
@@ -242,6 +246,19 @@ namespace BoLike.Game
             roomEnteredAt = world.Now;
             roomLog = new RoomLogEntry { roomId = run.CurrentRoomId, waveSet = run.CurrentWaveSet };
             runLog.rooms.Add(roomLog);
+            // Room affix and elite for this room were rolled with the run (RunState.RollAffixes); boss rooms have neither.
+            affix = !run.InBossRoom && run.AffixAt(index) != null ? GameDb.Affix(run.AffixAt(index)) : null;
+            extraPerkPicks = AffixIs("treasure") ? affix.effect.extraPerkPicks : 0;
+            spawnSerial = 0; eliteSerial = -1;
+            if (!run.InBossRoom && run.EliteAt(index))
+            {
+                var eligible = new List<int>();
+                int serial = 0;
+                foreach (var w in waves) foreach (var s in w.spawns) { if (GameDb.Elite.Eligible(GameDb.Enemy(s.enemy))) eligible.Add(serial); serial++; }
+                if (eligible.Count > 0) eliteSerial = eligible[run.EliteSpawnPickAt(index) % eligible.Count];
+            }
+            roomLog.affix = affix?.id;
+            roomLog.elite = eliteSerial >= 0;
             CrashLog.Context = $"{classId} {run.stageId} seed {run.SeedCode} room {index + 1} {run.CurrentRoomId}/{run.CurrentWaveSet}";
 
             foreach (var e in world.Enemies) if (views.TryGetValue(e, out var v)) Destroy(v.gameObject);
@@ -252,6 +269,18 @@ namespace BoLike.Game
             background = Background.Create(worldRoot, room.bg, room.bgGroundY, room.width, room.tint);
             world.StageWidth = room.width;
             world.LockRight = room.width;
+            hud.SetFog(AffixIs("fog") ? 0.45f : 0f);
+            if (AffixIs("poisonGround"))
+            {
+                // 毒沼: patches across the room the player has to fight around; cleared with the room's hazards.
+                int n = System.Math.Max(1, affix.effect.zones);
+                for (int k = 0; k < n; k++)
+                {
+                    float zx = room.width * (k + 1) / (n + 1f) + (k % 2 == 0 ? -120 : 120);
+                    float zy = k % 2 == 0 ? Units.GroundTopPx + 50 : Units.GroundBottomPx - 50;
+                    world.SpawnZone(new ZoneOpts { x = zx, y = zy, radius = 130, duration = 1e8f, color = 0x7bd13a, what = "poisonGround", hurtsPlayer = true, playerDpsFraction = affix.effect.dpsFraction });
+                }
+            }
 
             var p = world.Player;
             p.x = 200; p.y = (Units.GroundTopPx + Units.GroundBottomPx) / 2; p.z = 0; p.vx = p.vy = p.vz = 0; p.facing = 1;
@@ -264,6 +293,15 @@ namespace BoLike.Game
             // The chapter title card on the first room is the cheapest "something new" cue when a scene unlocks (S1).
             if (index == 0) fx.Banner($"{GameDb.Str("chapter.start").Replace("{n}", run.Chapter.order.ToString())}  {run.Chapter.name}", 0xfff4de, 56);
             world.Delay(index == 0 ? 1400 : 0, () => fx.Banner(label, 0xffffff, 48));
+            if (affix != null)
+            {
+                var a = affix;
+                world.Delay(index == 0 ? 2600 : 1200, () =>
+                {
+                    fx.Banner(GameDb.Str("affix.enter").Replace("{name}", a.name), 0xc9a0ff, 40);
+                    world.Toast(a.desc);
+                });
+            }
             hud.ShowGo(false);
             if (index == 0) world.Delay(700, () => Hint("hint.move"));
         }
@@ -279,6 +317,19 @@ namespace BoLike.Game
             foreach (var s in wave.spawns)
             {
                 var spawn = s;
+                int serial = spawnSerial++;
+                float y = run.rng.Between((int)Units.GroundTopPx + 20, (int)Units.GroundBottomPx - 20);
+                if (AffixIs("fog") && affix.effect.warnMs > 0)
+                {
+                    // 濃霧: a purple glow marks where the enemy will step in, warnMs before it does.
+                    world.Delay(Mathf.Max(0, spawn.delay - affix.effect.warnMs), () =>
+                    {
+                        if (finished) return;
+                        float wx = Mathf.Clamp(spawn.side == Side.Right ? world.CamX + world.ViewW - 60 : world.CamX + 60, 0, room.width);
+                        fx.Ring(wx, y, 70, 0xc080ff, y - 1);
+                        fx.Aura(wx, y, 0xc080ff);
+                    });
+                }
                 world.Delay(spawn.delay, () =>
                 {
                     pendingSpawns--;
@@ -292,12 +343,29 @@ namespace BoLike.Game
                         ? Mathf.Clamp(spawn.side == Side.Right ? camX + viewW - 160 : camX + 160, px - 500, px + 500)
                         : spawn.side == Side.Right ? camX + viewW + 60 : camX - 60;
                     x = Mathf.Clamp(x, -80, room.width + 80);
-                    float y = run.rng.Between((int)Units.GroundTopPx + 20, (int)Units.GroundBottomPx - 20);
                     var scaling = run.Scaling;
                     float hpMult = run.InBossRoom ? scaling.boss.hp : scaling.HpAt(slot);
                     float atkMult = run.InBossRoom ? scaling.boss.atk : scaling.AtkAt(slot);
                     if (run.InBossRoom && !def.boss) { hpMult = scaling.HpAt(scaling.hp.Count - 1); atkMult = scaling.AtkAt(scaling.atk.Count - 1); }
-                    var e = world.SpawnEnemy(def, x, y, hpMult, atkMult);
+                    if (AffixIs("rush")) hpMult *= affix.effect.hpMult; // 急襲: faster waves, softer enemies
+                    bool makeElite = serial == eliteSerial && GameDb.Elite.Eligible(def);
+                    string eliteMod = null;
+                    if (makeElite)
+                    {
+                        var mods = GameDb.Elite.modifiers;
+                        eliteMod = mods != null && mods.Count > 0 ? mods[run.rng.Range(0, mods.Count)] : "shield";
+                    }
+                    System.Action<Enemy> setup = null;
+                    if (makeElite) setup = en => en.MakeElite(GameDb.Elite, eliteMod);
+                    var e = world.SpawnEnemy(def, x, y, hpMult, atkMult, setup);
+                    if (makeElite)
+                    {
+                        fx.Banner($"{GameDb.Str("elite.appear")}  {GameDb.Str("elite." + eliteMod)}", 0xffd36b, 44);
+                        fx.Ring(x, y, 120, 0xffd36b, y - 1);
+                        fx.Aura(x, y, 0xffd36b);
+                        world.Sfx.Play("eliteAppear");
+                        cam.Shake(0.2f, 0.006f);
+                    }
                     if (rooted)
                     {
                         fx.Dust(x, y, 10, 1.4f);
@@ -326,7 +394,7 @@ namespace BoLike.Game
             {
                 bool start = waveIndex == 0
                     ? world.Now - roomEnteredAt >= 600
-                    : !waveActive || world.Now - lastWaveStart >= waves[waveIndex].timeout;
+                    : !waveActive || world.Now - lastWaveStart >= waves[waveIndex].timeout * (AffixIs("rush") ? affix.effect.waveTimeoutMult : 1f);
                 if (start) SpawnWave();
             }
             else if (run.InBossRoom ? boss != null && boss.dead : !waveActive)
@@ -418,6 +486,27 @@ namespace BoLike.Game
                 AddStardust(give);
                 fx.Number(e.x, e.y - e.h - 90, $"✦ +{give}", 0xcfe8ff);
                 world.Sfx.Play("card_ruinTreasure");
+            }
+            if (e.elite)
+            {
+                // Elite kill: fixed stardust (×2 in 精英房); 爆裂 elites blow up on death and hurt the player in range.
+                int give = Mathf.RoundToInt(GameDb.Elite.stardust * (AffixIs("elite") ? affix.effect.stardustMult : 1f));
+                if (give > 0)
+                {
+                    AddStardust(give);
+                    fx.Number(e.x, e.y - e.h - 120, GameDb.Str("elite.stardust").Replace("{n}", give.ToString()), 0xffd36b, true);
+                }
+                if (e.eliteMod == "volatile")
+                {
+                    float radius = GameDb.Elite.volatileRadius;
+                    fx.Ring(e.x, e.y, radius, 0xff6b3a, e.y - 1);
+                    fx.Spark(e.x, e.y - e.h / 2, 0xff6b3a, 2.2f);
+                    fx.Dust(e.x, e.y, 14, 1.6f);
+                    cam.Shake(0.25f, 0.01f);
+                    world.Sfx.Play("hitHeavy");
+                    if (!p.dead && World.InCircle(p.x, p.y, e.x, e.y, radius + p.w / 2))
+                        p.TakeHit(e.ExplosionHit(GameDb.Elite.volatilePower, System.Math.Sign(p.x - e.x) == 0 ? 1 : System.Math.Sign(p.x - e.x)));
+                }
             }
             int exp = ExpFor(e);
             int gained = StatFormulas.AddExp(p.prog, exp);
@@ -644,6 +733,14 @@ namespace BoLike.Game
             fx.Number(world.Player.x, world.Player.y - 140, perk.name, Colors.Buff, true);
             fx.Aura(world.Player.x, world.Player.y, Colors.Buff);
             world.Sfx.Play("buff");
+            if (extraPerkPicks > 0)
+            {
+                // 寶箱房: one more three-card pick before the door opens.
+                extraPerkPicks--;
+                fx.Banner(GameDb.Str("affix.enter").Replace("{name}", affix?.name ?? ""), 0xc9a0ff, 40);
+                world.Delay(500, ShowPerkChoice);
+                return;
+            }
             OpenDoor();
         }
 

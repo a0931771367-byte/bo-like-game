@@ -48,6 +48,14 @@ namespace BoLike.Game
         public int CurrentSlot => roomIndex;
         public int CurrentWaveSet => roomIndex < waveSetByRoom.Count ? waveSetByRoom[roomIndex] : 0;
 
+        /// <summary>Per combat room: the affix id (null = none), whether one enemy is elite, and a pick index for which spawn (design doc 08 §2.6).</summary>
+        public readonly List<string> roomAffixes = new();
+        public readonly List<bool> roomElite = new();
+        public readonly List<int> eliteSpawnPick = new();
+        public string AffixAt(int roomIndex) => roomIndex >= 0 && roomIndex < roomAffixes.Count ? roomAffixes[roomIndex] : null;
+        public bool EliteAt(int roomIndex) => roomIndex >= 0 && roomIndex < roomElite.Count && roomElite[roomIndex];
+        public int EliteSpawnPickAt(int roomIndex) => roomIndex >= 0 && roomIndex < eliteSpawnPick.Count ? eliteSpawnPick[roomIndex] : 0;
+
         public static RunState New(string classId, SaveData save, ulong? seed = null) => New(classId, save, null, seed);
 
         public static RunState New(string classId, SaveData save, string stageId, ulong? seed = null)
@@ -67,6 +75,7 @@ namespace BoLike.Game
             for (int i = 0; i < r.CombatRooms && i < pool.Count; i++) r.roomOrder.Add(pool[i]);
             foreach (var id in r.roomOrder) r.waveSetByRoom.Add(roomRng.Range(0, System.Math.Max(1, GameDb.Room(id).waveSets.Count)));
             if (stage.HasBossRoom) r.waveSetByRoom.Add(roomRng.Range(0, System.Math.Max(1, GameDb.Room(stage.finale.room).waveSets.Count)));
+            RollAffixes(r, stage, save);
             r.baseEffects.AddRange(Cards.ActiveEffects(save));
             r.baseEffects.AddRange(Talents.ActiveEffects(save, classId));
             r.mods = RunMods.From(r.perks, r.baseEffects);
@@ -74,6 +83,31 @@ namespace BoLike.Game
             r.inv.red = r.Rules.startPotions.red + UnlockValue(save, UnlockKind.StartPotion) + r.mods.startRed;
             r.inv.blue = r.Rules.startPotions.blue + r.mods.startBlue;
             return r;
+        }
+
+        /// <summary>
+        /// Room affixes and elites from their own rng stream, so adding them never shifts rooms or perks. Affixes only
+        /// once the stage was cleared before (and never in room 1); elites by the chapter's chance, forced by 精英房.
+        /// </summary>
+        static void RollAffixes(RunState r, RunStageDef stage, SaveData save)
+        {
+            var affixRng = new Rng(r.seed ^ 0x41666669UL);
+            var rules = r.Rules.affixes ?? new AffixRules();
+            bool affixesOn = GameDb.Affixes.Count > 0 && (!rules.onlyAfterStageClear || (save != null && save.stagesCleared.Contains(stage.id)));
+            var allowed = new List<string>();
+            if (stage.affixes != null) foreach (var id in stage.affixes) if (GameDb.HasAffix(id)) allowed.Add(id);
+            float eliteChance = GameDb.Elite.ChanceFor(GameDb.Chapter(stage.chapterId).order);
+            for (int i = 0; i < r.roomOrder.Count; i++)
+            {
+                string affix = null;
+                if (affixesOn && allowed.Count > 0 && !(rules.skipFirstRoom && i == 0) && affixRng.Chance(rules.chancePerRoom))
+                    affix = allowed[affixRng.Range(0, allowed.Count)];
+                r.roomAffixes.Add(affix);
+                bool forced = affix != null && GameDb.Affix(affix).effect.forceElite;
+                bool elite = affixRng.Chance(eliteChance); // always drawn, so a forced room never shifts the later rolls
+                r.roomElite.Add(forced || elite);
+                r.eliteSpawnPick.Add(affixRng.Range(0, 1 << 20));
+            }
         }
 
         static int UnlockValue(SaveData save, UnlockKind kind)

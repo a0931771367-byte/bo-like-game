@@ -130,9 +130,10 @@ namespace BoLike.Sim
             WallSpawned?.Invoke(w);
         }
 
-        public Enemy SpawnEnemy(EnemyDef def, float x, float y, float hpMult = 1f, float atkMult = 1f)
+        public Enemy SpawnEnemy(EnemyDef def, float x, float y, float hpMult = 1f, float atkMult = 1f, Action<Enemy> setup = null)
         {
             var e = new Enemy(this, x, y, def, hpMult, atkMult);
+            setup?.Invoke(e); // elite etc. before the view is created
             Enemies.Add(e);
             EnemySpawned?.Invoke(e);
             return e;

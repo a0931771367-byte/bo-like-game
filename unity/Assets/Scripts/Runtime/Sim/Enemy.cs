@@ -17,7 +17,7 @@ namespace BoLike.Sim
     {
         public override Team Team => Team.Enemy;
         public readonly EnemyDef def;
-        public readonly float atkMult;
+        public float atkMult;
         public double attackReadyAt;
         public float defDownMult = 1;
         public double defDownUntil;
@@ -25,7 +25,28 @@ namespace BoLike.Sim
         public double rootedUntil;
         double slowUntil; float slowMult = 1f;
         public bool Rooted => Now < rootedUntil;
-        public float SpeedMult => Now < slowUntil ? slowMult : 1f;
+        public float SpeedMult => (Now < slowUntil ? slowMult : 1f) * hasteMult;
+        // ---- elite (design doc 08 §2.6) ----
+        public bool elite;
+        /// <summary>shield | haste | volatile, null when not elite.</summary>
+        public string eliteMod;
+        public int shieldHits;
+        public float sizeMult = 1f, hasteMult = 1f;
+
+        /// <summary>Turns a freshly spawned enemy into an elite: more HP/ATK, bigger, one modifier. Call before the view exists.</summary>
+        public void MakeElite(EliteRules rules, string mod)
+        {
+            elite = true;
+            eliteMod = mod;
+            maxHp = hp = Mathf.Round(maxHp * rules.hpMult);
+            atkMult *= rules.atkMult;
+            sizeMult = rules.sizeMult;
+            if (mod == "shield") shieldHits = rules.shieldHits;
+            if (mod == "haste") hasteMult = rules.hasteMult;
+        }
+
+        /// <summary>爆裂 elite: the death explosion's hit on the player.</summary>
+        public HitInfo ExplosionHit(float powerMult, int dir) => MakeHit(powerMult, 240, 0, 0, dir);
         public int hitCount;
         public double lastHitAt;
         public float poisonDps;
@@ -387,6 +408,16 @@ namespace BoLike.Sim
         public override bool TakeHit(HitInfo h)
         {
             if (dead) return false;
+            if (shieldHits > 0 && h.damage > 0)
+            {
+                // 護盾 elite: the first hits bounce off.
+                shieldHits--;
+                Fx.Number(x, y - this.h - 30 - z, GameDb.Str("elite.shield") + (shieldHits > 0 ? $" {shieldHits}" : ""), 0xffd36b);
+                Fx.Spark(x, y - this.h / 2 - z, 0xffd36b, 1.2f);
+                Flash(0xffd36b, 70);
+                world.Sfx.Play("guard");
+                return false;
+            }
             hp -= h.damage;
             hitCount = Now - lastHitAt < 1500 ? hitCount + 1 : 1;
             lastHitAt = Now;
