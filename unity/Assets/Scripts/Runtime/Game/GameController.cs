@@ -478,7 +478,7 @@ namespace BoLike.Game
         {
             var p = world.Player;
             // Gold is still tracked for the merchant room later, but the beta shows neither the number nor the HUD counter (v2 E7).
-            int gold = (int)StatFormulas.JsRound(e.def.gold * (1 + p.PassiveValue(Passive.GoldFind)));
+            int gold = e.Revived ? 0 : (int)StatFormulas.JsRound(e.def.gold * (1 + p.PassiveValue(Passive.GoldFind)));
             run.inv.gold += gold;
             if (run.mods.killStardustAdd > 0 && killStardustGiven < run.mods.killStardustMax && !e.def.boss)
             {
@@ -510,9 +510,9 @@ namespace BoLike.Game
                         p.TakeHit(e.ExplosionHit(GameDb.Elite.volatilePower, System.Math.Sign(p.x - e.x) == 0 ? 1 : System.Math.Sign(p.x - e.x)));
                 }
             }
-            int exp = ExpFor(e);
-            int gained = StatFormulas.AddExp(p.prog, exp);
-            fx.Number(e.x, e.y - e.h - 60, $"+{exp} EXP", Colors.Gold);
+            int exp = e.Revived ? 0 : ExpFor(e); // a revived mummy's second death is free of rewards (no double farming)
+            int gained = exp > 0 ? StatFormulas.AddExp(p.prog, exp) : 0;
+            if (exp > 0) fx.Number(e.x, e.y - e.h - 60, $"+{exp} EXP", Colors.Gold);
             world.Sfx.Play(e.def.boss ? "bossDie" : "enemyDie");
             p.OnKilled(e);
             if (gained > 0) LevelUp(p, gained);

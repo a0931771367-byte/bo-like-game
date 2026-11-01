@@ -111,7 +111,7 @@ namespace BoLike.Game
             ["card_sugarRush"] = new Cue { files = new[] { "sfx_card_fx_sugarRush" }, fallback = "potion" },
             ["card_thornHeart"] = new Cue { files = new[] { "sfx_card_fx_thornHeart" }, minGapMs = 150f, fallback = "skill" },
             ["card_sporeBreath"] = new Cue { files = new[] { "sfx_card_fx_sporeBreath" }, minGapMs = 1000f, fallback = "heal" },
-            ["card_beeGuard"] = new Cue { files = new[] { "sfx_card_fx_beeGuard" }, fallback = "bugChirp" },
+            ["card_beeGuard"] = new Cue { files = new[] { "sfx_card_fx_beeGuard" }, minGapMs = 150f, volume = 0.63f, fallback = "bugChirp" }, // poison-on-hit fires often: 150 ms gap, −4 dB (audio dept 11/1)
             ["card_ancientRing"] = new Cue { files = new[] { "sfx_card_fx_ancientRing" }, minGapMs = 150f, fallback = "guard" },
             ["card_guardianEye"] = new Cue { files = new[] { "sfx_card_fx_guardianEye" }, minGapMs = 150f, fallback = "thunder" },
             ["card_stoneArmor"] = new Cue { files = new[] { "sfx_card_fx_stoneArmor" }, fallback = "guard" },

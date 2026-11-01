@@ -679,7 +679,7 @@ namespace BoLike.Sim
                 // onHitStatus (冰封之觸 / 燃燒之刃): a chance per hit to freeze, burn or poison.
                 if (e.kind != PerkEffectKind.OnHitStatus || !Rng.Chance(e.chance)) continue;
                 if (e.status == "freeze") hit.freeze = Math.Max(hit.freeze, e.duration);
-                else hit.poison = new Poison { dps = Math.Max(1, e.value), duration = e.duration };
+                else { hit.poison = new Poison { dps = Math.Max(1, e.value), duration = e.duration }; Sfx.Play("card_beeGuard"); } // 蜜蜂衛隊 / 燃燒之刃 share the buzz
             }
             OnComboHit(t, combo);
             float da = PassiveValue(Passive.DoubleAttack);
@@ -1139,6 +1139,7 @@ namespace BoLike.Sim
                 {
                     Fx.Ring(ex, ey, r, 0xff8a5a, ey - 1);
                     Fx.Spark(ex, ey - 40, 0xff8a5a, 1.5f);
+                    Sfx.Play("card_splitCore"); // 分裂之核 (and the chain-explosion perk) share the burst
                     world.StrikeCircle(this, Enemies, ex, ey, r, tt =>
                     {
                         var h = MakeHit((Enemy)tt, power, Element.Neutral, false, 220, 0, 350);

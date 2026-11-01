@@ -67,7 +67,7 @@ namespace BoLike.Game
             {
                 case "chapter1": return new Color(0.326f, 0.248f, 0.18f);
                 case "chapter2": return new Color(0.143f, 0.149f, 0.13f);
-                case "chapter3": return new Color(0.794f, 0.649f, 0.438f);
+                case "chapter3": return new Color(0.827f, 0.604f, 0.373f);
                 case "chapter3_boss": return new Color(0.876f, 0.521f, 0.246f);
             }
             try

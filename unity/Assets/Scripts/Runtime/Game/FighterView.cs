@@ -16,6 +16,8 @@ namespace BoLike.Game
         SpriteRenderer body, shadow, hpBg, hpBar, aura;
         /// <summary>Art's hit poses for enemies (<id>_hurt/_knock/_down/_flat); null when the monster has none yet.</summary>
         Sprite sideSprite, hurtSprite, knockSprite, downSprite, flatSprite, pileSprite;
+        /// <summary>ruinGuardian extras (art dept 11/1): _slam 砸地, _beam 雷射起手, _petrify 石化, _phase2 狂怒碎甲.</summary>
+        Sprite slamSprite, beamSprite, petrifySprite, phase2Sprite;
         /// <summary>Gold silhouette copies behind an elite's body (design doc 08 §2.6: 金色輪廓).</summary>
         SpriteRenderer[] outlines;
         /// <summary>Placeholder art (SpriteBank.PlaceholderTint): borrowed poses, tinted so testers can tell the desert enemies apart.</summary>
@@ -76,6 +78,13 @@ namespace BoLike.Game
                 downSprite = poseId != null ? PoseOrNull(poseId, "down") : null;
                 flatSprite = poseId != null ? PoseOrNull(poseId, "flat") : null;
                 pileSprite = poseId != null ? PoseOrNull(poseId, "pile") : null; // 沙蟲 sand pile / 木乃伊 bandage pile (art dept keys)
+                if (e.def.behavior == EnemyBehavior.BossGuardian && poseId != null)
+                {
+                    slamSprite = PoseOrNull(poseId, "slam");
+                    beamSprite = PoseOrNull(poseId, "beam");
+                    petrifySprite = PoseOrNull(poseId, "petrify");
+                    phase2Sprite = PoseOrNull(poseId, "phase2");
+                }
                 if (e.def.tint.HasValue) baseTint = Colors.Rgb(e.def.tint.Value);
                 else if (placeholder) baseTint = Colors.Rgb(placeholderTint);
                 float hPx = body.sprite != null ? body.sprite.rect.height : e.def.spriteH;
@@ -292,6 +301,10 @@ namespace BoLike.Game
                 : e.PetrifiedBoss ? Colors.Rgb(0xc9b28a) : e.Enraged ? Colors.Rgb(0xff9090)
                 : e.def.tint.HasValue ? Colors.Rgb(e.def.tint.Value) : placeholder ? Colors.Rgb(placeholderTint) : Color.white;
             if (sideSprite != null) body.sprite = sideSprite;
+            if (e.Enraged && phase2Sprite != null) body.sprite = phase2Sprite; // the hit poses below still override while they last
+            if (e.PetrifiedBoss && petrifySprite != null) { body.sprite = petrifySprite; return; }
+            if (e.state == FighterState.Stomp && slamSprite != null) { body.sprite = slamSprite; sy = t < 520 ? 1 + t / 520f * 0.06f : 0.96f; return; }
+            if (e.state == FighterState.Beam && beamSprite != null) { body.sprite = beamSprite; lean = t < 700 ? -3 : 4; return; }
             if (e.Burrowed)
             {
                 // Sand pile: the pile pose when the art has one, else the body squashed flat; it shakes while about to emerge.

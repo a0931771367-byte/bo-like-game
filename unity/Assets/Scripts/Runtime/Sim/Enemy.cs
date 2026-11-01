@@ -55,6 +55,8 @@ namespace BoLike.Sim
         public float pileHp;
         double reviveAt;
         bool revived;
+        /// <summary>木乃伊 already got back up once (or its pile was broken): the second death pays no EXP/gold (design 11/1).</summary>
+        public bool Revived => revived;
         /// <summary>石像 phases: petrified (invulnerable, still) and enraged (ATK up, red).</summary>
         public double PetrifiedUntil;
         public bool Enraged;

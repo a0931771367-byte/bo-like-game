@@ -56,7 +56,7 @@ namespace BoLike.Tests
         [Test]
         public void RunDataLoads()
         {
-            Assert.AreEqual(30, GameDb.Perks.Count, "beta 2: PERKS_NEXT joined the pool");
+            Assert.AreEqual(29, GameDb.Perks.Count, "beta 2: PERKS_NEXT joined the pool (comboMaster held back)");
             Assert.AreEqual(GameDb.Rules.combatRooms, GameDb.RoomPool.Count);
             Assert.AreEqual(RoomKind.Boss, GameDb.Room(GameDb.BossRoom).kind);
             Assert.AreEqual(3, GameDb.Rules.perkChoices);
