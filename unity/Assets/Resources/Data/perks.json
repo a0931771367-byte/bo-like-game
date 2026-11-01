@@ -313,20 +313,6 @@
   ]
  },
  {
-  "id": "comboMaster",
-  "name": "連擊大師",
-  "desc": "普攻連段多一擊",
-  "rarity": "rare",
-  "classes": [],
-  "maxStacks": 1,
-  "effects": [
-   {
-    "kind": "comboExtraHit",
-    "add": 1
-   }
-  ]
- },
- {
   "id": "frostTouch",
   "name": "冰封之觸",
   "desc": "普攻 10% 機率凍結敵人 1 秒",

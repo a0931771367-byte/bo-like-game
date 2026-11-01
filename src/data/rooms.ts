@@ -154,7 +154,7 @@ export const ROOMS: Record<string, RoomDef> = {
   // ---- 沙漠遺跡（封測 2 第 3 章，11/1 凍結）----
   // 房間主題：沙丘教潛行竄出、仙人掌練走位與掩體、墓廳教「打碎繃帶堆」、蟹灘教繞背。
   sandDune: {
-    id: 'sandDune', name: '流沙沙丘', scene: 'desertRuins', kind: 'combat', width: 1900, bg: 'bg_chapter3', bgGroundY: 540,
+    id: 'sandDune', name: '流沙沙丘', scene: 'desertRuins', kind: 'combat', width: 1900, bg: 'bg_chapter3', bgGroundY: 420,
     waveSets: [
       [
         wave(13000, sp('sandworm', 'right', 0), sp('sandworm', 'left', 800), sp('bug', 'right', 1600)),
@@ -169,7 +169,7 @@ export const ROOMS: Record<string, RoomDef> = {
     ],
   },
   cactusGrove: {
-    id: 'cactusGrove', name: '仙人掌林', scene: 'desertRuins', kind: 'combat', width: 2000, bg: 'bg_chapter3', bgGroundY: 540, tint: 0xf0dca8,
+    id: 'cactusGrove', name: '仙人掌林', scene: 'desertRuins', kind: 'combat', width: 2000, bg: 'bg_chapter3', bgGroundY: 420, tint: 0xf0dca8,
     waveSets: [
       [
         wave(15000, sp('cactusTurret', 'right', 0), sp('cactusTurret', 'left', 0), sp('sandworm', 'right', 1200)),
@@ -184,7 +184,7 @@ export const ROOMS: Record<string, RoomDef> = {
     ],
   },
   tombHall: {
-    id: 'tombHall', name: '陵墓長廊', scene: 'desertRuins', kind: 'combat', width: 1800, bg: 'bg_chapter3', bgGroundY: 540, tint: 0xc8b8d8,
+    id: 'tombHall', name: '陵墓長廊', scene: 'desertRuins', kind: 'combat', width: 1800, bg: 'bg_chapter3', bgGroundY: 420, tint: 0xc8b8d8,
     waveSets: [
       [
         wave(15000, sp('mummy', 'right', 0), sp('mummy', 'left', 700), sp('sandworm', 'right', 1600)),
@@ -199,7 +199,7 @@ export const ROOMS: Record<string, RoomDef> = {
     ],
   },
   crabShore: {
-    id: 'crabShore', name: '乾河蟹灘', scene: 'desertRuins', kind: 'combat', width: 2000, bg: 'bg_chapter3', bgGroundY: 540, tint: 0xf8c8a0,
+    id: 'crabShore', name: '乾河蟹灘', scene: 'desertRuins', kind: 'combat', width: 2000, bg: 'bg_chapter3', bgGroundY: 420, tint: 0xf8c8a0,
     waveSets: [
       [
         wave(14000, sp('sandCrab', 'right', 0), sp('sandCrab', 'left', 800), sp('sandworm', 'right', 1600)),
@@ -214,7 +214,7 @@ export const ROOMS: Record<string, RoomDef> = {
     ],
   },
   guardianAltar: {
-    id: 'guardianAltar', name: '守衛的祭壇', scene: 'desertRuins', kind: 'boss', width: 1600, bg: 'bg_chapter3', bgGroundY: 540, tint: 0xe8d0a8,
+    id: 'guardianAltar', name: '守衛的祭壇', scene: 'desertRuins', kind: 'boss', width: 1600, bg: 'bg_chapter3_boss', bgGroundY: 420, tint: 0xe8d0a8,
     waveSets: [
       [
         wave(0, sp('ruinGuardian', 'right', 800)),
