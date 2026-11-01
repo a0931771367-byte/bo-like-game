@@ -117,7 +117,7 @@ namespace BoLike.Sim
                     case PerkEffectKind.ElementResonance: resonanceMult = System.Math.Max(resonanceMult, e.mult); resonanceWindow = System.Math.Max(resonanceWindow, e.window); break;
                     case PerkEffectKind.ReflectProjectile: reflectProjectile = true; reflectOnGuard |= e.onGuard ?? false; break;
                     case PerkEffectKind.StartSkillPoints: startSkillPoints += e.add; break;
-                    case PerkEffectKind.KillStardust: killStardustAdd += e.add; killStardustMax += e.max; break;
+                    case PerkEffectKind.KillStardust: killStardustAdd += e.add; killStardustMax += (int)e.max; break;
                     case PerkEffectKind.FirstHitImmune: firstHitImmune = true; break;
                     case PerkEffectKind.IdleRegen: idleRegenAfter = idleRegenAfter > 0 ? System.Math.Min(idleRegenAfter, e.after) : e.after; idleRegenFraction += e.fraction; break;
                     case PerkEffectKind.OnHurtKnock: onHurtKnockChance = System.Math.Min(1f, onHurtKnockChance + e.chance); onHurtKnock = System.Math.Max(onHurtKnock, e.knock); break;

@@ -38,7 +38,9 @@ namespace BoLike.Data
         public int red, blue;
         public float invuln;
         // ---- beta-2 fields (cards, talents, perks 16–30); every variant's fields live here, unused ones stay 0/null ----
-        public int hit, count, max;
+        public int hit, count;
+        /// <summary>Cap of a stacking effect: a fraction for killStackAtk (0.3 = +30%), a count for killStardust.</summary>
+        public float max;
         /// <summary>onComboHitSpawn: stickyBlob | beam. onHitStatus: freeze | burn | poison. summonAlly trigger: room | kill.</summary>
         public string what, status, trigger, enemy;
         public float duration, chance, knock, hpFraction, cooldown, auraPower, after, hpMult, lifetime, respawn;

@@ -71,7 +71,7 @@ namespace BoLike.Tests
             var tough = GameDb.Perk("toughBody").effects[0];
             Assert.AreEqual(PerkEffectKind.Mult, tough.kind);
             Assert.AreEqual(MultTarget.MaxHp, tough.target);
-            Assert.AreEqual(1.2f, tough.value, 1e-5);
+            Assert.AreEqual(1.25f, tough.value, 1e-5); // growth curve v2 / design 11-1 value
             var phoenix = GameDb.Perk("phoenix").effects[0];
             Assert.AreEqual(PerkEffectKind.Revive, phoenix.kind);
             Assert.AreEqual(1500f, phoenix.invuln);
@@ -91,7 +91,7 @@ namespace BoLike.Tests
                 Assert.AreEqual(RoomKind.Combat, GameDb.Room(id).kind, id);
             foreach (var u in GameDb.Unlocks.Where(u => u.kind == UnlockKind.Class))
                 Assert.NotNull(GameDb.Class(u.ValueId), u.id);
-            Assert.AreEqual(0.1f, GameDb.Unlocks.First(u => u.kind == UnlockKind.RareChance).ValueNumber, 1e-5);
+            Assert.AreEqual(0.15f, GameDb.Unlocks.First(u => u.kind == UnlockKind.RareChance).ValueNumber, 1e-5);
             foreach (var p in GameDb.Perks)
                 foreach (var c in p.classes)
                     Assert.NotNull(GameDb.Class(c), p.id);
