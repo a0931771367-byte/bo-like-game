@@ -223,15 +223,17 @@ namespace BoLike.Sim
         void Think()
         {
             var p = P;
-            if (p == null || p.dead || p.Hidden)
+            bool decoy = world.DecoyActive;
+            if (p == null || p.dead || (p.Hidden && !decoy))
             {
                 // Nothing to chase: stand around (hidden players are invisible to enemies).
                 vx = vy = 0;
                 if (state != FighterState.Idle) SetState(FighterState.Idle);
                 return;
             }
-            float dx = p.x - x;
-            float dy = p.y - y;
+            // A decoy (影分身) draws the chase; attacks still check the real player's position, so they swing at air.
+            float dx = (decoy ? world.DecoyX : p.x) - x;
+            float dy = (decoy ? world.DecoyY : p.y) - y;
             float dist = Math.Abs(dx);
             facing = dx >= 0 ? 1 : -1;
             float sp = def.speed * SpeedMult;

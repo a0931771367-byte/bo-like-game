@@ -27,13 +27,32 @@ namespace BoLike.Sim
         // ---- beta 2 (cards / talents / perks 16–30) ----
         public int startRed, startBlue;
         public int startSkillPoints;
+        /// <summary>Multiplies every skill's power (mage 魔力增幅) and every stardust payout (遺跡 cards).</summary>
+        public float skillPower = 1f, stardust = 1f;
         public int killStardustAdd, killStardustMax;
         public bool firstHitImmune;
         public float idleRegenAfter, idleRegenFraction;
         public float onHurtKnockChance, onHurtKnock;
         public float lowHpShieldFraction, lowHpShieldDuration, lowHpShieldCooldown, lowHpShieldAura;
+        /// <summary>Damage taken while guarding is multiplied by this (perk/talent guardMult lowers it).</summary>
+        public float guardDamageMult = 0.25f;
+        public float dodgeInvulnAdd, dodgeDistanceMult = 1f, dodgeCooldownAdd;
+        public float roomStartBuffMs, roomStartBuffMult = 1f;
+        public float roomStartSpFraction, roomStartHiddenMs;
+        public float onKillSp;
+        public float killStackPerKill, killStackMax;
+        public float cooldownResetChance;
+        public float counterWindow, counterMult = 1f;
+        public float guardInvulnFraction, guardInvulnMs, guardInvulnCooldown;
+        public float spEmptyFreeMult;
+        public float resonanceMult, resonanceWindow;
+        public bool reflectProjectile, reflectOnGuard;
         /// <summary>Every effect whose kind has no folded field yet (gameplay kinds read the list directly).</summary>
         public readonly List<PerkEffect> raw = new();
+
+        /// <summary>Kinds some system acts on (folded here or read from <see cref="raw"/> by Player/RunState). Data tests
+        /// use it so a new kind cannot ship silently doing nothing; SummonAlly and ComboExtraHit are still pending.</summary>
+        public static bool Handles(PerkEffectKind k) => k != PerkEffectKind.SummonAlly && k != PerkEffectKind.ComboExtraHit;
 
         public static RunMods From(IEnumerable<PerkDef> perks) => From(perks, null);
 
@@ -70,6 +89,8 @@ namespace BoLike.Sim
                             case MultTarget.SpRegen: spRegen *= e.value; break;
                             case MultTarget.Knock: knock *= e.value; break;
                             case MultTarget.PotionHeal: potionHeal *= e.value; break;
+                            case MultTarget.SkillPower: skillPower *= e.value; break;
+                            case MultTarget.Stardust: stardust *= e.value; break;
                         }
                         break;
                     case PerkEffectKind.Crit: critAdd += e.chanceAdd; critDamageAdd += e.damageMultAdd; break;
@@ -83,6 +104,18 @@ namespace BoLike.Sim
                     case PerkEffectKind.ProjectileCount: projectileAdd += e.add; break;
                     case PerkEffectKind.Pierce: pierceAdd += e.add; break;
                     case PerkEffectKind.StartPotion: startRed += e.red; startBlue += e.blue; break;
+                    case PerkEffectKind.GuardMult: guardDamageMult = System.Math.Min(guardDamageMult, e.value); break;
+                    case PerkEffectKind.Dodge: dodgeInvulnAdd += e.invulnAdd; if (e.distanceMult > 0) dodgeDistanceMult *= e.distanceMult; dodgeCooldownAdd += e.cooldownAdd; break;
+                    case PerkEffectKind.RoomStartBuff: roomStartBuffMs = System.Math.Max(roomStartBuffMs, e.duration); roomStartBuffMult *= e.mult > 0 ? e.mult : 1f; break;
+                    case PerkEffectKind.RoomStart: roomStartSpFraction = System.Math.Max(roomStartSpFraction, e.spFraction); roomStartHiddenMs = System.Math.Max(roomStartHiddenMs, e.hiddenMs); break;
+                    case PerkEffectKind.OnKillSp: onKillSp += e.fraction; break;
+                    case PerkEffectKind.KillStackAtk: killStackPerKill += e.perKill; killStackMax += e.max; break;
+                    case PerkEffectKind.CooldownReset: cooldownResetChance = System.Math.Min(1f, cooldownResetChance + e.chance); break;
+                    case PerkEffectKind.Counter: counterWindow = System.Math.Max(counterWindow, e.window); counterMult = System.Math.Max(counterMult, e.mult); break;
+                    case PerkEffectKind.GuardInvuln: guardInvulnFraction = System.Math.Max(guardInvulnFraction, e.hpFraction); guardInvulnMs = System.Math.Max(guardInvulnMs, e.invuln); guardInvulnCooldown = guardInvulnCooldown > 0 ? System.Math.Min(guardInvulnCooldown, e.cooldown) : e.cooldown; break;
+                    case PerkEffectKind.SpEmptyFree: spEmptyFreeMult = System.Math.Max(spEmptyFreeMult, e.mult); break;
+                    case PerkEffectKind.ElementResonance: resonanceMult = System.Math.Max(resonanceMult, e.mult); resonanceWindow = System.Math.Max(resonanceWindow, e.window); break;
+                    case PerkEffectKind.ReflectProjectile: reflectProjectile = true; reflectOnGuard |= e.onGuard ?? false; break;
                     case PerkEffectKind.StartSkillPoints: startSkillPoints += e.add; break;
                     case PerkEffectKind.KillStardust: killStardustAdd += e.add; killStardustMax += e.max; break;
                     case PerkEffectKind.FirstHitImmune: firstHitImmune = true; break;

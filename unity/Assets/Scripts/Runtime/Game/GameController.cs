@@ -123,7 +123,7 @@ namespace BoLike.Game
             {
                 // Growth curve v2 §1: the 3 starting stat points are spent at once and skills unlock by level.
                 AllocateStats(world.Player, 1);
-                prog.skillPoints = 0; // skill 1 is known from the start; every level up adds one point the player spends
+                prog.skillPoints = run.mods.startSkillPoints; // skill 1 is known from the start; every level up adds one point (talents may add more)
                 world.Player.Recompute(true);
             }
             else
@@ -376,6 +376,7 @@ namespace BoLike.Game
 
         void AddStardust(int n)
         {
+            if (run.mods.stardust != 1f) n = Mathf.RoundToInt(n * run.mods.stardust);
             run.stardustEarned += n;
             save.stardust += n;
             save.gold = run.inv.gold;
@@ -551,6 +552,7 @@ namespace BoLike.Game
             runLog.classId = classId;
             runLog.chapterId = run.Chapter.id;
             runLog.cardsEquipped = new List<string>(save.equippedCards);
+            runLog.talents = Talents.OwnedFor(save, classId).ConvertAll(t => t.id);
             runLog.stageId = run.stageId;
             runLog.seed = run.SeedCode;
             runLog.result = result;

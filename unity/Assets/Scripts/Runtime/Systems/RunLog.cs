@@ -44,6 +44,8 @@ namespace BoLike.Systems
         public string cardDrop;
         /// <summary>Cards equipped when the run started.</summary>
         public List<string> cardsEquipped = new();
+        /// <summary>Talent nodes the class had learned when the run started (S3).</summary>
+        public List<string> talents = new();
         public int totalMs;
         public int stardust;
         public int level;

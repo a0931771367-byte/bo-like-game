@@ -72,6 +72,8 @@ namespace BoLike.Systems
         public List<string> equippedCards = new();
         /// <summary>Story beats already shown ("&lt;stageId&gt;:before" / ":after"); a beat plays once per account (S4).</summary>
         public List<string> storySeen = new();
+        /// <summary>Talent node ids bought (S3), across classes.</summary>
+        public List<string> talents = new();
 
         public CardProgress Card(string id) => cards.Find(c => c.id == id);
 
@@ -219,6 +221,7 @@ namespace BoLike.Systems
             s.bossFirstKills ??= new();
             s.cards ??= new();
             s.storySeen ??= new();
+            s.talents ??= new();
             s.equippedCards ??= new();
             s.cards.RemoveAll(c => c == null || string.IsNullOrEmpty(c.id));
             // v2 -> v3: the single bossCleared flag becomes the first boss's first kill and the first stage's clear.

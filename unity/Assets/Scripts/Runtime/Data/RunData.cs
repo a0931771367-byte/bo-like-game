@@ -91,6 +91,21 @@ namespace BoLike.Data
         public List<CardSetDef> sets = new();
     }
 
+    /// <summary>One node of a class's 10-node talent line (design doc 08 §2.3): bought in tier order with stardust, free reset.</summary>
+    public class TalentDef
+    {
+        public string id, classId, name, desc;
+        public int tier, cost;
+        public bool keystone;
+        public List<PerkEffect> effects = new();
+    }
+
+    public class TalentRules
+    {
+        public int nodesPerClass = 10;
+        public bool resetFree = true, linear = true;
+    }
+
     public class CardRules
     {
         public int startSlots = 2, maxSlots = 3;
@@ -271,6 +286,7 @@ namespace BoLike.Data
         public PerkOffer perkOffer = new();
         public LevelUp levelUp = new();
         public CardRules cards = new();
+        public TalentRules talents = new();
         public EnemyDamage enemyDamage = new();
         public PotionCount startPotions;
         public float roomClearHeal;

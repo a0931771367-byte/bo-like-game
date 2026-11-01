@@ -173,6 +173,11 @@ namespace BoLike.Game
                 var (ownedCards, totalCards) = Cards.Collection(save);
                 UiKit.Button(layer, 170, -12, 150, 32, $"{GameDb.Str("card.title")} {ownedCards}/{totalCards}", ownedCards > 0 ? 0x8a4fd1 : 0x3a3a4a, () => ShowCardBook(layer, save), 14, UiKit.BottomCenter, new Vector2(0.5f, 0));
             }
+            if (GameDb.Talents.Count > 0)
+            {
+                int ownedTalents = save.talents.Count;
+                UiKit.Button(layer, 340, -12, 150, 32, $"{GameDb.Str("talent.title")} {ownedTalents}/{GameDb.Talents.Count}", ownedTalents > 0 ? 0x2f8f5f : 0x3a3a4a, () => ShowTalents(layer, save, unlocked, unlocked[0]), 14, UiKit.BottomCenter, new Vector2(0.5f, 0));
+            }
             UiKit.Text(layer, -16, -12, $"v{Application.version} ({BuildInfo.Number}) {BuildInfo.Commit}", 12, 0x9aa0b4, UiKit.BottomRight, UiKit.BottomRight, TextAnchor.LowerRight, false, 1);
 #if BOLIKE_QA || DEVELOPMENT_BUILD || UNITY_EDITOR
             // Hidden QA entry for beta builds only (BuildIos sets BOLIKE_QA; the App Store menu item does not, since
@@ -349,6 +354,89 @@ namespace BoLike.Game
                 : GameDb.Str("card.setHint");
             UiKit.Text(panel, 0, footY, setLine, 15, sets.Count > 0 ? 0xffd36b : 0x9aa0b4, UiKit.TopCenter, UiKit.TopCenter, TextAnchor.UpperCenter, sets.Count > 0, 1);
             UiKit.Button(panel, 0, -14, 180, 40, "關閉", 0x2f6fb5, () => Destroy(dim.gameObject), 18, UiKit.BottomCenter, UiKit.BottomCenter);
+        }
+
+        /// <summary>
+        /// Talent page (S3, design doc 08 §2.3): one tab per unlocked class, ten nodes bought in order with stardust,
+        /// keystones (★) marked, and a free reset that refunds everything spent on the class.
+        /// </summary>
+        void ShowTalents(RectTransform layer, SaveData save, System.Collections.Generic.List<string> classes, string classId)
+        {
+            var dim = UiKit.Dim(layer, 0.9f);
+            var panel = dim.transform;
+            var nodes = GameDb.TalentsFor(classId);
+            var cls = GameDb.Class(classId);
+            UiKit.Text(panel, 0, 22, GameDb.Str("talent.title"), 34, 0xfff4de, UiKit.TopCenter, UiKit.TopCenter, TextAnchor.UpperCenter, true);
+            UiKit.Text(panel, -16, 28, $"✦ {save.stardust}", 20, 0xffd36b, UiKit.TopRight, UiKit.TopRight, TextAnchor.UpperRight, true);
+            // Class tabs.
+            float tabW = 150, tabX = -(classes.Count * (tabW + 10) - 10) / 2f;
+            for (int i = 0; i < classes.Count; i++)
+            {
+                var cid = classes[i];
+                var c = GameDb.Class(cid);
+                bool hasLine = GameDb.TalentsFor(cid).Count > 0;
+                UiKit.Button(panel, tabX + i * (tabW + 10), 68, tabW, 36, c.name + (hasLine ? "" : "（籌備中）"), cid == classId ? 0xf28c28 : hasLine ? 0x2f6fb5 : 0x3a3a4a, () =>
+                {
+                    if (cid == classId) return;
+                    AudioManager.Instance.Play("select");
+                    Destroy(dim.gameObject);
+                    ShowTalents(layer, save, classes, cid);
+                }, 16, UiKit.TopCenter, UiKit.TopLeft);
+            }
+            int ownedCount = Talents.OwnedFor(save, classId).Count;
+            UiKit.Text(panel, 0, 112, GameDb.Str("talent.progress").Replace("{n}", ownedCount.ToString()) + (ownedCount >= nodes.Count && nodes.Count > 0 ? "  " + GameDb.Str("talent.owned") : ""), 16, 0xcfe8ff, UiKit.TopCenter, UiKit.TopCenter, TextAnchor.UpperCenter);
+            // Nodes: two rows of five, connected left to right.
+            int cols = 5;
+            float nw = 220, nh = 150, gap = 16;
+            float x0 = -(cols * nw + (cols - 1) * gap) / 2f;
+            var next = Talents.Next(save, classId);
+            for (int i = 0; i < nodes.Count; i++)
+            {
+                var t = nodes[i];
+                bool owned = Talents.Owned(save, t);
+                bool isNext = next != null && next.id == t.id;
+                bool afford = save.stardust >= t.cost;
+                float nx = x0 + (i % cols) * (nw + gap), ny = 140 + (i / cols) * (nh + gap + 10);
+                int color = owned ? 0x2f8f5f : isNext ? (afford ? 0xf28c28 : 0x6a4a2a) : 0x2a2a3a;
+                var box = UiKit.Rect(panel, nx, ny, nw, nh, color, 0.95f, UiKit.TopCenter, UiKit.TopLeft);
+                if (t.keystone) UiKit.Rect(box.transform, 0, 0, nw, 5, 0xffd36b, 1f, UiKit.TopCenter, UiKit.TopCenter);
+                if (i % cols != cols - 1 && i + 1 < nodes.Count) UiKit.Rect(panel, nx + nw, ny + nh / 2 - 2, gap, 4, owned ? 0x2f8f5f : 0x3a3a4a, 1f, UiKit.TopCenter, UiKit.TopLeft);
+                UiKit.Text(box.transform, 0, 10, $"{t.tier}. {t.name}" + (t.keystone ? " ★" : ""), 18, owned || isNext ? 0xffffff : 0x8a8a9a, UiKit.TopCenter, UiKit.TopCenter, TextAnchor.UpperCenter, true, 1);
+                var desc = UiKit.Text(box.transform, 0, 38, t.desc, 13, owned || isNext ? 0xf0f0f0 : 0x8a8a9a, UiKit.TopCenter, UiKit.TopCenter, TextAnchor.UpperCenter, false, 0);
+                desc.rectTransform.sizeDelta = new Vector2(nw - 20, 64);
+                if (t.keystone) UiKit.Text(box.transform, 0, 100, GameDb.Str("talent.keystone"), 11, 0xffd36b, UiKit.TopCenter, UiKit.TopCenter, TextAnchor.UpperCenter, false, 0);
+                string label = owned ? GameDb.Str("talent.owned") : isNext ? GameDb.Str("talent.buy").Replace("{cost}", t.cost.ToString()) : GameDb.Str("talent.needPrev");
+                var node = t;
+                UiKit.Button(box.transform, 0, -8, nw - 24, 28, label, owned ? 0x1f5f3f : isNext && afford ? 0xd9731a : 0x3a3a4a, () =>
+                {
+                    string why = Talents.Blocker(save, node);
+                    if (why != null) { Flash((RectTransform)dim.transform, GameDb.Str(why)); return; }
+                    Talents.Buy(save, node);
+                    SaveSystem.Save();
+                    AudioManager.Instance.Play("talentBuy");
+                    Destroy(dim.gameObject);
+                    ShowTalents(layer, save, classes, classId);
+                }, 13, UiKit.BottomCenter, UiKit.BottomCenter);
+            }
+            int spent = Talents.Spent(save, classId);
+            if (spent > 0)
+            {
+                UiKit.Button(panel, -110, -14, 200, 40, GameDb.Str("talent.reset"), 0x7a2a2a, () =>
+                {
+                    var confirm = UiKit.Dim((RectTransform)dim.transform, 0.85f);
+                    UiKit.Text(confirm.transform, 0, 280, GameDb.Str("talent.resetConfirm").Replace("{n}", spent.ToString()), 20, 0xfff4de, UiKit.TopCenter, UiKit.TopCenter, TextAnchor.UpperCenter, true);
+                    UiKit.Button(confirm.transform, -110, 340, 200, 44, "確定重置", 0xd9731a, () =>
+                    {
+                        Talents.Reset(save, classId);
+                        SaveSystem.Save();
+                        AudioManager.Instance.Play("talentReset");
+                        Destroy(dim.gameObject);
+                        ShowTalents(layer, save, classes, classId);
+                    }, 18, UiKit.TopCenter);
+                    UiKit.Button(confirm.transform, 110, 340, 200, 44, "取消", 0x3a3a4a, () => Destroy(confirm.gameObject), 18, UiKit.TopCenter);
+                }, 18, UiKit.BottomCenter, UiKit.BottomCenter);
+            }
+            UiKit.Button(panel, spent > 0 ? 110 : 0, -14, 180, 40, "關閉", 0x2f6fb5, () => Destroy(dim.gameObject), 18, UiKit.BottomCenter, UiKit.BottomCenter);
         }
 
         void StartRun(string classId, string stageId)

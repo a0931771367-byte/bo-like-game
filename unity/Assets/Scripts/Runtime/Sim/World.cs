@@ -22,6 +22,9 @@ namespace BoLike.Sim
         public readonly List<Projectile> Projectiles = new();
         public readonly List<Wall> Walls = new();
         public readonly List<Zone> Zones = new();
+        /// <summary>影分身 (decoy talent): while active, enemies chase this point instead of the player.</summary>
+        public float DecoyX, DecoyY; public double DecoyUntil;
+        public bool DecoyActive => Now < DecoyUntil;
         readonly List<Fighter> playerList = new();
 
         public IFx Fx = new NullFx();

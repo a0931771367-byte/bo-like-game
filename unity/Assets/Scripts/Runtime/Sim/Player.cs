@@ -60,6 +60,38 @@ namespace BoLike.Sim
         {
             firstHitTaken = false;
             idleSince = Now;
+            killStacks = 0;
+            var m = Mods;
+            roomBuffUntil = m.roomStartBuffMs > 0 ? Now + m.roomStartBuffMs : 0;
+            if (m.roomStartSpFraction > 0) sp = Math.Max(sp, maxSp * m.roomStartSpFraction);
+            if (m.roomStartHiddenMs > 0)
+            {
+                buffs.RemoveAll(b => b.id == "talent.hidden");
+                buffs.Add(new ActiveBuff { id = "talent.hidden", name = "隱身", color = 0x9aa0b4, until = Now + m.roomStartHiddenMs, eff = new BuffEffect { hidden = true } });
+                Recompute();
+            }
+        }
+
+        // ---- talent state (S3) ----
+        int killStacks;
+        double roomBuffUntil, counterUntil, guardInvulnReadyAt, lastSkillAt;
+        Element? lastSkillElement;
+        bool spEmptyArmed;
+        /// <summary>Damage multiplier for the next skill cast (元素共鳴, 過載); consumed by ExecuteSkill.</summary>
+        float skillMultOnce = 1f;
+
+        /// <summary>反彈: projectiles aimed at the player bounce back while dodging (or guarding, with onGuard).</summary>
+        public bool ReflectsProjectiles => Mods.reflectProjectile && (state == FighterState.Dodge || (Mods.reflectOnGuard && state == FighterState.Guard));
+
+        /// <summary>Normal-attack multipliers from talents and perks that depend on the moment: room-start buff, kill stacks, counter window.</summary>
+        float MomentaryAtkMult()
+        {
+            float k = 1f;
+            var m = Mods;
+            if (roomBuffUntil > Now) k *= m.roomStartBuffMult;
+            if (m.killStackPerKill > 0) k *= 1f + Math.Min(m.killStackMax, m.killStackPerKill * killStacks);
+            if (counterUntil > Now) { k *= m.counterMult; counterUntil = 0; }
+            return k;
         }
         bool dodgeHealUsed, dodgeTeleported;
         /// <summary>The class dodge with any dodgeOverride card/talent applied (passThrough, knock); kind and animation never change.</summary>
@@ -69,7 +101,15 @@ namespace BoLike.Sim
             {
                 var dd = cls.Dodge;
                 DodgeDef over = null;
-                foreach (var e in Mods.raw)
+                var m = Mods;
+                if (m.dodgeInvulnAdd != 0 || m.dodgeDistanceMult != 1f || m.dodgeCooldownAdd != 0)
+                {
+                    over = dd.Clone();
+                    over.invuln = Math.Max(0, over.invuln + m.dodgeInvulnAdd);
+                    over.distance *= m.dodgeDistanceMult;
+                    over.cooldown = Math.Max(0, over.cooldown + m.dodgeCooldownAdd);
+                }
+                foreach (var e in m.raw)
                 {
                     if (e.kind != PerkEffectKind.DodgeOverride) continue;
                     over ??= dd.Clone();
@@ -479,6 +519,11 @@ namespace BoLike.Sim
                         Fx.Ring(x, y, radius, Colors.Ice, y - 1);
                         Sfx.Play("ice");
                         break;
+                    case "decoy":
+                        world.DecoyX = x; world.DecoyY = y; world.DecoyUntil = Now + l.duration;
+                        world.SpawnZone(new ZoneOpts { owner = this, x = x, y = y, radius = 40, duration = l.duration, color = 0x9aa0b4, what = "decoy" });
+                        Fx.Ghost(this);
+                        break;
                     case "spikeTrap":
                         world.SpawnZone(new ZoneOpts { owner = this, x = x, y = y, radius = radius, duration = l.duration, color = 0xb0b0b0, what = "spikeTrap", rootMs = 1000, damage = Math.Max(1, (int)StatFormulas.JsRound(d.atk * (l.power > 0 ? l.power : 0.6f))) });
                         break;
@@ -501,6 +546,7 @@ namespace BoLike.Sim
         public (float startup, float active, float recovery) Timing(ComboHit h)
         {
             float s = (float)d.aspd;
+            if (afterDodgeUntil > Now) foreach (var e in Mods.raw) if (e.kind == PerkEffectKind.AfterDodgeBuff && e.aspdMult > 0) s *= e.aspdMult;
             return (h.startup / s, h.active / s, h.recovery / s);
         }
 
@@ -577,7 +623,9 @@ namespace BoLike.Sim
                 make = tt => { var hit = MakeHit((Enemy)tt, h.power, Element.Neutral, false, h.knock, h.launch, h.stun); OnComboHit((Enemy)tt, step); return hit; },
             });
             Fire(0);
-            for (int i = 0; i < Mods.projectileAdd; i++) Fire(-12 * (i + 1));
+            int extra = Mods.projectileAdd;
+            if (afterDodgeUntil > Now) foreach (var e in Mods.raw) if (e.kind == PerkEffectKind.AfterDodgeBuff) extra += e.extraProjectiles; // 雙射
+            for (int i = 0; i < extra; i++) Fire(-12 * (i + 1));
             Sfx.Play("arrow");
             Fx.Spark(x + facing * 36, y - 70 - z, cls.accent, 0.6f);
             float da = PassiveValue(Passive.DoubleAttack);
@@ -623,7 +671,16 @@ namespace BoLike.Sim
         /// <summary>A normal-attack hit, with the thief's double-attack passive rolled in.</summary>
         HitInfo NormalHit(Enemy t, ComboHit h)
         {
-            var hit = MakeHit(t, h.power, Element.Neutral, false, h.knock, h.launch, h.stun);
+            float power = h.power * MomentaryAtkMult();
+            foreach (var e in Mods.raw) if (e.kind == PerkEffectKind.ComboHitMult && e.hit == combo + 1 && e.mult > 0) power *= e.mult; // 重擊收尾
+            var hit = MakeHit(t, power, Element.Neutral, false, h.knock, h.launch, h.stun);
+            foreach (var e in Mods.raw)
+            {
+                // onHitStatus (冰封之觸 / 燃燒之刃): a chance per hit to freeze, burn or poison.
+                if (e.kind != PerkEffectKind.OnHitStatus || !Rng.Chance(e.chance)) continue;
+                if (e.status == "freeze") hit.freeze = Math.Max(hit.freeze, e.duration);
+                else hit.poison = new Poison { dps = Math.Max(1, e.value), duration = e.duration };
+            }
             OnComboHit(t, combo);
             float da = PassiveValue(Passive.DoubleAttack);
             if (da > 0 && Rng.Chance(da))
@@ -669,12 +726,22 @@ namespace BoLike.Sim
                 if (s.type == SkillType.Passive) { world.Toast($"「{s.name}」是被動技能，已自動生效"); continue; }
                 if (CooldownLeft(s) > 0) continue;
                 int cost = SkillCost(s);
+                bool free = spEmptyArmed && Mods.spEmptyFreeMult > 0; // 過載: the cast after hitting 0 SP is free and hits harder
+                if (free) cost = 0;
                 if (sp < cost) { Fx.Number(x, y - 120, "SP 不足", Colors.Sp); continue; }
                 int gold = SkillGold(s);
                 if (Inv.gold < gold) { Fx.Number(x, y - 120, "金幣不足", Colors.Gold); continue; }
                 if (gold > 0) { Inv.gold -= gold; Fx.Number(x, y - 150, $"-{gold} G", Colors.Gold); }
                 sp -= cost;
+                skillMultOnce = 1f;
+                if (free) { spEmptyArmed = false; skillMultOnce *= Mods.spEmptyFreeMult; Fx.Number(x, y - 150, "過載！", Colors.Sp, true); }
+                else if (sp <= 0.5f && Mods.spEmptyFreeMult > 0) spEmptyArmed = true;
+                // 元素共鳴: a different element than the previous cast, inside the window, hits harder.
+                if (Mods.resonanceMult > 1f && lastSkillElement.HasValue && lastSkillElement != s.element && s.element != Element.Neutral && Now - lastSkillAt <= Mods.resonanceWindow)
+                { skillMultOnce *= Mods.resonanceMult; Fx.Number(x, y - 170, "共鳴！", s.color, true); }
+                lastSkillElement = s.element; lastSkillAt = Now;
                 cooldowns[s.id] = Now + CooldownTotal(s);
+                if (Mods.cooldownResetChance > 0 && Rng.Chance(Mods.cooldownResetChance)) { cooldowns[s.id] = Now; Fx.Number(x, y - 190, "冷卻重置", Colors.Buff); } // 時間裂隙
                 if (MoveX != 0) facing = MoveX > 0 ? 1 : -1;
                 casting = s;
                 struck.Clear();
@@ -705,7 +772,8 @@ namespace BoLike.Sim
         bool ExecuteSkill(SkillDef s)
         {
             int L = SkillLv(s);
-            float power = s.power.At(L);
+            float power = s.power.At(L) * skillMultOnce * Mods.skillPower;
+            skillMultOnce = 1f;
             var el = s.element;
             var fx = Fx;
             var buffEff = s.BuffAt(L);
@@ -938,7 +1006,19 @@ namespace BoLike.Sim
             bool guarding = state == FighterState.Guard && Math.Sign(h.source.x - x) == facing;
             if (guarding)
             {
-                int dmg = Math.Max(1, (int)StatFormulas.JsRound(h.damage * 0.25));
+                var m = Mods;
+                // 不屈 (guardInvuln): a low-HP block becomes a short invulnerability, on a cooldown.
+                if (m.guardInvulnMs > 0 && hp < maxHp * m.guardInvulnFraction && Now >= guardInvulnReadyAt)
+                {
+                    guardInvulnReadyAt = Now + m.guardInvulnCooldown;
+                    invulnUntil = Now + m.guardInvulnMs;
+                    fx.Ring(x, y, 110, Colors.Guard, y - 1);
+                    fx.Number(x, y - 140 - z, "不屈！", Colors.Guard, true);
+                    Sfx.Play("guard");
+                    return false;
+                }
+                if (m.counterWindow > 0) counterUntil = Now + m.counterWindow; // 反擊: the next normal hit in the window is boosted
+                int dmg = Math.Max(1, (int)StatFormulas.JsRound(h.damage * m.guardDamageMult));
                 hp = Math.Max(1, hp - dmg);
                 vx = h.dir * 160;
                 fx.Spark(x + facing * 25, y - 60, Colors.Guard);
@@ -1023,6 +1103,8 @@ namespace BoLike.Sim
         /// <summary>Heal on kill and death explosions (perks); called by the world when an enemy dies to the player.</summary>
         public void OnKilled(Enemy e)
         {
+            killStacks++;
+            if (Mods.onKillSp > 0 && !dead) sp = Math.Min(maxSp, sp + maxSp * Mods.onKillSp);
             if (Mods.onKillHeal > 0 && !dead)
             {
                 int v = (int)StatFormulas.JsRound(maxHp * Mods.onKillHeal);

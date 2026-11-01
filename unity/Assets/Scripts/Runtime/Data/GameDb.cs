@@ -32,6 +32,7 @@ namespace BoLike.Data
         static SkillUiTable skillUi;
         static ChapterTable chapterTable;
         static CardTable cardTable;
+        static List<TalentDef> talents;
         static Dictionary<string, CardDef> cardById;
         static Dictionary<string, ChapterDef> chapterById;
         static Dictionary<string, RunStageDef> runStageById;
@@ -54,6 +55,9 @@ namespace BoLike.Data
         /// <summary>Epic cards (cards.json); empty when the table is missing so the beta-1 flow still runs.</summary>
         public static IReadOnlyList<CardDef> Cards { get { Load(); return cardTable.cards; } }
         public static IReadOnlyList<CardSetDef> CardSets { get { Load(); return cardTable.sets; } }
+        /// <summary>Talent nodes of every class (talents.json), in tier order per class.</summary>
+        public static IReadOnlyList<TalentDef> Talents { get { Load(); return talents; } }
+        public static List<TalentDef> TalentsFor(string classId) { Load(); return talents.Where(t => t.classId == classId).OrderBy(t => t.tier).ToList(); }
         /// <summary>The stage a run starts in when none is chosen: the first chapter's first stage.</summary>
         public static RunStageDef DefaultStage { get { Load(); return runStageById[chapterTable.chapters[0].stages[0]]; } }
 
@@ -104,6 +108,8 @@ namespace BoLike.Data
             var cardAsset = Resources.Load<TextAsset>("Data/cards");
             cardTable = cardAsset != null ? Parse<CardTable>(cardAsset.text) : new CardTable();
             cardById = cardTable.cards.ToDictionary(c => c.id);
+            var talentAsset = Resources.Load<TextAsset>("Data/talents");
+            talents = talentAsset != null ? Parse<List<TalentDef>>(talentAsset.text) : new List<TalentDef>();
             var uiAsset = Resources.Load<TextAsset>("Data/skillUi");
             skillUi = uiAsset != null ? Parse<SkillUiTable>(uiAsset.text) : new SkillUiTable();
             var strAsset = Resources.Load<TextAsset>("Data/strings");

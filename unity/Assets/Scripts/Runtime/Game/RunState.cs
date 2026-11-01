@@ -68,6 +68,7 @@ namespace BoLike.Game
             foreach (var id in r.roomOrder) r.waveSetByRoom.Add(roomRng.Range(0, System.Math.Max(1, GameDb.Room(id).waveSets.Count)));
             if (stage.HasBossRoom) r.waveSetByRoom.Add(roomRng.Range(0, System.Math.Max(1, GameDb.Room(stage.finale.room).waveSets.Count)));
             r.baseEffects.AddRange(Cards.ActiveEffects(save));
+            r.baseEffects.AddRange(Talents.ActiveEffects(save, classId));
             r.mods = RunMods.From(r.perks, r.baseEffects);
             r.inv.gold = save.gold;
             r.inv.red = r.Rules.startPotions.red + UnlockValue(save, UnlockKind.StartPotion) + r.mods.startRed;

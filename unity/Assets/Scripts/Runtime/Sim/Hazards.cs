@@ -51,6 +51,21 @@ namespace BoLike.Sim
                 if (t.dead || hit.Contains(t) || Math.Abs(t.y - o.y) > 50f) continue;
                 if (Math.Abs(t.x - o.x) < t.w / 2f + 14f && t.z < o.z + 40f)
                 {
+                    if (t is Player pl && o.targets == Team.Player && pl.ReflectsProjectiles)
+                    {
+                        // 反彈 (reflectProjectile): the shot turns around as the player's own, hurting its shooter and anything behind.
+                        o.dir = -o.dir;
+                        o.targets = Team.Enemy;
+                        o.owner = pl;
+                        o.color = 0xffe08a;
+                        o.make = tt => pl.MakeHit((Enemy)tt, 1.2f, Element.Neutral, false, 160, 0, 300);
+                        travelled = 0;
+                        hit.Clear();
+                        hitsLeft = Math.Max(hitsLeft, 2);
+                        world.Fx.Spark(o.x, o.y - o.z, 0xffe08a, 1.3f);
+                        world.Sfx.Play("guard");
+                        return;
+                    }
                     hit.Add(t);
                     t.TakeHit(o.make(t));
                     world.HitStop(40f);
