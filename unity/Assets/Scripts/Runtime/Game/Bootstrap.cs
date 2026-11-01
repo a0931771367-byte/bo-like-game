@@ -168,6 +168,11 @@ namespace BoLike.Game
                 UiKit.Button(layer, 0, -12, 150, 32, "種子開局", 0x3a3a4a, () => ShowSeedPanel(layer, unlocked), 14, UiKit.BottomCenter, new Vector2(0.5f, 0));
             if (Feedback.Available)
                 UiKit.Button(layer, -170, -12, 150, 32, "封測問卷", 0x2f6fb5, () => Feedback.Open(BuildInfo.Number, "title", save.lastSeedCode ?? "-", 0), 14, UiKit.BottomCenter, new Vector2(0.5f, 0));
+            if (GameDb.Cards.Count > 0)
+            {
+                var (ownedCards, totalCards) = Cards.Collection(save);
+                UiKit.Button(layer, 170, -12, 150, 32, $"{GameDb.Str("card.title")} {ownedCards}/{totalCards}", ownedCards > 0 ? 0x8a4fd1 : 0x3a3a4a, () => ShowCardBook(layer, save), 14, UiKit.BottomCenter, new Vector2(0.5f, 0));
+            }
             UiKit.Text(layer, -16, -12, $"v{Application.version} ({BuildInfo.Number}) {BuildInfo.Commit}", 12, 0x9aa0b4, UiKit.BottomRight, UiKit.BottomRight, TextAnchor.LowerRight, false, 1);
 #if BOLIKE_QA || DEVELOPMENT_BUILD || UNITY_EDITOR
             // Hidden QA entry for beta builds only (BuildIos sets BOLIKE_QA; the App Store menu item does not, since
@@ -274,6 +279,76 @@ namespace BoLike.Game
             }
             UiKit.Button(panel, 0, 400, 160, 44, "取消", 0x7a2a2a, () => Destroy(dim.gameObject), 18, UiKit.TopCenter);
             field.ActivateInputField();
+        }
+
+        /// <summary>
+        /// Card book (S2, design doc 07 §3): every epic card in boss order; owned ones show stars and can be equipped into
+        /// the account's slots (2, 3 with the cardSlot unlock), unowned ones say which boss drops them. Set bonuses light
+        /// up when two cards of one boss are worn.
+        /// </summary>
+        void ShowCardBook(RectTransform layer, SaveData save)
+        {
+            var dim = UiKit.Dim(layer, 0.88f);
+            var panel = dim.transform;
+            int slots = Cards.Slots(save);
+            UiKit.Text(panel, 0, 26, GameDb.Str("card.title"), 34, 0xfff4de, UiKit.TopCenter, UiKit.TopCenter, TextAnchor.UpperCenter, true);
+            UiKit.Text(panel, 0, 70, GameDb.Str("card.slots").Replace("{n}", save.equippedCards.Count.ToString()).Replace("{max}", slots.ToString()), 18, 0xcfe8ff, UiKit.TopCenter, UiKit.TopCenter, TextAnchor.UpperCenter);
+            var frameSprite = Resources.Load<Sprite>("UI/card_epic");
+            var lockSprite = Resources.Load<Sprite>("Icons/skill_locked");
+            var cards = GameDb.Cards;
+            int cols = 6;
+            float cw = 158, ch = cw * 520 / 360, gap = 14, k = cw / 360f;
+            int rows = (cards.Count + cols - 1) / cols;
+            float x0 = -(cols * cw + (cols - 1) * gap) / 2f;
+            for (int i = 0; i < cards.Count; i++)
+            {
+                var card = cards[i];
+                var prog = save.Card(card.id);
+                bool owned = prog != null;
+                bool equipped = Cards.Equipped(save, card.id);
+                float cx = x0 + (i % cols) * (cw + gap), cy = 100 + (i / cols) * (ch + gap + 6);
+                Image frame = frameSprite != null
+                    ? UiKit.Sprite(panel, frameSprite, cx, cy, cw, ch, UiKit.TopCenter, UiKit.TopLeft)
+                    : UiKit.Rect(panel, cx, cy, cw, ch, 0x8a4fd1, 0.95f, UiKit.TopCenter, UiKit.TopLeft);
+                if (frameSprite != null) { frame.type = Image.Type.Sliced; frame.preserveAspect = false; }
+                if (!owned) frame.color = new Color(0.45f, 0.45f, 0.5f, 1f);
+                var portrait = SpriteBank.Get(string.IsNullOrEmpty(card.icon) ? GameDb.Enemy(card.boss).SpriteId + "_side" : card.icon);
+                if (portrait != null)
+                {
+                    var img = UiKit.Sprite(frame.transform, portrait, 0, 36 * k, 190 * k, 190 * k, UiKit.TopCenter, UiKit.TopCenter);
+                    img.preserveAspect = true;
+                    if (!owned) img.color = new Color(0.3f, 0.3f, 0.35f, 1f);
+                }
+                if (!owned && lockSprite != null) UiKit.Sprite(frame.transform, lockSprite, 0, 90 * k, 110 * k, 110 * k, UiKit.TopCenter, UiKit.TopCenter);
+                UiKit.Text(frame.transform, 0, 250 * k, card.name, (int)(40 * k), owned ? 0x2b2140 : 0x6a6a7a, UiKit.TopCenter, UiKit.TopCenter, TextAnchor.UpperCenter, true, 0);
+                string stars = owned ? new string('★', prog.stars) + new string('☆', System.Math.Max(0, GameDb.Rules.cards.maxStars - prog.stars)) : "";
+                if (owned) UiKit.Text(frame.transform, 0, 300 * k, stars, (int)(34 * k), 0xf2a81d, UiKit.TopCenter, UiKit.TopCenter, TextAnchor.UpperCenter, false, 0);
+                if (owned && prog.stars < GameDb.Rules.cards.maxStars && card.starScale > 0)
+                    UiKit.Text(frame.transform, 0, 340 * k, GameDb.Str("card.shards").Replace("{n}", prog.shards.ToString()).Replace("{need}", GameDb.Rules.cards.shardsPerStar.ToString()), (int)(26 * k), 0x5a5a6a, UiKit.TopCenter, UiKit.TopCenter, TextAnchor.UpperCenter, false, 0);
+                var descText = UiKit.Text(frame.transform, 0, 375 * k, owned ? card.desc : GameDb.Str("card.source").Replace("{boss}", GameDb.Enemy(card.boss).name), (int)(22 * k), owned ? 0x3a3a4a : 0x6a6a7a, UiKit.TopCenter, UiKit.TopCenter, TextAnchor.UpperCenter, false, 0);
+                descText.rectTransform.sizeDelta = new Vector2(cw - 30, 60);
+                string label = !owned ? GameDb.Str("card.locked") : equipped ? GameDb.Str("card.unequip") : GameDb.Str("card.equip");
+                int color = !owned ? 0x3a3a4a : equipped ? 0x7a2a2a : 0xf28c28;
+                var cid = card.id;
+                UiKit.Button(frame.transform, 0, -14, cw - 36, 30, label, color, () =>
+                {
+                    if (!owned) return;
+                    if (Cards.Equipped(save, cid)) Cards.Unequip(save, cid);
+                    else if (!Cards.Equip(save, cid)) { Flash((RectTransform)dim.transform, GameDb.Str("card.slotsFull")); return; }
+                    SaveSystem.Save();
+                    AudioManager.Instance.Play("select");
+                    Destroy(dim.gameObject);
+                    ShowCardBook(layer, save);
+                }, 13, UiKit.BottomCenter, UiKit.BottomCenter);
+                if (equipped) UiKit.Rect(frame.transform, 0, 0, cw, 6, 0xf28c28, 1f, UiKit.TopCenter, UiKit.TopCenter);
+            }
+            float footY = 100 + rows * (ch + gap + 6) + 4;
+            var sets = Cards.ActiveSets(save);
+            string setLine = sets.Count > 0
+                ? string.Join("   ", sets.ConvertAll(st => GameDb.Str("card.set").Replace("{name}", st.name) + "：" + st.desc))
+                : GameDb.Str("card.setHint");
+            UiKit.Text(panel, 0, footY, setLine, 15, sets.Count > 0 ? 0xffd36b : 0x9aa0b4, UiKit.TopCenter, UiKit.TopCenter, TextAnchor.UpperCenter, sets.Count > 0, 1);
+            UiKit.Button(panel, 0, -14, 180, 40, "關閉", 0x2f6fb5, () => Destroy(dim.gameObject), 18, UiKit.BottomCenter, UiKit.BottomCenter);
         }
 
         void StartRun(string classId, string stageId)

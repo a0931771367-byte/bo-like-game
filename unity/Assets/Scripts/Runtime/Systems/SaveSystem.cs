@@ -66,12 +66,26 @@ namespace BoLike.Systems
         public string lastChapterId;
         /// <summary>The run in progress, written at every room start and cleared when the run ends (S5 續局). Null = none.</summary>
         public RunSnapshot runSnapshot;
+        /// <summary>Epic cards owned, account-wide (S2); any class can equip them.</summary>
+        public List<CardProgress> cards = new();
+        /// <summary>Equipped card ids, at most <see cref="Cards.Slots"/> of them.</summary>
+        public List<string> equippedCards = new();
+
+        public CardProgress Card(string id) => cards.Find(c => c.id == id);
 
         public ClassProgress ProgressFor(ClassDef cls)
         {
             if (!classes.TryGetValue(cls.id, out var p) || p == null) classes[cls.id] = p = ClassProgress.New(cls);
             return p;
         }
+    }
+
+    /// <summary>One owned epic card: stars 1–3 and the shards collected toward the next star.</summary>
+    public class CardProgress
+    {
+        public string id;
+        public int stars = 1;
+        public int shards;
     }
 
     /// <summary>
@@ -201,6 +215,9 @@ namespace BoLike.Systems
             s.hintsSeen ??= new();
             s.stagesCleared ??= new();
             s.bossFirstKills ??= new();
+            s.cards ??= new();
+            s.equippedCards ??= new();
+            s.cards.RemoveAll(c => c == null || string.IsNullOrEmpty(c.id));
             // v2 -> v3: the single bossCleared flag becomes the first boss's first kill and the first stage's clear.
             if (s.version < 3 && s.bossCleared)
             {

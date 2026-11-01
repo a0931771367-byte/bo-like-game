@@ -24,16 +24,36 @@ namespace BoLike.Sim
         public int projectileAdd;
         public int pierceAdd;
 
-        public static RunMods From(IEnumerable<PerkDef> perks)
+        // ---- beta 2 (cards / talents / perks 16–30) ----
+        public int startRed, startBlue;
+        public int startSkillPoints;
+        public int killStardustAdd, killStardustMax;
+        public bool firstHitImmune;
+        public float idleRegenAfter, idleRegenFraction;
+        public float onHurtKnockChance, onHurtKnock;
+        public float lowHpShieldFraction, lowHpShieldDuration, lowHpShieldCooldown, lowHpShieldAura;
+        /// <summary>Every effect whose kind has no folded field yet (gameplay kinds read the list directly).</summary>
+        public readonly List<PerkEffect> raw = new();
+
+        public static RunMods From(IEnumerable<PerkDef> perks) => From(perks, null);
+
+        /// <summary>Folds the run's perks and the account-level effects (equipped cards, talents) into one table.</summary>
+        public static RunMods From(IEnumerable<PerkDef> perks, IEnumerable<PerkEffect> extra)
         {
             var m = new RunMods();
+            if (extra != null) foreach (var e in extra) m.Apply(e);
             foreach (var p in perks) m.Apply(p);
             return m;
         }
 
         public void Apply(PerkDef perk)
         {
-            foreach (var e in perk.effects)
+            foreach (var e in perk.effects) Apply(e);
+        }
+
+        public void Apply(PerkEffect e)
+        {
+            raw.Add(e);
             {
                 switch (e.kind)
                 {
@@ -62,7 +82,19 @@ namespace BoLike.Sim
                     case PerkEffectKind.ComboFinisherAoe: comboFinisherAoeRadius = System.Math.Max(comboFinisherAoeRadius, e.radius); break;
                     case PerkEffectKind.ProjectileCount: projectileAdd += e.add; break;
                     case PerkEffectKind.Pierce: pierceAdd += e.add; break;
-                    default: break; // beta-2 kinds land with their systems (S2 cards, S3 talents, perks 16–30)
+                    case PerkEffectKind.StartPotion: startRed += e.red; startBlue += e.blue; break;
+                    case PerkEffectKind.StartSkillPoints: startSkillPoints += e.add; break;
+                    case PerkEffectKind.KillStardust: killStardustAdd += e.add; killStardustMax += e.max; break;
+                    case PerkEffectKind.FirstHitImmune: firstHitImmune = true; break;
+                    case PerkEffectKind.IdleRegen: idleRegenAfter = idleRegenAfter > 0 ? System.Math.Min(idleRegenAfter, e.after) : e.after; idleRegenFraction += e.fraction; break;
+                    case PerkEffectKind.OnHurtKnock: onHurtKnockChance = System.Math.Min(1f, onHurtKnockChance + e.chance); onHurtKnock = System.Math.Max(onHurtKnock, e.knock); break;
+                    case PerkEffectKind.LowHpShield:
+                        lowHpShieldFraction = System.Math.Max(lowHpShieldFraction, e.hpFraction);
+                        lowHpShieldDuration = System.Math.Max(lowHpShieldDuration, e.duration);
+                        lowHpShieldCooldown = lowHpShieldCooldown > 0 ? System.Math.Min(lowHpShieldCooldown, e.cooldown) : e.cooldown;
+                        lowHpShieldAura = System.Math.Max(lowHpShieldAura, e.auraPower);
+                        break;
+                    default: break; // remaining beta-2 kinds are read from `raw` by the systems that implement them
                 }
             }
         }

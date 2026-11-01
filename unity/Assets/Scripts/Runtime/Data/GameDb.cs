@@ -31,6 +31,8 @@ namespace BoLike.Data
         static StringTable stringTable;
         static SkillUiTable skillUi;
         static ChapterTable chapterTable;
+        static CardTable cardTable;
+        static Dictionary<string, CardDef> cardById;
         static Dictionary<string, ChapterDef> chapterById;
         static Dictionary<string, RunStageDef> runStageById;
 
@@ -49,6 +51,9 @@ namespace BoLike.Data
         /// <summary>Chapters in play order (chapters.json); beta 2 ships three, the third without stages until its data lands.</summary>
         public static IReadOnlyList<ChapterDef> Chapters { get { Load(); return chapterTable.chapters; } }
         public static IReadOnlyList<RunStageDef> RunStages { get { Load(); return chapterTable.stages; } }
+        /// <summary>Epic cards (cards.json); empty when the table is missing so the beta-1 flow still runs.</summary>
+        public static IReadOnlyList<CardDef> Cards { get { Load(); return cardTable.cards; } }
+        public static IReadOnlyList<CardSetDef> CardSets { get { Load(); return cardTable.sets; } }
         /// <summary>The stage a run starts in when none is chosen: the first chapter's first stage.</summary>
         public static RunStageDef DefaultStage { get { Load(); return runStageById[chapterTable.chapters[0].stages[0]]; } }
 
@@ -72,6 +77,8 @@ namespace BoLike.Data
         public static ChapterDef Chapter(string id) { Load(); return chapterById[id]; }
         public static RunStageDef RunStage(string id) { Load(); return runStageById[id]; }
         public static bool HasRunStage(string id) { Load(); return id != null && runStageById.ContainsKey(id); }
+        public static CardDef Card(string id) { Load(); return cardById[id]; }
+        public static bool HasCard(string id) { Load(); return id != null && cardById.ContainsKey(id); }
         public static StageStory Story(string stageId) { Load(); return storyById.TryGetValue(stageId, out var s) ? s : null; }
         public static AnimSet Anim(string classId) { Load(); return animById.TryGetValue(classId, out var a) ? a : null; }
 
@@ -94,6 +101,9 @@ namespace BoLike.Data
             chapterTable = Read<ChapterTable>("chapters");
             chapterById = chapterTable.chapters.ToDictionary(c => c.id);
             runStageById = chapterTable.stages.ToDictionary(st => st.id);
+            var cardAsset = Resources.Load<TextAsset>("Data/cards");
+            cardTable = cardAsset != null ? Parse<CardTable>(cardAsset.text) : new CardTable();
+            cardById = cardTable.cards.ToDictionary(c => c.id);
             var uiAsset = Resources.Load<TextAsset>("Data/skillUi");
             skillUi = uiAsset != null ? Parse<SkillUiTable>(uiAsset.text) : new SkillUiTable();
             var strAsset = Resources.Load<TextAsset>("Data/strings");

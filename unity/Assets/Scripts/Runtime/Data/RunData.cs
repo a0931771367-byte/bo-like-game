@@ -37,6 +37,66 @@ namespace BoLike.Data
         public float power, radius;
         public int red, blue;
         public float invuln;
+        // ---- beta-2 fields (cards, talents, perks 16–30); every variant's fields live here, unused ones stay 0/null ----
+        public int hit, count, max;
+        /// <summary>onComboHitSpawn: stickyBlob | beam. onHitStatus: freeze | burn | poison. summonAlly trigger: room | kill.</summary>
+        public string what, status, trigger, enemy;
+        public float duration, chance, knock, hpFraction, cooldown, auraPower, after, hpMult, lifetime, respawn;
+        public float defMult, invulnAdd, distanceMult, cooldownAdd, mult, perKill, window, aspdMult, spFraction, hiddenMs;
+        public int extraProjectiles;
+        public bool? passThrough, onGuard;
+        public LandingDef landing;
+
+        public PerkEffect Clone()
+        {
+            var c = (PerkEffect)MemberwiseClone();
+            if (landing != null) c.landing = (LandingDef)landing.MemberwiseCloneDef();
+            return c;
+        }
+    }
+
+    /// <summary>dodgeOverride.landing: a zone left where the dodge ends.</summary>
+    public class LandingDef
+    {
+        public string what; // thornWall | quicksand | iceBurst | spikeTrap | decoy
+        public float duration, power, slow, radius;
+        public object MemberwiseCloneDef() => MemberwiseClone();
+    }
+
+    public enum CardRarity { Epic, Legendary }
+
+    /// <summary>Boss drop, account-wide, kept forever (design doc 08 §2.2). Effects reuse <see cref="PerkEffect"/>.</summary>
+    public class CardDef
+    {
+        public string id, name, desc, boss, icon;
+        public CardRarity rarity;
+        /// <summary>Guaranteed on that boss's first kill; one per boss.</summary>
+        public bool signature;
+        public List<PerkEffect> effects = new();
+        /// <summary>Each star above 1 scales the numbers of <see cref="effects"/> by (1 + starScale); 0 = stars only collect shards.</summary>
+        public float starScale;
+    }
+
+    /// <summary>Wearing <see cref="need"/> cards of one boss adds these effects.</summary>
+    public class CardSetDef
+    {
+        public string boss, name, desc;
+        public int need = 2;
+        public List<PerkEffect> effects = new();
+    }
+
+    public class CardTable
+    {
+        public List<CardDef> cards = new();
+        public List<CardSetDef> sets = new();
+    }
+
+    public class CardRules
+    {
+        public int startSlots = 2, maxSlots = 3;
+        public bool firstKillSignature = true;
+        public int dropsPerKill = 1, shardsPerDuplicate = 1, shardsPerStar = 3, maxStars = 3;
+        public bool legendaryEnabled;
     }
 
     public class PerkDef
@@ -210,6 +270,7 @@ namespace BoLike.Data
         public Dictionary<PerkRarity, float> rarityWeights;
         public PerkOffer perkOffer = new();
         public LevelUp levelUp = new();
+        public CardRules cards = new();
         public EnemyDamage enemyDamage = new();
         public PotionCount startPotions;
         public float roomClearHeal;

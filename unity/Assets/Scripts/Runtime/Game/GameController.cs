@@ -49,6 +49,10 @@ namespace BoLike.Game
         Enemy boss;
         /// <summary>Chapter this run's boss kill just opened, shown on the result screen.</summary>
         ChapterDef unlockedChapter;
+        /// <summary>Epic card this run's boss kill dropped (S2), revealed on the result screen.</summary>
+        Cards.DropResult cardDrop;
+        /// <summary>Stardust already paid out by 遺跡秘寶 (killStardust) this run.</summary>
+        int killStardustGiven;
         Canvas overlayCanvas;
         GameObject overlay;
         bool paused;
@@ -227,6 +231,7 @@ namespace BoLike.Game
             var p = world.Player;
             p.x = 200; p.y = (Units.GroundTopPx + Units.GroundBottomPx) / 2; p.z = 0; p.vx = p.vy = p.vz = 0; p.facing = 1;
             p.struck.Clear();
+            p.OnRoomStart();
             if (p.state != FighterState.Dead) p.SetState(FighterState.Idle);
             cam.SnapTo(p.x);
             string label = run.InBossRoom ? room.name : $"第 {index + 1} 房  {room.name}";
@@ -321,6 +326,9 @@ namespace BoLike.Game
                 if (firstKill) { reward += run.Rules.stardust.firstClearBonus; save.bossFirstKills.Add(bossId); save.bossCleared = true; }
                 if (!save.stagesCleared.Contains(run.stageId)) save.stagesCleared.Add(run.stageId);
                 unlockedChapter = firstKill ? Progress.ChapterUnlockedBy(bossId) : null;
+                // Epic card drop (S2): the signature card on a first kill, otherwise one from the boss's pool.
+                cardDrop = bossId != null ? Cards.Drop(save, bossId, firstKill, run.rng) : null;
+                if (cardDrop != null) runLog.cardDrop = cardDrop.card.id;
                 AddStardust(reward);
                 fx.Banner("RUN CLEAR!", Colors.Crit, 72);
                 AudioManager.Instance.StopMusic(1.5f);
@@ -376,6 +384,15 @@ namespace BoLike.Game
             // Gold is still tracked for the merchant room later, but the beta shows neither the number nor the HUD counter (v2 E7).
             int gold = (int)StatFormulas.JsRound(e.def.gold * (1 + p.PassiveValue(Passive.GoldFind)));
             run.inv.gold += gold;
+            if (run.mods.killStardustAdd > 0 && killStardustGiven < run.mods.killStardustMax && !e.def.boss)
+            {
+                // 遺跡秘寶 (killStardust): a little stardust per kill, capped per run.
+                int give = Mathf.Min(run.mods.killStardustAdd, run.mods.killStardustMax - killStardustGiven);
+                killStardustGiven += give;
+                AddStardust(give);
+                fx.Number(e.x, e.y - e.h - 90, $"✦ +{give}", 0xcfe8ff);
+                world.Sfx.Play("card_ruinTreasure");
+            }
             int exp = ExpFor(e);
             int gained = StatFormulas.AddExp(p.prog, exp);
             fx.Number(e.x, e.y - e.h - 60, $"+{exp} EXP", Colors.Gold);
@@ -508,6 +525,7 @@ namespace BoLike.Game
             runLog.build = BuildInfo.Number;
             runLog.classId = classId;
             runLog.chapterId = run.Chapter.id;
+            runLog.cardsEquipped = new List<string>(save.equippedCards);
             runLog.stageId = run.stageId;
             runLog.seed = run.SeedCode;
             runLog.result = result;
@@ -615,9 +633,56 @@ namespace BoLike.Game
             t.rectTransform.sizeDelta = new Vector2(900, 200);
             string next = unlockedChapter != null ? GameDb.Str("chapter.unlocked").Replace("{name}", unlockedChapter.name) : NextUnlockLine(save);
             if (next != null) UiKit.Text(layer, 0, 330, next, 22, 0xffd36b, UiKit.TopCenter, UiKit.TopCenter, TextAnchor.UpperCenter, true);
+            if (cardDrop != null) ShowCardDrop(layer, cardDrop);
+            var (owned, total) = Cards.Collection(save);
+            if (total > 0) UiKit.Text(layer, 0, 366, $"{GameDb.Str("card.title")} {owned}/{total}", 16, 0xcfd4e6, UiKit.TopCenter, UiKit.TopCenter, TextAnchor.UpperCenter);
             UiKit.Button(layer, -130, 480, 240, 60, "再來一局", 0xf28c28, () => Restart(classId), 24, UiKit.TopCenter, UiKit.TopCenter);
             UiKit.Button(layer, 130, 480, 240, 60, "回標題", 0x2f6fb5, () => Bootstrap.ToTitle(), 24, UiKit.TopCenter, UiKit.TopCenter);
             FeedbackButton(layer, 0, 560);
+        }
+
+        /// <summary>
+        /// The card that just dropped, shown beside the result text: epic frame, boss portrait, name and whether it is new,
+        /// a shard or a star-up (design doc 07 §3.1). Tapping it opens the card book on the title later.
+        /// </summary>
+        void ShowCardDrop(RectTransform layer, Cards.DropResult drop)
+        {
+            var card = drop.card;
+            float cw = 170, chh = cw * 520 / 360, k = cw / 360f;
+            var frameSprite = Resources.Load<Sprite>("UI/card_epic");
+            Image frame = frameSprite != null
+                ? UiKit.Sprite(layer, frameSprite, 520, 150, cw, chh, UiKit.TopCenter)
+                : UiKit.Rect(layer, 520, 150, cw, chh, 0x8a4fd1, 0.95f, UiKit.TopCenter);
+            if (frameSprite != null) { frame.type = Image.Type.Sliced; frame.preserveAspect = false; }
+            var portrait = SpriteBank.Get(string.IsNullOrEmpty(card.icon) ? GameDb.Enemy(card.boss).SpriteId + "_side" : card.icon);
+            if (portrait != null) UiKit.Sprite(frame.transform, portrait, 0, 40 * k, 200 * k, 200 * k, UiKit.TopCenter, UiKit.TopCenter).preserveAspect = true;
+            UiKit.Text(frame.transform, 0, 262 * k, card.name, (int)(44 * k), 0x2b2140, UiKit.TopCenter, UiKit.TopCenter, TextAnchor.UpperCenter, true, 0);
+            UiKit.Text(frame.transform, 0, 320 * k, new string('★', drop.progress?.stars ?? 1), (int)(40 * k), 0xf2a81d, UiKit.TopCenter, UiKit.TopCenter, TextAnchor.UpperCenter, false, 0);
+            string line = drop.outcome switch
+            {
+                Cards.DropOutcome.New => GameDb.Str("card.drop"),
+                Cards.DropOutcome.StarUp => GameDb.Str("card.starUp"),
+                Cards.DropOutcome.Shard => GameDb.Str("card.dropDup").Replace("{n}", drop.shardsAdded.ToString()),
+                _ => GameDb.Str("card.dropDup").Replace("{n}", "0"),
+            };
+            UiKit.Text(layer, 520, 118, line, 20, 0xffd36b, UiKit.TopCenter, UiKit.TopCenter, TextAnchor.UpperCenter, true);
+            frame.transform.localScale = Vector3.zero;
+            StartCoroutine(PopIn(frame.transform));
+            world.Sfx.Play(drop.outcome == Cards.DropOutcome.StarUp ? "cardStarUp" : "cardAppear");
+        }
+
+        System.Collections.IEnumerator PopIn(Transform t)
+        {
+            float d = 0;
+            while (d < 0.45f)
+            {
+                d += Time.unscaledDeltaTime;
+                float k = Mathf.Clamp01(d / 0.45f);
+                float s = k < 0.7f ? Mathf.Lerp(0f, 1.12f, k / 0.7f) : Mathf.Lerp(1.12f, 1f, (k - 0.7f) / 0.3f);
+                if (t != null) t.localScale = new Vector3(s, s, 1);
+                yield return null;
+            }
+            if (t != null) t.localScale = Vector3.one;
         }
 
         /// <summary>"再 N 星塵解鎖：X" for the cheapest unlock not yet owned, or a nudge back to base when one is affordable (v2 §3).</summary>

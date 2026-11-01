@@ -102,6 +102,26 @@ namespace BoLike.Game
             ["wolfGrowl"] = new Cue { files = new[] { "sfx_wolf_growl" } },
             ["bugChirp"] = new Cue { files = new[] { "sfx_bug_chirp" }, volume = 0.6f },
             ["flowerBite"] = new Cue { files = new[] { "sfx_flower_bite" } },
+            // Beta 2 (audio/phase2-assets-v1.md): card drop, card activations (sfx_card_fx_<cardId>), elite, talents, dialog.
+            ["cardAppear"] = new Cue { files = new[] { "sfx_card_appear" }, pitchVar = 0f, fallback = "levelup" },
+            ["cardStarUp"] = new Cue { files = new[] { "sfx_card_starup" }, pitchVar = 0f, fallback = "cardAppear" },
+            ["card_jellyCrown"] = new Cue { files = new[] { "sfx_card_fx_jellyCrown" }, minGapMs = 150f, fallback = "jellyBounce" },
+            ["card_bouncyShell"] = new Cue { files = new[] { "sfx_card_fx_bouncyShell" }, minGapMs = 150f, fallback = "guard" },
+            ["card_splitCore"] = new Cue { files = new[] { "sfx_card_fx_splitCore" }, minGapMs = 150f, fallback = "jellyBounce" },
+            ["card_sugarRush"] = new Cue { files = new[] { "sfx_card_fx_sugarRush" }, fallback = "potion" },
+            ["card_thornHeart"] = new Cue { files = new[] { "sfx_card_fx_thornHeart" }, minGapMs = 150f, fallback = "skill" },
+            ["card_sporeBreath"] = new Cue { files = new[] { "sfx_card_fx_sporeBreath" }, minGapMs = 1000f, fallback = "heal" },
+            ["card_beeGuard"] = new Cue { files = new[] { "sfx_card_fx_beeGuard" }, fallback = "bugChirp" },
+            ["card_ancientRing"] = new Cue { files = new[] { "sfx_card_fx_ancientRing" }, minGapMs = 150f, fallback = "guard" },
+            ["card_guardianEye"] = new Cue { files = new[] { "sfx_card_fx_guardianEye" }, minGapMs = 150f, fallback = "thunder" },
+            ["card_stoneArmor"] = new Cue { files = new[] { "sfx_card_fx_stoneArmor" }, fallback = "guard" },
+            ["card_quicksandStep"] = new Cue { files = new[] { "sfx_card_fx_quicksandStep" }, minGapMs = 150f, fallback = "dodge" },
+            ["card_ruinTreasure"] = new Cue { files = new[] { "sfx_card_fx_ruinTreasure" }, minGapMs = 150f, volume = 0.6f, fallback = "gold" },
+            ["eliteAppear"] = new Cue { files = new[] { "sfx_elite_appear" }, fallback = "bossGrowl" },
+            ["talentBuy"] = new Cue { files = new[] { "sfx_talent_unlock" }, fallback = "buff" },
+            ["talentReset"] = new Cue { files = new[] { "sfx_talent_reset" }, fallback = "select" },
+            ["classUnlock"] = new Cue { files = new[] { "sfx_class_unlock" }, fallback = "levelup" },
+            ["dialogBlip"] = new Cue { files = new[] { "sfx_dialog_blip" }, volume = 0.5f, minGapMs = 40f, fallback = "text" },
         };
 
         /// <summary>

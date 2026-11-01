@@ -47,6 +47,20 @@ namespace BoLike.Sim
         public double glowUntil;
         /// <summary>Dodge cooldown (design doc 06): the next dodge may start at this sim time.</summary>
         public double dodgeReadyAt;
+        // ---- epic card state (S2) ----
+        /// <summary>firstHitImmune: the first hit of the room has been absorbed.</summary>
+        public bool firstHitTaken;
+        double idleSince;
+        /// <summary>lowHpShield (石化護甲): petrified until this time; immobile and invulnerable.</summary>
+        public double petrifiedUntil, petrifyReadyAt, petrifyAuraAt;
+        public bool Petrified => Now < petrifiedUntil;
+
+        /// <summary>Called by the room flow when a new room starts: per-room card state resets here.</summary>
+        public void OnRoomStart()
+        {
+            firstHitTaken = false;
+            idleSince = Now;
+        }
         bool dodgeHealUsed, dodgeTeleported;
         public DodgeDef Dodge => cls.Dodge;
         public float DodgeCooldownLeft => (float)Math.Max(0, dodgeReadyAt - Now);
@@ -168,9 +182,27 @@ namespace BoLike.Sim
                 hp = Math.Min(maxHp, hp + (float)d.hpRegen * dt);
                 ExpireBuffs();
                 TryPotions();
+                UpdateCardEffects(dt);
             }
             var (xMin, xMax) = world.PlayerBounds();
             bool grounded = !Airborne;
+            if (Petrified)
+            {
+                // 石化護甲: a statue for the duration — no input, no movement; the aura (set bonus) hurts enemies around it once a second.
+                vx = vy = 0;
+                if (state != FighterState.Guard) SetState(FighterState.Guard);
+                if (Mods.lowHpShieldAura > 0 && Now >= petrifyAuraAt)
+                {
+                    petrifyAuraAt = Now + 1000;
+                    int dmg = Math.Max(1, (int)StatFormulas.JsRound(d.atk * Mods.lowHpShieldAura));
+                    foreach (var e in world.Enemies)
+                        if (!e.dead && Math.Abs(e.x - x) < 170 && Math.Abs(e.y - y) < 90)
+                            e.TakeHit(new HitInfo { damage = dmg, dir = Math.Sign(e.x - x) == 0 ? 1 : Math.Sign(e.x - x), source = this, element = Element.Earth });
+                    Fx.Ring(x, y, 170, 0xc9b28a, y - 1);
+                }
+                if (Physics(dt, xMin, xMax)) OnLand(grounded);
+                return;
+            }
 
             switch (state)
             {
@@ -757,9 +789,19 @@ namespace BoLike.Sim
 
         // ---------- receiving damage ----------
 
+        /// <summary>孢子呼吸 (idleRegen): standing still for a while regenerates HP per second.</summary>
+        void UpdateCardEffects(float dt)
+        {
+            bool still = (state == FighterState.Idle || state == FighterState.Guard) && Math.Abs(vx) + Math.Abs(vy) < 1 && !Airborne;
+            if (!still || Petrified) idleSince = Now;
+            else if (Mods.idleRegenFraction > 0 && Now - idleSince >= Mods.idleRegenAfter && hp < maxHp)
+                hp = Math.Min(maxHp, hp + maxHp * Mods.idleRegenFraction * dt);
+        }
+
         public override bool TakeHit(HitInfo h)
         {
             if (dead) return false;
+            if (Petrified) { Fx.Spark(x, y - 60 - z, 0xc9b28a); return false; }
             if (Now < invulnUntil || state == FighterState.Dodge)
             {
                 // Grace step (acolyte): avoiding an attack with the dodge's invulnerability heals a little, once per dodge.
@@ -787,6 +829,15 @@ namespace BoLike.Sim
                 fx.Number(x, y - 110 - z, "MISS", Colors.Miss);
                 return false;
             }
+            if (Mods.firstHitImmune && !firstHitTaken)
+            {
+                // 古樹年輪: the first hit of every room deals no damage.
+                firstHitTaken = true;
+                fx.Ring(x, y, 90, 0x9be15d, y - 1);
+                fx.Number(x, y - 120 - z, "年輪", 0x9be15d);
+                Sfx.Play("card_ancientRing");
+                return true;
+            }
             bool guarding = state == FighterState.Guard && Math.Sign(h.source.x - x) == facing;
             if (guarding)
             {
@@ -800,12 +851,31 @@ namespace BoLike.Sim
             }
             hp -= h.damage;
             world.RaisePlayerHurt();
+            // 彈力外殼 (onHurtKnock): a chance to shove the attacker away.
+            if (Mods.onHurtKnock > 0 && h.source is Enemy attacker && Rng.Chance(Mods.onHurtKnockChance))
+            {
+                attacker.Shove(Math.Sign(attacker.x - x) == 0 ? facing : Math.Sign(attacker.x - x), Mods.onHurtKnock);
+                fx.Ring(x, y, 70, 0xffc6e0, y - 1);
+                Sfx.Play("card_bouncyShell");
+            }
             fx.Number(x, y - 110 - z, $"{h.damage}", Colors.Hp, h.damage > maxHp * 0.2f);
             fx.Spark(x, y - 55 - z, 0xff7070);
             Flash(0xff4444, 90);
             fx.Shake(90, 0.005f);
             Sfx.Play(h.source != null ? "hurt_" + cls.id : "hurt"); // 敵人造成的傷害用職業專屬受傷音；陷阱等用通用音
             if (casting != null) { casting = null; if (state == FighterState.Cast) SetState(FighterState.CastEnd); }
+            // 石化護甲 (lowHpShield): dropping under the threshold turns the player to stone — invulnerable, immobile — on a cooldown.
+            if (hp > 0 && Mods.lowHpShieldDuration > 0 && hp < maxHp * Mods.lowHpShieldFraction && Now >= petrifyReadyAt)
+            {
+                petrifiedUntil = Now + Mods.lowHpShieldDuration;
+                petrifyReadyAt = Now + Mods.lowHpShieldCooldown;
+                petrifyAuraAt = Now + 400;
+                vx = vy = 0;
+                casting = null;
+                fx.Ring(x, y, 120, 0xc9b28a, y - 1);
+                fx.Number(x, y - 150 - z, "石化！", 0xc9b28a, true);
+                Sfx.Play("card_stoneArmor");
+            }
             if (hp <= 0)
             {
                 if (Mods.reviveFraction > 0 && !Mods.reviveUsed)

@@ -30,6 +30,8 @@ namespace BoLike.Game
         public int roomsCleared;
         public bool bossKilled, abandoned;
         public RunMods mods = new();
+        /// <summary>Account-level effects the run starts with (equipped cards and their sets; talents later), folded under the perks.</summary>
+        public readonly List<PerkEffect> baseEffects = new();
         public readonly Inventory inv = new();
         public double startedAt;
 
@@ -65,9 +67,11 @@ namespace BoLike.Game
             for (int i = 0; i < r.CombatRooms && i < pool.Count; i++) r.roomOrder.Add(pool[i]);
             foreach (var id in r.roomOrder) r.waveSetByRoom.Add(roomRng.Range(0, System.Math.Max(1, GameDb.Room(id).waveSets.Count)));
             if (stage.HasBossRoom) r.waveSetByRoom.Add(roomRng.Range(0, System.Math.Max(1, GameDb.Room(stage.finale.room).waveSets.Count)));
+            r.baseEffects.AddRange(Cards.ActiveEffects(save));
+            r.mods = RunMods.From(r.perks, r.baseEffects);
             r.inv.gold = save.gold;
-            r.inv.red = r.Rules.startPotions.red + UnlockValue(save, UnlockKind.StartPotion);
-            r.inv.blue = r.Rules.startPotions.blue;
+            r.inv.red = r.Rules.startPotions.red + UnlockValue(save, UnlockKind.StartPotion) + r.mods.startRed;
+            r.inv.blue = r.Rules.startPotions.blue + r.mods.startBlue;
             return r;
         }
 
@@ -158,7 +162,7 @@ namespace BoLike.Game
             perks.Add(p);
             perkStacks[p.id] = (perkStacks.TryGetValue(p.id, out var n) ? n : 0) + 1;
             bool reviveUsed = mods.reviveUsed; // one phoenix per run, even after more perks rebuild the mods (QA #10)
-            mods = RunMods.From(perks);
+            mods = RunMods.From(perks, baseEffects);
             mods.reviveUsed = reviveUsed;
             foreach (var e in p.effects)
                 if (e.kind == PerkEffectKind.Potion) { inv.red += e.red; inv.blue += e.blue; }

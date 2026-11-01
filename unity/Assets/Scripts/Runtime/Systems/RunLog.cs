@@ -40,6 +40,10 @@ namespace BoLike.Systems
         public bool bossKilled;
         /// <summary>Times the run was continued from a snapshot after the app was closed (S5); 0 = played in one go.</summary>
         public int resumes;
+        /// <summary>Epic card the boss dropped this run (S2), null when none.</summary>
+        public string cardDrop;
+        /// <summary>Cards equipped when the run started.</summary>
+        public List<string> cardsEquipped = new();
         public int totalMs;
         public int stardust;
         public int level;
