@@ -7,9 +7,9 @@ import { BOSS_ROOM, ROOM_POOL } from './rooms';
  * 解鎖：前一章 Boss 首殺（progress.bossFirstKills）。已解鎖的章可直接選擇開局（罐子 11/1）。
  */
 export const CHAPTERS: Record<string, ChapterDef> = {
-  grassland: { id: 'grassland', order: 1, name: '果凍草原', bg: 'bg_chapter1', stages: ['grassland-3'], bossTrack: 'boss_pudding' },
-  mistForest: { id: 'mistForest', order: 2, name: '蘑菇森林', bg: 'bg_chapter2', stages: ['mistForest-3'], unlock: { bossKill: 'jellyKing' }, bossTrack: 'boss_treant' },
-  desertRuins: { id: 'desertRuins', order: 3, name: '沙漠遺跡', bg: 'bg_chapter3', stages: ['desertRuins-3'], unlock: { bossKill: 'treant' }, bossTrack: 'boss_guardian' },
+  grassland: { id: 'grassland', order: 1, name: '果凍草原', bg: 'bg_chapter1', stages: ['grassland-3'], bossTrack: 'boss_pudding', desc: '王都郊外，發狂的果凍怪與野狼。', music: 'field', ambience: 'amb_ch1_grassland' },
+  mistForest: { id: 'mistForest', order: 2, name: '蘑菇森林', bg: 'bg_chapter2', stages: ['mistForest-3'], unlock: { bossKill: 'jellyKing' }, bossTrack: 'boss_treant', desc: '紫霧籠罩的林間，飛行的蜜蜂與毒蘑菇。', music: 'forest', ambience: 'amb_ch2_forest' },
+  desertRuins: { id: 'desertRuins', order: 3, name: '沙漠遺跡', bg: 'bg_chapter3', stages: ['desertRuins-3'], unlock: { bossKill: 'treant' }, bossTrack: 'boss_guardian', desc: '百年前封印紫霧的古王國遺跡。', music: 'desert', ambience: 'amb_ch3_desert' },
 };
 export const CHAPTER_ORDER = ['grassland', 'mistForest', 'desertRuins'];
 

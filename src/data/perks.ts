@@ -52,8 +52,6 @@ export const PERKS: PerkDef[] = [
   { id: 'openingRush', name: '開場衝鋒', desc: '每間房開始 5 秒內攻擊力 +30%', rarity: 'common', classes: [], maxStacks: 2,
     effects: [{ kind: 'roomStartBuff', duration: 5000, mult: 1.3 }] },
   // ---- 稀有：機制 ----
-  { id: 'comboMaster', name: '連擊大師', desc: '普攻連段多一擊', rarity: 'rare', classes: [], maxStacks: 1,
-    effects: [{ kind: 'comboExtraHit', add: 1 }] },
   { id: 'frostTouch', name: '冰封之觸', desc: '普攻 10% 機率凍結敵人 1 秒', rarity: 'rare', classes: [], maxStacks: 2,
     effects: [{ kind: 'onHitStatus', status: 'freeze', chance: 0.1, duration: 1000 }] },
   { id: 'burningEdge', name: '燃燒之刃', desc: '普攻使敵人燃燒 3 秒，每秒 4 點傷害', rarity: 'rare', classes: [], maxStacks: 2,
@@ -76,8 +74,11 @@ export const PERKS: PerkDef[] = [
     effects: [{ kind: 'crit', chanceAdd: 15 }] },
 ];
 
-/** @deprecated 封測 2 起全部在 PERKS 裡；保留空陣列給舊程式。 */
-export const PERKS_NEXT: PerkDef[] = [];
+/** 封測 2 不入池：comboExtraHit 需連段重構（程式部 11/1），正式版再併回 PERKS。 */
+export const PERKS_NEXT: PerkDef[] = [
+  { id: 'comboMaster', name: '連擊大師', desc: '普攻連段多一擊', rarity: 'rare', classes: [], maxStacks: 1,
+    effects: [{ kind: 'comboExtraHit', add: 1 }] },
+];
 export const getPerk = (id: string) => {
   const p = [...PERKS, ...PERKS_NEXT].find((k) => k.id === id);
   if (!p) throw new Error(`unknown perk ${id}`);
