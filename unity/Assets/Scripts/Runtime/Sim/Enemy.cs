@@ -427,6 +427,17 @@ namespace BoLike.Sim
             return true;
         }
 
+        /// <summary>Pushed aside by a dash (shield dash, jet dash): no damage, a short stagger. Bosses hold their ground.</summary>
+        public void Shove(int dir, float knock)
+        {
+            if (dead || def.boss || state == FighterState.Dying || state == FighterState.Knock) return;
+            vx = dir * knock;
+            stunUntil = Now + 240;
+            SetState(FighterState.Hurt);
+            Flash(Colors.White, 60);
+            Fx.Dust(x, y, 3, 0.8f);
+        }
+
         /// <summary>Corpse time: down 120 ms, flat 120 ms, fade 200 ms (the view draws the art poses over this).</summary>
         public const int DyingMs = 440;
 

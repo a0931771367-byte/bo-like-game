@@ -88,6 +88,25 @@ namespace BoLike.Data
             buffByLevel == null || buffByLevel.Count == 0 ? null : buffByLevel[Math.Clamp(level, 1, buffByLevel.Count) - 1];
     }
 
+    public enum DodgeKind { ShieldDash, Blink, Roll, JetDash, GraceStep, ShadowStep }
+
+    /// <summary>Per-class dodge (design doc 06). Distances px, times ms; invulnerable for <see cref="invuln"/> ms from the press.</summary>
+    public class DodgeDef
+    {
+        public DodgeKind kind;
+        public string name, desc;
+        public float distance, duration, invuln, cooldown;
+        public bool passThrough;
+        /// <summary>Enemies touched during the dash are pushed back this far (no damage).</summary>
+        public float knock;
+        /// <summary>Fraction of max HP restored when an attack is avoided by the invulnerability.</summary>
+        public float onAvoidHeal;
+        /// <summary>Attacks and skills may start this many ms before <see cref="duration"/> ends.</summary>
+        public float cancelWindow;
+
+        public static readonly DodgeDef Default = new() { kind = DodgeKind.Roll, name = "閃避", desc = "", distance = 166, duration = 260, invuln = 260, cooldown = 0 };
+    }
+
     public class ClassDef
     {
         public string id, name, role;
@@ -98,7 +117,22 @@ namespace BoLike.Data
         public Stats baseStats;
         public List<ComboHit> combo;
         public ComboHit air;
+        public DodgeDef dodge;
         public List<SkillDef> skills;
+
+        public DodgeDef Dodge => dodge ?? DodgeDef.Default;
+    }
+
+    /// <summary>Skill panel rows exported from src/data/skillUi.ts: which Scaling fields to show and how.</summary>
+    public class SkillUiTable
+    {
+        public List<SkillStatRow> statRows = new();
+        public List<BuffStatRow> buffRows = new();
+        public Dictionary<string, string> typeLabel = new();
+        public Dictionary<string, string> elementLabel = new();
+
+        public class SkillStatRow { public string field, label, format; public List<string> onlyTypes; }
+        public class BuffStatRow { public string field, label, format; }
     }
 
     public class EnemyDef

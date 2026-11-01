@@ -43,6 +43,14 @@ namespace BoLike.Sim
         public double potionReadyAt;
         public int dodgeDir = 1;
         public float dodgeMs = DodgeMsDefault, dodgeSpeed = DodgeSpeedDefault;
+        /// <summary>Level-up body glow (view) until this sim time.</summary>
+        public double glowUntil;
+        /// <summary>Dodge cooldown (design doc 06): the next dodge may start at this sim time.</summary>
+        public double dodgeReadyAt;
+        bool dodgeHealUsed, dodgeTeleported;
+        public DodgeDef Dodge => cls.Dodge;
+        public float DodgeCooldownLeft => (float)Math.Max(0, dodgeReadyAt - Now);
+        public float DodgeCooldownTotal => Math.Max(1, Dodge.cooldown);
         public SkillDef casting;
         bool shotFired;
         double lastStepAt, lastGhostAt;
@@ -209,9 +217,7 @@ namespace BoLike.Sim
                     break;
                 }
                 case FighterState.Dodge:
-                    vx = dodgeDir * dodgeSpeed * (1 - stateTime / dodgeMs * 0.6f);
-                    vy = MoveY * 200;
-                    if (stateTime >= dodgeMs) SetState(FighterState.Idle);
+                    UpdateDodge(dt);
                     break;
                 case FighterState.Cast:
                     vx *= 0.8f;
@@ -249,12 +255,8 @@ namespace BoLike.Sim
 
             bool landed = Physics(dt, xMin, xMax);
             if (landed) OnLand(grounded);
-            if (state == FighterState.Walk && Now - lastStepAt > 280)
-            {
-                lastStepAt = Now;
-                Fx.Dust(x - facing * 10, y, 2, 0.6f);
-            }
-            if (state == FighterState.Dodge && Now - lastGhostAt > 40)
+            // (Footstep dust puffs were removed: on the phone they read as small explosions under the feet.)
+            if (state == FighterState.Dodge && Dodge.kind != DodgeKind.Blink && Now - lastGhostAt > 40)
             {
                 lastGhostAt = Now;
                 Fx.Ghost(this);
@@ -315,15 +317,86 @@ namespace BoLike.Sim
         {
             float mx = MoveX;
             if (Math.Abs(mx) < 0.5f) return false;
+            if (Now < dodgeReadyAt) return false; // on cooldown: the button falls through to guard
+            var dd = Dodge;
             dodgeDir = mx > 0 ? 1 : -1;
-            dodgeMs = DodgeMsDefault;
-            dodgeSpeed = DodgeSpeedDefault;
-            invulnUntil = Now + DodgeMsDefault;
+            facing = dodgeDir;
+            dodgeMs = Math.Max(1, dd.duration);
+            // Blink stands still for its wind-up and teleports at the end; everything else covers `distance` over `duration`.
+            dodgeSpeed = dd.kind == DodgeKind.Blink ? 0 : dd.distance / (dodgeMs / 1000f) / 0.7f; // the speed curve below averages 0.7×
+            invulnUntil = Now + dd.invuln;
+            dodgeReadyAt = Now + dd.cooldown;
+            dodgeHealUsed = dodgeTeleported = false;
+            struck.Clear();
             SetState(FighterState.Dodge);
-            Fx.Aura(x, y - 20, 0xffffff);
-            Fx.Dust(x, y, 5);
-            Sfx.Play("dodge");
+            switch (dd.kind)
+            {
+                case DodgeKind.Blink:
+                    Fx.Aura(x, y - 20, cls.accent);
+                    Sfx.Play("cast", 0.7f);
+                    break;
+                case DodgeKind.ShieldDash:
+                    Fx.Dust(x, y, 5);
+                    Sfx.Play("guard", 0.8f);
+                    break;
+                case DodgeKind.GraceStep:
+                    Fx.Ring(x, y, 70, 0xfff2b3, y - 1);
+                    Fx.Aura(x, y - 20, 0xfff2b3);
+                    Sfx.Play("dodge");
+                    break;
+                case DodgeKind.JetDash:
+                    Fx.Dust(x - dodgeDir * 20, y, 6, 1.2f);
+                    Sfx.Play("dodge");
+                    break;
+                default:
+                    Fx.Aura(x, y - 20, 0xffffff);
+                    Fx.Dust(x, y, 5);
+                    Sfx.Play("dodge");
+                    break;
+            }
             return true;
+        }
+
+        /// <summary>Per-frame dodge behaviour: movement, the blink teleport, dash shoves and the cancel window.</summary>
+        void UpdateDodge(float dt)
+        {
+            var dd = Dodge;
+            if (dd.kind == DodgeKind.Blink)
+            {
+                vx = 0; vy = 0;
+                if (!dodgeTeleported && stateTime >= dodgeMs)
+                {
+                    dodgeTeleported = true;
+                    Fx.Ghost(this);
+                    var (min, max) = world.PlayerBounds();
+                    x = Math.Clamp(x + dodgeDir * dd.distance, min, max);
+                    Fx.Ring(x, y, 60, cls.accent, y - 1);
+                    Fx.Spark(x, y - 60, cls.accent, 1.2f);
+                    SetState(FighterState.Idle);
+                }
+                return;
+            }
+            vx = dodgeDir * dodgeSpeed * (1 - stateTime / dodgeMs * 0.6f);
+            vy = MoveY * 200;
+            if (dd.kind == DodgeKind.JetDash && Now - lastStepAt > 50) { lastStepAt = Now; Fx.Dust(x - dodgeDir * 24, y, 1, 0.9f); }
+            if (dd.knock > 0)
+                foreach (var e in world.Enemies)
+                {
+                    if (e.dead || struck.Contains(e)) continue;
+                    if (Math.Abs(e.x - x) < (w + e.w) / 2 && Math.Abs(e.y - y) < 44)
+                    {
+                        struck.Add(e);
+                        e.Shove(dodgeDir, dd.knock);
+                        Fx.Spark(e.x, e.y - e.h / 2, 0xffffff, 0.8f);
+                    }
+                }
+            // Roll / shadow step: the last `cancelWindow` ms can flow straight into an attack or skill.
+            if (dd.cancelWindow > 0 && stateTime >= dodgeMs - dd.cancelWindow)
+            {
+                if (GameInput.Consume(GameAction.Attack)) { vx = 0; StartAttack(0); return; }
+                if (TrySkill()) return;
+            }
+            if (stateTime >= dodgeMs) SetState(FighterState.Idle);
         }
 
         void Decel(float dt)
@@ -686,7 +759,18 @@ namespace BoLike.Sim
 
         public override bool TakeHit(HitInfo h)
         {
-            if (dead || Now < invulnUntil || state == FighterState.Dodge) return false;
+            if (dead) return false;
+            if (Now < invulnUntil || state == FighterState.Dodge)
+            {
+                // Grace step (acolyte): avoiding an attack with the dodge's invulnerability heals a little, once per dodge.
+                if (Dodge.onAvoidHeal > 0 && !dodgeHealUsed && Now < invulnUntil)
+                {
+                    dodgeHealUsed = true;
+                    int v = (int)StatFormulas.JsRound(maxHp * Dodge.onAvoidHeal);
+                    if (v > 0 && hp < maxHp) { hp = Math.Min(maxHp, hp + v); Fx.Number(x, y - 120 - z, $"+{v}", Colors.Heal); Fx.Aura(x, y, 0xfff2b3); }
+                }
+                return false;
+            }
             var fx = Fx;
             ActiveBuff shield = null;
             foreach (var b in buffs) if ((b.hits ?? 0) > 0) { shield = b; break; }

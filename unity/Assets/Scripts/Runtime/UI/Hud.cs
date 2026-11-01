@@ -15,11 +15,13 @@ namespace BoLike.UI
         RectTransform layer;
         Image hpBar, spBar, expBar, bossBar, bossFrame, flashImg;
         Text hpText, spText, lvText, goldText, potText, buffText, toastText, goText, comboText, bossName, stardustText;
-        readonly List<(Image bg, Image cover, Image label, Text key, Image locked, Image level)> skillCd = new();
+        readonly List<(Image bg, Image cover, Image label, Text key, Image locked, Image level, Button plus)> skillCd = new();
         float toastUntil, comboUntil, comboPop, flashUntil, flashDur, flashAlpha;
         Enemy boss;
         readonly List<(Text t, float until, float start)> banners = new();
         public System.Func<int> Stardust;
+        /// <summary>Opens the skill panel on a slot (the "+" next to a skill button).</summary>
+        public System.Action<int> OpenSkillPanel;
 
         public static Hud Create(World world, bool touch)
         {
@@ -68,7 +70,10 @@ namespace BoLike.UI
                 Image lockImg = lockSprite != null ? UiKit.Sprite(layer, lockSprite, bx + 8, by + 8, 48, 48, UiKit.TopCenter) : null;
                 // Art: level capsule 36×20 at the bottom-right corner, protruding 4 px outside the slot.
                 var levelImg = UiKit.Sprite(layer, SkillLevelBadge(1), bx + 64 - 36 + 4, by + 64 - 20 + 4, 36, 20, UiKit.TopCenter);
-                skillCd.Add((bg, cover, label, key, lockImg, levelImg));
+                int slot = i;
+                var plus = UiKit.Button(layer, bx + 46, by - 12, 30, 30, "+", Colors.Crit, () => OpenSkillPanel?.Invoke(slot), 22, UiKit.TopCenter, UiKit.TopLeft);
+                plus.gameObject.SetActive(false);
+                skillCd.Add((bg, cover, label, key, lockImg, levelImg, plus));
             }
             if (!touch) UiKit.Text(layer, 0, 92, "J 攻擊  K 跳躍  L 防禦(+方向閃躲)  1/2 藥水  Esc 選單", 13, 0xcfd4e6, UiKit.TopCenter, UiKit.TopCenter, TextAnchor.UpperCenter);
 
@@ -158,8 +163,11 @@ namespace BoLike.UI
             for (int i = 0; i < skillCd.Count; i++)
             {
                 var s = p.cls.skills[i];
-                var (bg, cover, label, key, lockImg, levelImg) = skillCd[i];
+                var (bg, cover, label, key, lockImg, levelImg, plus) = skillCd[i];
                 bool learned = p.SkillLv(s) > 0;
+                bool canSpend = Game.GameController.SkillUpBlocker(p, i) == null;
+                if (plus.gameObject.activeSelf != canSpend) plus.gameObject.SetActive(canSpend);
+                if (canSpend) UiKit.SetAlpha(plus.image, 0.6f + Mathf.PingPong(Time.time * 2.5f, 0.4f));
                 if (levelImg != null)
                 {
                     if (learned) levelImg.sprite = SkillLevelBadge(p.SkillLv(s));

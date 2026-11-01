@@ -80,41 +80,52 @@ namespace BoLike.Tests
         }
 
         [Test]
-        public void SkillsUnlockInOrderThenRaiseTheLowest()
+        public void SkillPointsAreSpentByThePlayerBehindLevelGates()
         {
             var cls = GameDb.Class("swordsman");
-            var world = new World();
-            var p = new Player(world, 200, 500, cls, ClassProgress.New(cls));
-            var skills = cls.skills;
-            int Lv(int i) => p.prog.skillLv.TryGetValue(skills[i].id, out var l) ? l : 0;
+            var p = new Player(new World(), 200, 500, cls, ClassProgress.New(cls));
+            p.prog.skillPoints = 0;
+            int Lv(int i) => GameController.BaseSkillLv(p, cls.skills[i]);
 
-            GameController.ApplySkillUnlocks(p, out var fresh);
-            Assert.IsNull(fresh, "level 1 already knows skill 1");
-            Assert.AreEqual(1, Lv(0));
-            for (int i = 1; i < skills.Count; i++) Assert.AreEqual(0, Lv(i), $"skill {i} locked at level 1");
+            Assert.AreEqual(1, Lv(0), "skill 1 is known from the start");
+            Assert.AreEqual("沒有技能點", GameController.SkillUpBlocker(p, 0));
+            Assert.IsFalse(GameController.SpendSkillPoint(p, 0));
 
-            p.prog.level = 2;
-            GameController.ApplySkillUnlocks(p, out fresh);
-            Assert.AreEqual(skills[1].id, fresh?.id);
+            p.prog.skillPoints = 2;
+            Assert.AreEqual($"Lv{GameController.SkillGate(1)} 解鎖", GameController.SkillUpBlocker(p, 1), "slot 2 waits for its level gate");
+            Assert.IsTrue(GameController.SpendSkillPoint(p, 0));
+            Assert.AreEqual(2, Lv(0));
+            Assert.AreEqual(1, p.prog.skillPoints);
+
+            p.prog.level = GameController.SkillGate(1);
+            Assert.IsNull(GameController.SkillUpBlocker(p, 1));
+            Assert.IsTrue(GameController.SpendSkillPoint(p, 1), "learning a skill costs one point");
             Assert.AreEqual(1, Lv(1));
+            Assert.AreEqual(0, p.prog.skillPoints);
 
-            p.prog.level = 4;
-            GameController.ApplySkillUnlocks(p, out fresh);
-            Assert.AreEqual(skills[2].id, fresh?.id, "the first newly unlocked skill is reported");
-            for (int i = 0; i < skills.Count && i < 4; i++) Assert.AreEqual(1, Lv(i));
+            p.prog.skillPoints = 10;
+            p.prog.skillLv[cls.skills[0].id] = cls.skills[0].maxLv;
+            Assert.AreEqual(GameDb.Str("skill.max"), GameController.SkillUpBlocker(p, 0));
+        }
 
-            p.prog.level = 6;
-            GameController.ApplySkillUnlocks(p, out fresh);
-            Assert.IsNull(fresh);
-            int total = 0; for (int i = 0; i < skills.Count; i++) total += Lv(i);
-            Assert.AreEqual(skills.Count + 2, total, "two levels past the last unlock add two skill levels");
-            int max = 0, min = 99; for (int i = 0; i < skills.Count; i++) { max = System.Math.Max(max, Lv(i)); min = System.Math.Min(min, Lv(i)); }
-            Assert.LessOrEqual(max - min, 1, "points go to the lowest skill first");
-
-            // Calling again at the same level changes nothing.
-            GameController.ApplySkillUnlocks(p, out fresh);
-            int again = 0; for (int i = 0; i < skills.Count; i++) again += Lv(i);
-            Assert.AreEqual(total, again);
+        [Test]
+        public void EveryClassHasItsOwnDodgeFromData()
+        {
+            Assert.AreEqual(DodgeKind.Blink, GameDb.Class("mage").Dodge.kind);
+            Assert.AreEqual(DodgeKind.Roll, GameDb.Class("archer").Dodge.kind);
+            Assert.AreEqual(DodgeKind.ShieldDash, GameDb.Class("swordsman").Dodge.kind);
+            Assert.Greater(GameDb.Class("swordsman").Dodge.knock, 0);
+            Assert.Greater(GameDb.Class("acolyte").Dodge.onAvoidHeal, 0);
+            foreach (var c in GameDb.Classes)
+            {
+                var d = c.Dodge;
+                Assert.IsNotNull(c.dodge, $"{c.id} has no dodge in classes.json");
+                Assert.Greater(d.duration, 0, c.id);
+                Assert.GreaterOrEqual(d.invuln, 260, $"{c.id}: invulnerability must not drop below the old 260 ms");
+                Assert.Greater(d.cooldown, 0, c.id);
+            }
+            Assert.IsNotEmpty(GameDb.SkillUi.statRows);
+            Assert.AreEqual("近戰", GameDb.SkillUi.typeLabel["melee"]);
         }
 
         [Test]

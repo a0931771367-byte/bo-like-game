@@ -72,8 +72,7 @@ namespace BoLike.Game
             world.Player = new Player(world, 200, (Units.GroundTopPx + Units.GroundBottomPx) / 2, cls, prog);
             // Growth curve v2 §1: the 3 starting stat points are spent at once and skills unlock by level.
             AllocateStats(world.Player, 1);
-            prog.skillPoints = 0;
-            ApplySkillUnlocks(world.Player, out _);
+            prog.skillPoints = 0; // skill 1 is known from the start; every level up adds one point the player spends
             world.Player.Recompute(true);
             hintsOn = save.runsPlayed < 2;
 
@@ -81,7 +80,8 @@ namespace BoLike.Game
             bool isTouch = TouchControls.IsTouchDevice;
             hud = Hud.Create(world, isTouch);
             hud.Stardust = () => save.stardust + run.stardustEarned;
-            if (isTouch) touch = TouchControls.Create(world);
+            hud.OpenSkillPanel = ShowSkillPanel;
+            if (isTouch) { touch = TouchControls.Create(world); touch.SkillLongPressed += ShowSkillPanel; }
             fx = new FxSystem(worldRoot, cam, hud, world) { views = views };
             world.Fx = fx;
             world.Sfx = AudioManager.Instance;
@@ -301,18 +301,19 @@ namespace BoLike.Game
         {
             var rules = run.Rules.levelUp;
             AllocateStats(p, levels);
-            p.prog.skillPoints = 0;
-            ApplySkillUnlocks(p, out var newSkill);
+            // 罐子 10/30: skill points are the player's to spend (long-press a skill button), one per level.
+            p.prog.skillPoints += levels;
             // Keep the HP ratio, then heal a fraction of the new max per level (not a full heal: v2 §1).
             p.Recompute(false);
             int heal = (int)StatFormulas.JsRound(p.maxHp * rules.heal * levels);
             p.hp = Mathf.Min(p.maxHp, p.hp + heal);
+            p.glowUntil = world.Now + 1500;
             world.Sfx.Play("levelup");
-            fx.Banner(newSkill != null ? $"LEVEL UP！新技能：{newSkill.name}" : "LEVEL UP!", Colors.Crit, newSkill != null ? 56 : 72);
+            fx.Banner($"{GameDb.Str("levelup.banner")}　{GameDb.Str("levelup.point").Replace("{n}", levels.ToString())}", Colors.Crit, 56);
             if (heal > 0) fx.Number(p.x, p.y - 130, $"+{heal}", Colors.Heal, true);
             fx.Aura(p.x, p.y, Colors.Crit);
             fx.Ring(p.x, p.y, 160, Colors.Crit, p.y - 1);
-            if (newSkill != null) world.Delay(1200, () => Hint("hint.skill"));
+            if (!skillPointHintShown) { skillPointHintShown = true; world.Delay(1400, () => hud.Toast(GameDb.Str("hint.skillPoint"), 3.5f)); }
         }
 
         /// <summary>Spends one level's worth of stat points per level: +1 to the class's two highest base stats, +1 VIT.</summary>
@@ -329,42 +330,43 @@ namespace BoLike.Game
             p.prog.statPoints = 0;
         }
 
-        /// <summary>
-        /// Skills unlock in order at <c>levelUp.skillUnlockLevels</c>; once every skill is learned, each further level
-        /// raises the lowest-level skill. Returns the skill newly unlocked this call (null when none).
-        /// Idempotent for the current level, so the run start can call it too.
-        /// </summary>
-        public static void ApplySkillUnlocks(Player p, out SkillDef newSkill)
+        bool skillPointHintShown;
+
+        /// <summary>Run level a skill slot needs before a point can be spent on it (<c>levelUp.skillUnlockLevels</c>).</summary>
+        public static int SkillGate(int index)
         {
-            newSkill = null;
-            var rules = GameDb.Rules.levelUp;
-            var levels = rules.skillUnlockLevels ?? new List<int> { 1, 2, 3, 4 };
-            int level = p.prog.level;
-            var skills = p.cls.skills;
-            int Lv(SkillDef s) => p.prog.skillLv.TryGetValue(s.id, out var l) ? l : 0;
-            for (int i = 0; i < skills.Count; i++)
-            {
-                int at = i < levels.Count ? levels[i] : int.MaxValue;
-                if (level >= at && Lv(skills[i]) == 0)
-                {
-                    p.prog.skillLv[skills[i].id] = 1;
-                    newSkill ??= skills[i];
-                }
-            }
-            // Levels past the last unlock each add +1 to the weakest skill (spent points are tracked by total skill levels).
-            int lastUnlock = skills.Count == 0 ? 1 : (skills.Count - 1 < levels.Count ? levels[skills.Count - 1] : levels[levels.Count - 1]);
-            int unlockedCount = 0, totalLv = 0;
-            foreach (var s in skills) { int l = Lv(s); if (l > 0) unlockedCount++; totalLv += l; }
-            if (unlockedCount < skills.Count) return;
-            int budget = skills.Count + System.Math.Max(0, level - lastUnlock);
-            while (totalLv < budget)
-            {
-                SkillDef lowest = null;
-                foreach (var s in skills) if (Lv(s) < s.maxLv && (lowest == null || Lv(s) < Lv(lowest))) lowest = s;
-                if (lowest == null) break;
-                p.prog.skillLv[lowest.id] = Lv(lowest) + 1;
-                totalLv++;
-            }
+            var levels = GameDb.Rules.levelUp.skillUnlockLevels;
+            if (levels == null || levels.Count == 0) return 1;
+            return levels[System.Math.Min(index, levels.Count - 1)];
+        }
+
+        /// <summary>Points to learn (0→1) or raise a skill, from <c>levelUp.skillLearnCost / skillRaiseCost</c>.</summary>
+        public static int SkillCost(Player p, SkillDef s) =>
+            System.Math.Max(1, BaseSkillLv(p, s) == 0 ? GameDb.Rules.levelUp.skillLearnCost : GameDb.Rules.levelUp.skillRaiseCost);
+
+        public static int BaseSkillLv(Player p, SkillDef s) => p.prog.skillLv.TryGetValue(s.id, out var l) ? l : 0;
+
+        /// <summary>Why a point can't go into slot <paramref name="index"/> right now, or null when it can.</summary>
+        public static string SkillUpBlocker(Player p, int index)
+        {
+            if (index >= p.cls.skills.Count) return "—";
+            var s = p.cls.skills[index];
+            if (p.prog.level < SkillGate(index)) return $"Lv{SkillGate(index)} 解鎖";
+            int lv = BaseSkillLv(p, s);
+            if (lv >= s.maxLv) return GameDb.Str("skill.max");
+            if (p.prog.skillPoints < SkillCost(p, s)) return "沒有技能點";
+            return null;
+        }
+
+        /// <summary>Spends one skill point on slot <paramref name="index"/>: learns it (0→1) or raises it. False when blocked.</summary>
+        public static bool SpendSkillPoint(Player p, int index)
+        {
+            if (SkillUpBlocker(p, index) != null) return false;
+            var s = p.cls.skills[index];
+            p.prog.skillPoints -= SkillCost(p, s);
+            p.prog.skillLv[s.id] = BaseSkillLv(p, s) + 1;
+            p.Recompute(false);
+            return true;
         }
 
         /// <summary>Shows a tutorial hint once per save, and only in the first two runs (v2 E6).</summary>
@@ -540,8 +542,144 @@ namespace BoLike.Game
             UiKit.Text(layer, 0, 160, "暫停", 44, 0xfff4de, UiKit.TopCenter, UiKit.TopCenter, TextAnchor.UpperCenter, true);
             UiKit.Text(layer, 0, 230, $"種子 {run.SeedCode}   第 {Mathf.Min(run.roomIndex + 1, run.Rules.combatRooms + 1)} 房", 20, 0xcfd4e6, UiKit.TopCenter, UiKit.TopCenter, TextAnchor.UpperCenter);
             UiKit.Button(layer, 0, 320, 260, 60, "繼續", 0xf28c28, ClearOverlay, 24, UiKit.TopCenter, UiKit.TopCenter);
-            UiKit.Button(layer, 0, 400, 260, 60, "放棄本局", 0x7a2a2a, () => { run.abandoned = true; finished = true; FinishRunLog("abandon"); ClearOverlay(); ShowResult(false); }, 24, UiKit.TopCenter, UiKit.TopCenter);
+            UiKit.Button(layer, -140, 400, 260, 60, world.Player.prog.skillPoints > 0 ? $"技能（{world.Player.prog.skillPoints} 點可用）" : "技能", 0x2f6fb5, () => ShowSkillPanel(0), 22, UiKit.TopCenter, UiKit.TopCenter);
+            UiKit.Button(layer, 140, 400, 260, 60, "放棄本局", 0x7a2a2a, () => { run.abandoned = true; finished = true; FinishRunLog("abandon"); ClearOverlay(); ShowResult(false); }, 24, UiKit.TopCenter, UiKit.TopCenter);
             FeedbackButton(layer, 0, 480);
+        }
+
+        /// <summary>
+        /// Skill panel (long-press a skill button, or pause → 技能): every skill with its description, the numbers at the
+        /// current and next level, and a button to spend a skill point. The world is paused while it is open.
+        /// </summary>
+        public void ShowSkillPanel(int focus)
+        {
+            if (finished) return;
+            var p = world.Player;
+            var ui = GameDb.SkillUi;
+            var layer = NewOverlay(0.72f);
+            paused = true;
+            UiKit.Text(layer, 0, 30, $"{GameDb.Str("skill.panel.title")}　　{GameDb.Str("skill.panel.points").Replace("{n}", p.prog.skillPoints.ToString())}", 30, 0xfff4de, UiKit.TopCenter, UiKit.TopCenter, TextAnchor.UpperCenter, true);
+            int n = p.cls.skills.Count;
+            float cardW = 250, cardH = 430, gap = 14;
+            float startX = -((n + 1) * cardW + n * gap) / 2; // + one card for the class dodge
+            string[] keys = { "U", "I", "O", "P" };
+            for (int i = 0; i < n; i++)
+            {
+                var s = p.cls.skills[i];
+                int idx = i;
+                int lv = BaseSkillLv(p, s);
+                bool learned = lv > 0;
+                var card = UiKit.Rect(layer, startX + i * (cardW + gap), 80, cardW, cardH, i == focus ? 0x2a2550 : 0x1b1830, 0.96f, UiKit.TopCenter);
+                if (i == focus) UiKit.Rect(card.transform, 0, 0, cardW, 4, 0xf28c28, 1f);
+                var icon = UiKit.Sprite(card.transform, SpriteBank.Icon(p.cls.id, i), 14, 14, 64, 64);
+                UiKit.SetAlpha(icon, learned ? 1f : 0.4f);
+                if (!learned)
+                {
+                    var lockSprite = Resources.Load<Sprite>("Icons/skill_locked");
+                    if (lockSprite != null) UiKit.Sprite(card.transform, lockSprite, 24, 24, 44, 44);
+                }
+                UiKit.Text(card.transform, 88, 14, s.name, 22, 0xfff4de, bold: true);
+                string type = ui.typeLabel.TryGetValue(s.type.ToString().ToLowerInvariant(), out var tl) ? tl : s.type.ToString();
+                string elem = ui.elementLabel.TryGetValue(s.element.ToString().ToLowerInvariant(), out var el) ? el : s.element.ToString();
+                UiKit.Text(card.transform, 88, 42, GameDb.Str("skill.level").Replace("{n}", lv.ToString()).Replace("{max}", s.maxLv.ToString()) + $"　[{(i < keys.Length ? keys[i] : "")}]", 14, 0xcfd4e6);
+                UiKit.Text(card.transform, 88, 60, GameDb.Str("skill.type").Replace("{type}", type).Replace("{element}", elem), 13, 0xcfd4e6);
+                var desc = UiKit.Text(card.transform, 14, 88, s.desc ?? "", 15, 0xe8e4f0);
+                desc.rectTransform.sizeDelta = new Vector2(cardW - 28, 64);
+                desc.horizontalOverflow = HorizontalWrapMode.Wrap;
+                var stats = UiKit.Text(card.transform, 14, 158, SkillNumbers(s, lv, ui), 14, 0xcfe8ff);
+                stats.rectTransform.sizeDelta = new Vector2(cardW - 28, 190);
+                stats.horizontalOverflow = HorizontalWrapMode.Wrap;
+                string blocker = SkillUpBlocker(p, i);
+                string label = blocker ?? GameDb.Str(learned ? "skill.raise" : "skill.learn");
+                var btn = UiKit.Button(card.transform, 0, -14, cardW - 36, 48, label, blocker == null ? 0xf28c28 : 0x3a3a4a, () =>
+                {
+                    if (!SpendSkillPoint(p, idx)) { hud.Toast(GameDb.Str("skill.noPoints")); return; }
+                    runLog.skillUps.Add(s.id);
+                    world.Sfx.Play("buff");
+                    ShowSkillPanel(idx);
+                }, 18, new Vector2(0.5f, 0), new Vector2(0.5f, 0));
+                btn.interactable = blocker == null;
+            }
+            // Class dodge card (design doc 06): what the dodge button does for this class.
+            var dd = p.cls.Dodge;
+            var dcard = UiKit.Rect(layer, startX + n * (cardW + gap), 80, cardW, cardH, 0x16202e, 0.96f, UiKit.TopCenter);
+            UiKit.Text(dcard.transform, 14, 14, GameDb.Str("dodge.title").Replace("{name}", dd.name), 20, 0x9be15d, bold: true);
+            var ddesc = UiKit.Text(dcard.transform, 14, 50, dd.desc ?? "", 15, 0xe8e4f0);
+            ddesc.rectTransform.sizeDelta = new Vector2(cardW - 28, 90);
+            ddesc.horizontalOverflow = HorizontalWrapMode.Wrap;
+            var dstats = UiKit.Text(dcard.transform, 14, 150,
+                $"距離：{dd.distance:0} px\n無敵：{dd.invuln / 1000f:0.##} 秒\n冷卻：{dd.cooldown / 1000f:0.#} 秒" +
+                (dd.knock > 0 ? $"\n撞開敵人：{dd.knock:0}" : "") + (dd.onAvoidHeal > 0 ? $"\n閃過攻擊回復：{dd.onAvoidHeal * 100:0}% HP" : "") +
+                (dd.cancelWindow > 0 ? $"\n結束前 {dd.cancelWindow:0} ms 可接攻擊" : "") + (dd.passThrough ? "\n穿過敵人" : ""), 14, 0xcfe8ff);
+            dstats.rectTransform.sizeDelta = new Vector2(cardW - 28, 200);
+            dstats.horizontalOverflow = HorizontalWrapMode.Wrap;
+            UiKit.Text(layer, 0, 520, GameDb.Str("skill.panel.hint"), 14, 0x9aa0b4, UiKit.TopCenter, UiKit.TopCenter, TextAnchor.UpperCenter);
+            UiKit.Button(layer, 0, 548, 220, 54, "關閉", 0x2f6fb5, ClearOverlay, 22, UiKit.TopCenter, UiKit.TopCenter);
+        }
+
+        static Scaling? ScalingOf(SkillDef s, string field) => field switch
+        {
+            "power" => s.power,
+            "sp" => s.sp,
+            "count" => s.count,
+            "duration" => s.duration,
+            "stunChance" => s.stunChance,
+            "freezeChance" => s.freezeChance,
+            "defDown" => s.defDown,
+            "goldCost" => s.goldCost,
+            "poison" => s.poison,
+            "heal" => s.heal,
+            "passiveValue" => s.passiveValue,
+            "dashDistance" => s.dashDistance,
+            _ => null,
+        };
+
+        static string Fmt(float v, string format) => format switch
+        {
+            "mult" => $"×{v:0.00}",
+            "percent" => $"{v * 100:0}%",
+            "seconds" => $"{v / 1000f:0.#} 秒",
+            "px" => $"{v:0} px",
+            _ => $"{v:0}",
+        };
+
+        static string FmtBuff(BuffEffect b, string field, string format)
+        {
+            if (b == null) return null;
+            float? f = field switch { "atkMult" => b.atkMult, "matkMult" => b.matkMult, "aspdMult" => b.aspdMult, "moveMult" => b.moveMult, "allStats" => b.allStats, "shieldHits" => (float?)b.shieldHits, _ => null };
+            bool? flag = field switch { "endure" => b.endure, "hidden" => b.hidden, _ => null };
+            if (format == "flag") return flag == true ? "✓" : null;
+            if (!f.HasValue) return null;
+            return format == "multPercent" ? $"+{(f.Value - 1) * 100:0}%" : $"{f.Value:0}";
+        }
+
+        /// <summary>"現在 → 下一級" rows from skillUi.json (SKILL_STAT_ROWS / BUFF_STAT_ROWS), only the fields the skill uses.</summary>
+        static string SkillNumbers(SkillDef s, int lv, SkillUiTable ui)
+        {
+            int cur = System.Math.Max(1, lv), next = System.Math.Min(s.maxLv, cur + 1);
+            bool showNext = lv < s.maxLv;
+            string typeKey = s.type.ToString().ToLowerInvariant();
+            var lines = new List<string>();
+            foreach (var row in ui.statRows)
+            {
+                if (row.onlyTypes != null && row.onlyTypes.Count > 0 && !row.onlyTypes.Contains(typeKey)) continue;
+                var sc = ScalingOf(s, row.field);
+                if (!sc.HasValue) continue;
+                if (row.field == "power" && sc.Value.Base <= 0) continue;
+                if (row.field == "sp" && s.type == SkillType.Passive) continue;
+                string a = Fmt(sc.Value.At(cur), row.format), b = Fmt(sc.Value.At(next), row.format);
+                lines.Add(showNext && a != b ? $"{row.label}：{a} → {b}" : $"{row.label}：{a}");
+            }
+            if (s.buffByLevel != null && s.buffByLevel.Count > 0)
+                foreach (var row in ui.buffRows)
+                {
+                    string a = FmtBuff(s.BuffAt(cur), row.field, row.format), b = FmtBuff(s.BuffAt(next), row.field, row.format);
+                    if (a == null && b == null) continue;
+                    lines.Add(showNext && a != b ? $"{row.label}：{a ?? "—"} → {b ?? "—"}" : $"{row.label}：{a ?? b}");
+                }
+            if (s.cooldown > 0) lines.Add(GameDb.Str("skill.cooldown").Replace("{s}", (s.cooldown / 1000f).ToString("0.#")));
+            if (lv == 0) lines.Add("（尚未學習，顯示 Lv1 數值）");
+            return string.Join("\n", lines);
         }
 
         /// <summary>"回報問題" opens the beta feedback form / mail with build, class, seed and room pre-filled; hidden when none is configured.</summary>
@@ -573,6 +711,23 @@ namespace BoLike.Game
 
         // ---------- frame ----------
 
+        readonly float[] skillKeyHeld = new float[4];
+
+        /// <summary>Holding U/I/O/P for half a second opens the skill panel on that slot (touch buttons do the same via TouchControls).</summary>
+        bool KeyboardSkillLongPress(out int slot)
+        {
+            slot = -1;
+            var kb = Keyboard.current;
+            if (kb == null) return false;
+            var keys = new[] { kb.uKey, kb.iKey, kb.oKey, kb.pKey };
+            for (int i = 0; i < keys.Length; i++)
+            {
+                if (keys[i].isPressed) skillKeyHeld[i] += Time.unscaledDeltaTime; else skillKeyHeld[i] = 0;
+                if (skillKeyHeld[i] >= 0.5f) { skillKeyHeld[i] = 0; slot = i; return true; }
+            }
+            return false;
+        }
+
         void Update()
         {
             if (overlay != null)
@@ -589,6 +744,7 @@ namespace BoLike.Game
                 return;
             }
             if (GameInput.Consume(GameAction.Menu) && !finished) { ShowPause(); return; }
+            if (KeyboardSkillLongPress(out int held)) { ShowSkillPanel(held); return; }
 
             float dt = Time.deltaTime;
             world.Step(dt);

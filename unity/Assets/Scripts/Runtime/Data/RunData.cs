@@ -136,8 +136,14 @@ namespace BoLike.Data
         /// <summary>Fraction of max HP healed on level up.</summary>
         public float heal = 0.3f;
         public int statsPerLevel = 3;
-        /// <summary>Level at which skill i unlocks; after all are unlocked each level raises the lowest skill.</summary>
+        /// <summary>Skill slot i can take points once the run level is at least skillUnlockLevels[i].</summary>
         public List<int> skillUnlockLevels = new() { 1, 2, 3, 4 };
+        /// <summary>Skill points per level, spent by the player in the skill panel (design doc 06).</summary>
+        public int skillPointsPerLevel = 1;
+        public int skillLearnCost = 1;
+        public int skillRaiseCost = 1;
+        public int startSkills = 1;
+        public bool panelPausesGame = true;
 
         public float ExpMultAt(int slot) => expScalingBySlot == null || expScalingBySlot.Count == 0 ? 1 : expScalingBySlot[System.Math.Clamp(slot, 0, expScalingBySlot.Count - 1)];
     }

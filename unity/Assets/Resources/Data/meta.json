@@ -26,12 +26,17 @@
    "bossExpMult": 2,
    "heal": 0.3,
    "statsPerLevel": 3,
+   "skillPointsPerLevel": 1,
    "skillUnlockLevels": [
     1,
     2,
     3,
     4
-   ]
+   ],
+   "skillLearnCost": 1,
+   "skillRaiseCost": 1,
+   "startSkills": 1,
+   "panelPausesGame": true
   },
   "roomClearHeal": 0.2,
   "roomScaling": {

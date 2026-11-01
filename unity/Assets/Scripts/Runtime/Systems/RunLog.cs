@@ -40,6 +40,8 @@ namespace BoLike.Systems
         public int stardust;
         public int level;
         public List<string> perks = new();
+        /// <summary>Skill ids the player spent skill points on, in order (one entry per point).</summary>
+        public List<string> skillUps = new();
         public List<RoomLogEntry> rooms = new();
     }
 

@@ -205,7 +205,20 @@ namespace BoLike.Game
                 case FighterState.Jump: sy = 1.08f; sx = 0.95f; lean = 5; break;
                 case FighterState.Cast: sy = 1.05f + Mathf.Sin(t / 50f) * 0.02f; lean = -4; break;
                 case FighterState.CastEnd: sx = 1.1f; lean = 8; break;
-                case FighterState.Dodge: lean = 22; sx = 1.1f; sy = 0.9f; break;
+                case FighterState.Dodge:
+                {
+                    float u = Mathf.Clamp01(t / p.dodgeMs);
+                    switch (p.Dodge.kind)
+                    {
+                        case DodgeKind.Blink: sx = 1 - 0.25f * u; sy = 1 + 0.15f * u; break;                     // mage: gathers, then vanishes (alpha below)
+                        case DodgeKind.Roll: lean = 360f * u; bob = Mathf.Sin(u * Mathf.PI) * 28f; break;        // archer: forward roll
+                        case DodgeKind.JetDash: lean = 24; sx = 1.15f; sy = 0.92f; break;                         // merchant: jet slide
+                        case DodgeKind.ShadowStep: lean = 32; sx = 1.15f; sy = 0.88f; break;                      // thief: low dash
+                        case DodgeKind.GraceStep: lean = 8; bob = 10 + Mathf.Sin(u * Mathf.PI) * 8; sy = 1.04f; break; // acolyte: glides
+                        default: lean = -8; sx = 1.12f; sy = 0.96f; break;                                        // swordsman: shield forward
+                    }
+                    break;
+                }
                 case FighterState.Hurt: lean = -14; sx = 0.92f; break;
                 case FighterState.Knock: lean = -45; break;
                 case FighterState.Down:
@@ -215,8 +228,18 @@ namespace BoLike.Game
             foreach (var b in p.buffs)
                 if (b.eff.endure || (b.hits ?? 0) > 0 || b.eff.atkMult.HasValue || b.eff.allStats.HasValue || b.eff.aspdMult.HasValue) { glow = b; break; }
             aura.color = glow != null ? Colors.Rgb(glow.color, 0.6f + Mathf.Sin((float)(now / 90)) * 0.3f) : new Color(0, 0, 0, 0);
+            if (now < p.glowUntil)
+            {
+                // Level-up: golden aura that swells and fades over the glow time.
+                float g = Mathf.Clamp01((float)(p.glowUntil - now) / 1500f);
+                aura.color = Colors.Rgb(Colors.Crit, 0.35f + 0.5f * g + Mathf.Sin((float)(now / 70)) * 0.15f);
+                aura.transform.localScale = new Vector3(110f / 128f * (1.1f + 0.3f * (1 - g)), 150f / 128f * (1.1f + 0.3f * (1 - g)), 1);
+            }
+            else aura.transform.localScale = new Vector3(110f / 128f, 150f / 128f, 1);
             bool blink = now < p.invulnUntil && p.state != FighterState.Dodge;
-            alpha = p.Hidden ? 0.3f : blink ? ((int)(now / 60) % 2 == 1 ? 0.35f : 1f) : p.state == FighterState.Dodge ? 0.6f : 1f;
+            alpha = p.Hidden ? 0.3f : blink ? ((int)(now / 60) % 2 == 1 ? 0.35f : 1f)
+                : p.state == FighterState.Dodge ? (p.Dodge.kind == DodgeKind.Blink ? Mathf.Clamp01(1 - t / p.dodgeMs)
+                    : p.Dodge.kind == DodgeKind.ShadowStep ? 0.5f : p.Dodge.kind == DodgeKind.ShieldDash ? 1f : 0.6f) : 1f;
         }
 
         // ---------- enemy ----------

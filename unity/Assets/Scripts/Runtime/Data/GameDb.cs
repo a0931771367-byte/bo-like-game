@@ -29,6 +29,7 @@ namespace BoLike.Data
         static RoomTable roomTable;
         static MetaTable meta;
         static StringTable stringTable;
+        static SkillUiTable skillUi;
 
         public static IReadOnlyList<ClassDef> Classes { get { Load(); return classes; } }
         public static IEnumerable<EnemyDef> Enemies { get { Load(); return enemyById.Values; } }
@@ -39,6 +40,7 @@ namespace BoLike.Data
         public static IReadOnlyList<string> RoomPool { get { Load(); return roomTable.pool; } }
         public static string BossRoom { get { Load(); return roomTable.boss; } }
         public static RunRules Rules { get { Load(); return meta.rules; } }
+        public static SkillUiTable SkillUi { get { Load(); return skillUi; } }
         public static IReadOnlyList<UnlockDef> Unlocks { get { Load(); return meta.unlocks; } }
         public static IReadOnlyList<string> StartingClasses { get { Load(); return meta.startingClasses; } }
         public static IReadOnlyList<SceneDef> Scenes { get { Load(); return roomTable.scenes; } }
@@ -79,6 +81,8 @@ namespace BoLike.Data
             roomTable = Read<RoomTable>("rooms");
             roomById = roomTable.rooms.ToDictionary(r => r.id);
             meta = Read<MetaTable>("meta");
+            var uiAsset = Resources.Load<TextAsset>("Data/skillUi");
+            skillUi = uiAsset != null ? Parse<SkillUiTable>(uiAsset.text) : new SkillUiTable();
             var strAsset = Resources.Load<TextAsset>("Data/strings");
             stringTable = strAsset != null ? Parse<StringTable>(strAsset.text) : new StringTable();
             loaded = true;
