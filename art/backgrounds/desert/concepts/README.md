@@ -8,3 +8,6 @@
 
 選定後用 `art/characters-v2/tools/betabg.py` 轉成 Unity 格式（高 720、bgGroundY 420、左右鏡像平鋪）。
 符文目前像英文字母，定稿時會改成原創符號。Higgsfield 3 張，6 點。
+
+## 初版 Unity 轉檔（未交付）
+`../out/chapter3.png`（A）、`../out/chapter3_boss.png`（B）只是格式試轉。已知問題：鏡像拼接讓石像頭、方尖碑左右成對；B 的走道底部深色帶在補高時變成條紋。罐子選定後會用擴圖補寬、重畫走道再交付。
