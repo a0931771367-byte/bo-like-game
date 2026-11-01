@@ -167,6 +167,30 @@ namespace BoLike.Game
             if (!string.IsNullOrEmpty(chapter.ambience)) AudioManager.Instance.PlayAmbience(chapter.ambience, 0.35f); else AudioManager.Instance.StopAmbience();
             EnterRoom(snap != null ? Mathf.Clamp(snap.roomIndex, 0, run.waveSetByRoom.Count - 1) : 0);
             if (snap != null) hud.Toast(GameDb.Str("chapter.resumed"), 2.5f);
+            else ShowStory(run.Stage.story?.before, "before", null);
+        }
+
+        // ---------- story (S4) ----------
+
+        /// <summary>
+        /// Plays a story beat once per account: the stage's `before` key when a fresh run starts, `after` when its boss
+        /// falls. The world is paused underneath; <paramref name="then"/> runs when the player finishes or skips.
+        /// </summary>
+        void ShowStory(string storyKey, string slot, System.Action then)
+        {
+            var story = string.IsNullOrEmpty(storyKey) ? null : GameDb.Story(storyKey);
+            var lines = story == null ? null : slot == "before" ? story.before : story.after;
+            string seenKey = $"{run.stageId}:{slot}";
+            if (lines == null || lines.Count == 0 || save.storySeen.Contains(seenKey)) { then?.Invoke(); return; }
+            save.storySeen.Add(seenKey);
+            SaveSystem.Save();
+            var layer = NewOverlay(0.35f);
+            var cls = GameDb.Class(classId);
+            DialogueBox.Show(layer, lines, cls.name, $"{classId}_front", () =>
+            {
+                ClearOverlay();
+                then?.Invoke();
+            });
         }
 
         void OnDestroy() => GameInput.Disable();
@@ -336,7 +360,7 @@ namespace BoLike.Game
                 world.Sfx.Play("clear");
                 finished = true;
                 FinishRunLog("win");
-                world.Delay(2200, () => ShowResult(true));
+                world.Delay(2200, () => ShowStory(run.Stage.story?.after, "after", () => ShowResult(true)));
                 return;
             }
             run.roomsCleared++;

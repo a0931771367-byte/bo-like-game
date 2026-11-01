@@ -122,6 +122,7 @@ namespace BoLike.Game
             ["talentReset"] = new Cue { files = new[] { "sfx_talent_reset" }, fallback = "select" },
             ["classUnlock"] = new Cue { files = new[] { "sfx_class_unlock" }, fallback = "levelup" },
             ["dialogBlip"] = new Cue { files = new[] { "sfx_dialog_blip" }, volume = 0.5f, minGapMs = 40f, fallback = "text" },
+            ["dialogNarrator"] = new Cue { files = new[] { "sfx_dialog_narrator" }, volume = 0.6f, minGapMs = 300f, fallback = "text" },
         };
 
         /// <summary>
