@@ -162,3 +162,57 @@ namespace BoLike.Tests
         }
     }
 }
+
+namespace BoLike.Tests
+{
+    /// <summary>S5: continuing a run from its room-start snapshot must reproduce the same offers the player would have seen.</summary>
+    public class ResumeTests
+    {
+        [Test]
+        public void ReplayingTakenPerksReproducesTheNextOffer()
+        {
+            var save = new SaveData();
+            var live = RunState.New("swordsman", save, "grassland-3", 99);
+            var taken = new System.Collections.Generic.List<string>();
+            for (int room = 0; room < 3; room++)
+            {
+                var offer = live.DrawPerks(3, 0);
+                live.TakePerk(offer[room % offer.Count]);
+                taken.Add(offer[room % offer.Count].id);
+            }
+            var expectedNext = live.DrawPerks(3, 0).ConvertAll(p => p.id);
+
+            var resumed = RunState.New("swordsman", save, "grassland-3", 99);
+            foreach (var id in taken) { resumed.DrawPerks(3, 0); resumed.TakePerk(GameDb.Perk(id)); }
+            CollectionAssert.AreEqual(live.roomOrder, resumed.roomOrder);
+            CollectionAssert.AreEqual(live.waveSetByRoom, resumed.waveSetByRoom);
+            CollectionAssert.AreEqual(expectedNext, resumed.DrawPerks(3, 0).ConvertAll(p => p.id), "the 4th offer after a resume equals the uninterrupted one");
+            Assert.AreEqual(live.mods.atk, resumed.mods.atk, 1e-5);
+        }
+
+        [Test]
+        public void SnapshotRoundTripsThroughTheSave()
+        {
+            var save = new SaveData
+            {
+                runSnapshot = new RunSnapshot
+                {
+                    classId = "mage", stageId = "mistForest-3", seedCode = "ABCD2345", roomIndex = 2,
+                    perks = new() { "toughBody" }, prog = new ClassProgress { level = 4, skillPoints = 1, stats = new Stats { str = 1, @int = 9 }, skillLv = new() { ["firebolt"] = 2 } },
+                    hp = 123, sp = 45, red = 1, blue = 2, gold = 70, stardustEarned = 25, roomsCleared = 2, reviveUsed = true, elapsedMs = 123456, resumes = 1,
+                },
+            };
+            var json = Newtonsoft.Json.JsonConvert.SerializeObject(save, GameDb.Json);
+            var back = SaveSystem.Parse(json).runSnapshot;
+            Assert.NotNull(back);
+            Assert.AreEqual("mistForest-3", back.stageId);
+            Assert.AreEqual(2, back.roomIndex);
+            Assert.AreEqual(4, back.prog.level);
+            Assert.AreEqual(2, back.prog.skillLv["firebolt"]);
+            Assert.AreEqual(9, back.prog.stats.@int);
+            Assert.IsTrue(back.reviveUsed);
+            Assert.AreEqual(123456, back.elapsedMs);
+            Assert.IsNull(SaveSystem.Parse("{\"version\":2}").runSnapshot, "older saves have no run to continue");
+        }
+    }
+}

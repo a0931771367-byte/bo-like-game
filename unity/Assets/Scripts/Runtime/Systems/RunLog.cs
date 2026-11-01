@@ -38,6 +38,8 @@ namespace BoLike.Systems
         public string result;
         public int roomsCleared;
         public bool bossKilled;
+        /// <summary>Times the run was continued from a snapshot after the app was closed (S5); 0 = played in one go.</summary>
+        public int resumes;
         public int totalMs;
         public int stardust;
         public int level;

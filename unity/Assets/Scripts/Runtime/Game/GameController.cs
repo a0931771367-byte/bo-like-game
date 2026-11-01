@@ -20,6 +20,8 @@ namespace BoLike.Game
         public ulong seedOverride;
         /// <summary>Stage to play (S1); null = the first chapter's stage.</summary>
         public string stageId;
+        /// <summary>When set, the run continues from this snapshot instead of starting fresh (S5).</summary>
+        public RunSnapshot resumeFrom;
 
         World world;
         RunState run;
@@ -53,6 +55,20 @@ namespace BoLike.Game
 
         public static GameController Launch(string classId, ulong seed = 0) => Launch(classId, null, seed);
 
+        /// <summary>Continues the run saved in <paramref name="snap"/> from the start of its current room.</summary>
+        public static GameController Resume(RunSnapshot snap)
+        {
+            var go = new GameObject("Game");
+            go.SetActive(false);
+            var gc = go.AddComponent<GameController>();
+            gc.classId = snap.classId;
+            gc.stageId = snap.stageId;
+            gc.seedOverride = Rng.CodeToSeed(snap.seedCode);
+            gc.resumeFrom = snap;
+            go.SetActive(true);
+            return gc;
+        }
+
         public static GameController Launch(string classId, string stageId, ulong seed = 0)
         {
             var go = new GameObject("Game");
@@ -76,13 +92,43 @@ namespace BoLike.Game
             worldRoot = new GameObject("World").transform;
 
             var cls = GameDb.Class(classId);
-            var prog = ClassProgress.New(cls);
+            var snap = resumeFrom;
+            var prog = snap?.prog ?? ClassProgress.New(cls);
+            prog.skillLv ??= new Dictionary<string, int>();
+            prog.stats ??= cls.baseStats.Clone();
+            if (snap != null)
+            {
+                // Replay the perks in the order they were taken: each offer is drawn first so the perk rng advances exactly
+                // as it did in the original session and the next offers come out the same (QA #9 still holds after a resume).
+                foreach (var id in snap.perks)
+                {
+                    run.DrawPerks(run.Rules.perkChoices, RunState.RareChanceBonus(save));
+                    run.TakePerk(GameDb.Perk(id));
+                }
+                run.mods.reviveUsed = snap.reviveUsed;
+                world.Mods = run.mods;
+                run.inv.red = snap.red; run.inv.blue = snap.blue; run.inv.gold = snap.gold;
+                run.stardustEarned = snap.stardustEarned;
+                run.roomsCleared = snap.roomsCleared;
+                runLog.rooms.AddRange(snap.rooms ?? new List<RoomLogEntry>());
+                runLog.skillUps.AddRange(snap.skillUps ?? new List<string>());
+                runLog.resumes = snap.resumes + 1;
+            }
             world.Player = new Player(world, 200, (Units.GroundTopPx + Units.GroundBottomPx) / 2, cls, prog);
-            // Growth curve v2 §1: the 3 starting stat points are spent at once and skills unlock by level.
-            AllocateStats(world.Player, 1);
-            prog.skillPoints = 0; // skill 1 is known from the start; every level up adds one point the player spends
-            world.Player.Recompute(true);
-            hintsOn = save.runsPlayed < 2;
+            if (snap == null)
+            {
+                // Growth curve v2 §1: the 3 starting stat points are spent at once and skills unlock by level.
+                AllocateStats(world.Player, 1);
+                prog.skillPoints = 0; // skill 1 is known from the start; every level up adds one point the player spends
+                world.Player.Recompute(true);
+            }
+            else
+            {
+                world.Player.Recompute(false);
+                world.Player.hp = Mathf.Clamp(snap.hp, 1, world.Player.maxHp);
+                world.Player.sp = Mathf.Clamp(snap.sp, 0, world.Player.maxSp);
+            }
+            hintsOn = snap == null && save.runsPlayed < 2;
 
             cam = GameCamera.Create(world);
             bool isTouch = TouchControls.IsTouchDevice;
@@ -110,14 +156,48 @@ namespace BoLike.Game
             world.ComboChanged += hud.Combo;
 
             GameInput.Enable();
-            run.startedAt = 0;
+            run.startedAt = snap != null ? -snap.elapsedMs : 0; // world.Now starts at 0; the snapshot carries the time already played
             var chapter = run.Chapter;
             AudioManager.Instance.PlayMusic(chapter.music ?? "field");
             if (!string.IsNullOrEmpty(chapter.ambience)) AudioManager.Instance.PlayAmbience(chapter.ambience, 0.35f); else AudioManager.Instance.StopAmbience();
-            EnterRoom(0);
+            EnterRoom(snap != null ? Mathf.Clamp(snap.roomIndex, 0, run.waveSetByRoom.Count - 1) : 0);
+            if (snap != null) hud.Toast(GameDb.Str("chapter.resumed"), 2.5f);
         }
 
         void OnDestroy() => GameInput.Disable();
+
+        // ---------- resume snapshot (S5) ----------
+
+        /// <summary>Writes the run as it stands at the start of the current room; the title screen offers to continue it.</summary>
+        void SaveSnapshot()
+        {
+            if (finished) return;
+            var p = world.Player;
+            save.runSnapshot = new RunSnapshot
+            {
+                classId = classId, stageId = run.stageId, seedCode = run.SeedCode,
+                roomIndex = run.roomIndex,
+                perks = run.perks.ConvertAll(pk => pk.id),
+                prog = p.prog,
+                hp = Mathf.RoundToInt(p.hp), sp = Mathf.RoundToInt(p.sp),
+                red = run.inv.red, blue = run.inv.blue, gold = run.inv.gold,
+                stardustEarned = run.stardustEarned, roomsCleared = run.roomsCleared,
+                reviveUsed = run.mods.reviveUsed,
+                elapsedMs = (int)(world.Now - run.startedAt),
+                rooms = runLog.rooms.FindAll(r => r != roomLog), // the current room is logged again when it is replayed
+                skillUps = new List<string>(runLog.skillUps),
+                resumes = runLog.resumes,
+                savedAt = System.DateTime.UtcNow.ToString("o"),
+            };
+            SaveSystem.Save();
+        }
+
+        void ClearSnapshot()
+        {
+            if (save.runSnapshot == null) return;
+            save.runSnapshot = null;
+            SaveSystem.Save();
+        }
 
         // ---------- rooms ----------
 
@@ -150,6 +230,7 @@ namespace BoLike.Game
             if (p.state != FighterState.Dead) p.SetState(FighterState.Idle);
             cam.SnapTo(p.x);
             string label = run.InBossRoom ? room.name : $"第 {index + 1} 房  {room.name}";
+            SaveSnapshot();
             // The chapter title card on the first room is the cheapest "something new" cue when a scene unlocks (S1).
             if (index == 0) fx.Banner($"{GameDb.Str("chapter.start").Replace("{n}", run.Chapter.order.ToString())}  {run.Chapter.name}", 0xfff4de, 56);
             world.Delay(index == 0 ? 1400 : 0, () => fx.Banner(label, 0xffffff, 48));
@@ -423,6 +504,7 @@ namespace BoLike.Game
         {
             if (runLogged) return;
             runLogged = true;
+            ClearSnapshot();
             runLog.build = BuildInfo.Number;
             runLog.classId = classId;
             runLog.chapterId = run.Chapter.id;

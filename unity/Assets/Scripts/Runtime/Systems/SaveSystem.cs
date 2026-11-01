@@ -64,12 +64,40 @@ namespace BoLike.Systems
         public List<string> bossFirstKills = new();
         /// <summary>Chapter the player last picked on the title screen.</summary>
         public string lastChapterId;
+        /// <summary>The run in progress, written at every room start and cleared when the run ends (S5 續局). Null = none.</summary>
+        public RunSnapshot runSnapshot;
 
         public ClassProgress ProgressFor(ClassDef cls)
         {
             if (!classes.TryGetValue(cls.id, out var p) || p == null) classes[cls.id] = p = ClassProgress.New(cls);
             return p;
         }
+    }
+
+    /// <summary>
+    /// Everything needed to continue a run from the start of its current room (design doc 08 §1.3): the seed replays
+    /// the room order, wave sets and perk offers; the rest is the player's state when the room began.
+    /// </summary>
+    public class RunSnapshot
+    {
+        public int version = 1;
+        public string classId, stageId, seedCode;
+        /// <summary>Index of the room to resume at; the player restarts it from its door.</summary>
+        public int roomIndex;
+        /// <summary>Perk ids in the order they were taken; replayed through DrawPerks/TakePerk so later offers match.</summary>
+        public List<string> perks = new();
+        public ClassProgress prog;
+        public int hp, sp;
+        public int red, blue, gold;
+        public int stardustEarned, roomsCleared;
+        public bool reviveUsed;
+        /// <summary>Simulation ms played before this room, so the run's total time survives the restart.</summary>
+        public int elapsedMs;
+        public List<RoomLogEntry> rooms = new();
+        public List<string> skillUps = new();
+        /// <summary>How many times this run has been resumed (for runs.jsonl).</summary>
+        public int resumes;
+        public string savedAt;
     }
 
     /// <summary>

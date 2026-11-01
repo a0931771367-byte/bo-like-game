@@ -140,8 +140,29 @@ namespace BoLike.Game
                 UiKit.Text(btn.transform, 0, 174, locked ? $"✦ {lockedBy.cost} 解鎖" : cls.role, 12, locked ? 0xffd36b : 0xcfd4e6, UiKit.TopCenter, UiKit.TopCenter, TextAnchor.UpperCenter);
                 x += 220;
             }
+            // Resume (S5): a run saved at a room start continues from that room; discarding it just drops the snapshot
+            // (the stardust it earned is already banked).
+            var snap = save.runSnapshot;
+            bool canResume = snap != null && GameDb.HasRunStage(snap.stageId) && snap.classId != null && unlocked.Contains(snap.classId);
+            if (canResume)
+            {
+                UiKit.Button(layer, -70, 296, 300, 34, GameDb.Str("chapter.resume").Replace("{n}", (snap.roomIndex + 1).ToString()), 0xf28c28, () =>
+                {
+                    AudioManager.Instance.Play("select");
+                    Destroy(title);
+                    GameController.Resume(snap);
+                }, 16, UiKit.TopCenter);
+                UiKit.Button(layer, 160, 296, 140, 34, GameDb.Str("chapter.resumeDiscard"), 0x7a2a2a, () =>
+                {
+                    save.runSnapshot = null;
+                    SaveSystem.Save();
+                    Destroy(title);
+                    ShowTitle();
+                }, 14, UiKit.TopCenter);
+            }
+            else if (snap != null) { save.runSnapshot = null; SaveSystem.Save(); } // stale snapshot (data removed): drop it quietly
             string nextLine = GameController.NextUnlockLine(save);
-            if (nextLine != null) UiKit.Text(layer, 0, 300, nextLine, 14, 0xffd36b, UiKit.TopCenter, UiKit.TopCenter, TextAnchor.UpperCenter);
+            if (nextLine != null && !canResume) UiKit.Text(layer, 0, 300, nextLine, 14, 0xffd36b, UiKit.TopCenter, UiKit.TopCenter, TextAnchor.UpperCenter);
             ShowUnlockShop(layer, save);
             if (Debug.isDebugBuild || Application.isEditor)
                 UiKit.Button(layer, 0, -12, 150, 32, "種子開局", 0x3a3a4a, () => ShowSeedPanel(layer, unlocked), 14, UiKit.BottomCenter, new Vector2(0.5f, 0));

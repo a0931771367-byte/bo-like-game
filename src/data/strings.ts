@@ -96,6 +96,7 @@ export const STRINGS: Record<string, string> = {
   'chapter.resume': '繼續上一局（第 {n} 房）',
   'chapter.resumeDiscard': '放棄上一局',
   'chapter.soon': '即將開放',
+  'chapter.resumed': '從上次離開的房間繼續',
   'chapter.done': '已通關',
   'chapter.unlocked': '解鎖新場景：{name}',
   'chapter.start': '第 {n} 章',
