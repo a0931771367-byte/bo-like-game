@@ -12,7 +12,7 @@ namespace BoLike.Tests
         [Test]
         public void EveryStageHasAFullPoolAndAValidFinale()
         {
-            Assert.GreaterOrEqual(GameDb.Chapters.Count, 3, "beta 2 lists three chapters even before the third has data");
+            Assert.AreEqual(3, GameDb.Chapters.Count, "beta 2 ships three chapters");
             foreach (var st in GameDb.RunStages)
             {
                 var ch = GameDb.Chapter(st.chapterId);
@@ -102,13 +102,15 @@ namespace BoLike.Tests
             Assert.IsTrue(Progress.ChapterCleared(save, grass));
             Assert.AreEqual("mistForest", Progress.DefaultChapter(save).id, "preselect the furthest open chapter");
             Assert.AreEqual("mistForest", Progress.ChapterUnlockedBy("jellyKing").id);
-            Assert.IsNull(Progress.ChapterUnlockedBy("treant"), "the desert has no stages yet, so a treant kill opens nothing");
+            if (!Progress.ChapterReady(GameDb.Chapter("desertRuins")))
+                Assert.IsNull(Progress.ChapterUnlockedBy("treant"), "the desert's background is not in the build yet, so a treant kill opens nothing");
+            else Assert.AreEqual("desertRuins", Progress.ChapterUnlockedBy("treant").id);
             Assert.AreEqual("mistForest-3", Progress.NextStage(save, forest).id);
 
             save.lastChapterId = "grassland";
             Assert.AreEqual("grassland", Progress.DefaultChapter(save).id, "the player's last pick wins while it is still open");
             save.lastChapterId = "desertRuins";
-            Assert.AreEqual("mistForest", Progress.DefaultChapter(save).id, "a pick that is not playable is ignored");
+            Assert.AreEqual("mistForest", Progress.DefaultChapter(save).id, "a pick that is locked or not ready is ignored");
         }
 
         // A v2 save as build 14 wrote it (fields of SaveData v2; QA gate D asks for the real device file once pulled).

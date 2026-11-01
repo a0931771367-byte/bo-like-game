@@ -11,7 +11,9 @@ namespace BoLike.Data
     public enum StatKey { Str, Agi, Vit, Int, Dex, Luk }
     public enum SkillType { Melee, Aoe, Projectile, Buff, Debuff, Wall, Strikes, Heal, Dash, Passive }
     public enum Weapon { Sword, Staff, Axe, Mace, Dagger, Bow }
-    public enum EnemyBehavior { Hopper, Melee, Lunger, BossSlime, Flyer, Turret, BossTreant }
+    /// <summary>Burrower/Reviver/Crab/BossGuardian are the desert ruins behaviours (design doc 08 §2.5); until each is
+    /// implemented the enemy AI treats it as Melee so the data loads and the rooms stay playable.</summary>
+    public enum EnemyBehavior { Hopper, Melee, Lunger, BossSlime, Flyer, Turret, BossTreant, Burrower, Reviver, Crab, BossGuardian }
     public enum Passive { DoubleAttack, GoldFind }
     public enum Side { Left, Right }
 

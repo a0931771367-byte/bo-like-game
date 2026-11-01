@@ -83,18 +83,19 @@ namespace BoLike.Game
             foreach (var ch in chapters)
             {
                 var c = ch;
-                bool open = c.Playable && Progress.ChapterUnlocked(save, c);
+                bool ready = Progress.ChapterReady(c);
+                bool open = ready && Progress.ChapterUnlocked(save, c);
                 bool selected = open && c.id == chapter.id;
                 var cb = UiKit.Button(layer, cx, 232, 284, 64, "", selected ? 0xf28c28 : open ? 0x1b1830 : 0x14121f, () =>
                 {
-                    if (!open) { Flash(layer, c.Playable ? GameDb.Str("chapter.locked").Replace("{boss}", UnlockBossName(c)) : GameDb.Str("chapter.soon")); return; }
+                    if (!open) { Flash(layer, ready ? GameDb.Str("chapter.locked").Replace("{boss}", UnlockBossName(c)) : GameDb.Str("chapter.soon")); return; }
                     save.lastChapterId = c.id;
                     SaveSystem.Save();
                     AudioManager.Instance.Play("select");
                     Destroy(title);
                     ShowTitle();
                 }, 20, UiKit.TopCenter);
-                string sub = !c.Playable ? GameDb.Str("chapter.soon")
+                string sub = !ready ? GameDb.Str("chapter.soon")
                     : !open ? GameDb.Str("chapter.locked").Replace("{boss}", UnlockBossName(c))
                     : Progress.ChapterCleared(save, c) ? $"{GameDb.Str("chapter.cleared")} ✓  {c.desc}" : c.desc;
                 UiKit.Text(cb.transform, 0, 6, $"{GameDb.Str("chapter.start").Replace("{n}", c.order.ToString())}  {c.name}", 20, open ? 0xfff4de : 0x9aa0b4, UiKit.TopCenter, UiKit.TopCenter, TextAnchor.UpperCenter, true, 1);

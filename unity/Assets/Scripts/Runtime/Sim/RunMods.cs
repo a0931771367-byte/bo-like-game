@@ -62,6 +62,7 @@ namespace BoLike.Sim
                     case PerkEffectKind.ComboFinisherAoe: comboFinisherAoeRadius = System.Math.Max(comboFinisherAoeRadius, e.radius); break;
                     case PerkEffectKind.ProjectileCount: projectileAdd += e.add; break;
                     case PerkEffectKind.Pierce: pierceAdd += e.add; break;
+                    default: break; // beta-2 kinds land with their systems (S2 cards, S3 talents, perks 16–30)
                 }
             }
         }

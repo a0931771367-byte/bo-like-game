@@ -29,14 +29,6 @@ export const STRINGS: Record<string, string> = {
   'hint.potion': 'HP 低了就喝藥水，開局有 2 瓶',
   'hint.door': '清完這一房，門會打開',
 
-  // 章節選單（封測 2 S1）
-  'chapter.pick': '選擇場景',
-  'chapter.locked': '擊敗{boss}解鎖',
-  'chapter.soon': '即將開放',
-  'chapter.cleared': '已通關',
-  'chapter.unlocked': '解鎖新場景：{name}',
-  'chapter.start': '第 {n} 章',
-
   // ---- 升級與技能面板 ----
   'levelup.banner': 'LEVEL UP!',
   'levelup.point': '技能點 +{n}',
@@ -96,6 +88,60 @@ export const STRINGS: Record<string, string> = {
   'settings.resetConfirm': '星塵與解鎖都會消失，確定？',
   'settings.devUnlockAll': '開發者：全部解鎖（封測用）',
 
+  // ---- 章節選擇（封測 2）----
+  'chapter.pick': '選擇目的地',
+  'chapter.locked': '打倒 {boss} 後開放',
+  'chapter.cleared': '已通關 {n} 次',
+  'chapter.firstClear': '尚未通關',
+  'chapter.resume': '繼續上一局（第 {n} 房）',
+  'chapter.resumeDiscard': '放棄上一局',
+  'chapter.soon': '即將開放',
+  'chapter.done': '已通關',
+  'chapter.unlocked': '解鎖新場景：{name}',
+  'chapter.start': '第 {n} 章',
+
+  // ---- 史詩卡片 ----
+  'card.title': '卡冊',
+  'card.slots': '裝備 {n}/{max}',
+  'card.equip': '裝備',
+  'card.unequip': '卸下',
+  'card.locked': '尚未取得',
+  'card.source': '來自：{boss}',
+  'card.signature': '首殺必得',
+  'card.stars': '{n} 星',
+  'card.shards': '碎片 {n}/{need}',
+  'card.starUp': '升星！',
+  'card.drop': '獲得史詩卡！',
+  'card.dropDup': '重複卡片 → 碎片 +{n}',
+  'card.set': '套裝：{name}',
+  'card.setHint': '同一位 Boss 的 2 張卡一起裝備時生效',
+  'card.slotsFull': '卡片格已滿，先卸下一張',
+
+  // ---- 天賦 ----
+  'talent.title': '天賦',
+  'talent.buy': '學習（{cost} 星塵）',
+  'talent.owned': '已學會',
+  'talent.needPrev': '先學會前一格',
+  'talent.reset': '重置天賦',
+  'talent.resetConfirm': '退回全部 {n} 星塵，天賦全部清空，確定？',
+  'talent.keystone': '改變玩法',
+  'talent.progress': '{n}/10',
+
+  // ---- 房間詞綴與精英 ----
+  'affix.enter': '詞綴：{name}',
+  'elite.appear': '精英出現！',
+  'elite.shield': '護盾',
+  'elite.haste': '加速',
+  'elite.volatile': '爆裂',
+  'elite.stardust': '精英擊殺 +{n} 星塵',
+
+  // ---- 第 3 章教學提示 ----
+  'hint.burrow': '沙堆在動，沙蟲要竄出來了，先退開',
+  'hint.revive': '打碎繃帶堆，不然木乃伊會再站起來',
+  'hint.crab': '沙蟹正面有硬殼，繞到背後打',
+  'hint.guardianBeam': '紅線是雷射預告，用閃避穿過去',
+  'hint.guardianQuake': '石像砸地時跳起來躲震波',
+
   // ---- 通用 ----
   'common.ok': '好',
   'common.cancel': '取消',
@@ -106,7 +152,10 @@ export const STRINGS: Record<string, string> = {
   'common.quitConfirm': '已清房間的星塵照拿，確定放棄？',
 };
 
-/** Boss 登場與死亡台詞（封測只有果凍王）。 */
+/** Boss 登場與死亡台詞。正經奇幻調性：布丁巨像無語，只有擬聲由旁白描述。 */
 export const BOSS_LINES: Record<string, { enter: string; die: string }> = {
-  jellyKing: { enter: '噗嚕……噗嚕嚕……', die: '噗……嚕……' },
+  jellyKing: { enter: '……', die: '……' },
+  wolfLord: { enter: '嗷嗚——！', die: '嗚……' },
+  treant: { enter: '誰……在吵……我的……睡眠……', die: '……霧……散了……' },
+  ruinGuardian: { enter: '……闖入者……退下……', die: '……封印……已破……' },
 };

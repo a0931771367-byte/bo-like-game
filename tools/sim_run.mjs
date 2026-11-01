@@ -21,6 +21,7 @@ await build({
       export { CLASSES } from './src/data/classes';
       export { ENEMIES } from './src/data/enemies';
       export { ROOMS, ROOM_POOL, BOSS_ROOM } from './src/data/rooms';
+      export { RUN_STAGES } from './src/data/chapters';
       export { PERKS } from './src/data/perks';
       export { RUN_RULES } from './src/data/meta';
       export { lv } from './src/data/types';
@@ -40,6 +41,14 @@ const R = D.RUN_RULES;
 const DT = 0.1;
 // Optional overrides for parameter sweeps: --hp=1.3,1.7,2.1,2.6 --atk=1,1.15,1.3,1.5 --boss=1.8,1.15 --greedy=0.6
 const ARG = Object.fromEntries(process.argv.slice(2).filter((a) => a.startsWith('--')).map((a) => a.slice(2).split('=')));
+// --stage=desertRuins-3 : simulate one RUN_STAGES entry (its pool, boss room and per-stage scaling). Default: chapter 1.
+let POOL = D.ROOM_POOL, BOSS = D.BOSS_ROOM;
+if (ARG.stage) {
+  const st = D.RUN_STAGES[ARG.stage];
+  if (!st) throw new Error(`unknown stage ${ARG.stage}`);
+  POOL = st.pool; BOSS = st.finale.room;
+  R.roomScaling.hp = [...st.scaling.hp]; R.roomScaling.atk = [...st.scaling.atk]; R.roomScaling.boss = { ...st.scaling.boss };
+}
 if (ARG.hp) R.roomScaling.hp = ARG.hp.split(',').map(Number);
 if (ARG.atk) R.roomScaling.atk = ARG.atk.split(',').map(Number);
 if (ARG.boss) { const [h, a] = ARG.boss.split(',').map(Number); R.roomScaling.boss = { hp: h, atk: a }; }
@@ -228,7 +237,7 @@ function simRoom(rand, p, room, slot, log) {
 function simRun(seed, cls) {
   const rand = rng(seed);
   const p = makePlayer(cls);
-  const rooms = shuffle(rand, D.ROOM_POOL).slice(0, R.combatRooms).map((id) => D.ROOMS[id]);
+  const rooms = shuffle(rand, POOL).slice(0, R.combatRooms).map((id) => D.ROOMS[id]);
   const log = { roomTimes: [], perks: [], offered: [], deathSlot: -1, cleared: false, total: 0 };
   for (let slot = 0; slot < rooms.length; slot++) {
     const r = simRoom(rand, p, rooms[slot], slot, log);
@@ -243,7 +252,7 @@ function simRun(seed, cls) {
     for (const k of offer) log.offered.push(k.id);
     if (choice) { applyPerk(p, choice); log.perks.push(choice.id); }
   }
-  const b = simRoom(rand, p, D.ROOMS[D.BOSS_ROOM], 4, log);
+  const b = simRoom(rand, p, D.ROOMS[BOSS], 4, log);
   log.roomTimes.push(b.t); log.total += b.t;
   log.cleared = b.cleared;
   log.level = p.level;

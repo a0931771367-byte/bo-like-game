@@ -7,9 +7,20 @@ namespace BoLike.Data
 
     public enum PerkRarity { Common, Rare, Epic }
     public enum MultTarget { MaxHp, Atk, Matk, Move, Aspd, Cooldown, SpCost, SpRegen, Knock, PotionHeal, SkillPower, Stardust }
-    public enum PerkEffectKind { Mult, Crit, SkillLvAll, OnKillHeal, OnKillAoe, RoomClearHeal, Potion, Revive, ComboFinisherAoe, ProjectileCount, Pierce }
+    /// <summary>Every effect kind in src/data/types.ts (perks, epic cards, talents). RunMods ignores kinds it does not
+    /// implement yet, so new data never breaks loading; the beta-2 list is implemented system by system (design doc 08 §2.4).</summary>
+    public enum PerkEffectKind
+    {
+        Mult, Crit, SkillLvAll, OnKillHeal, OnKillAoe, RoomClearHeal, Potion, Revive, ComboFinisherAoe, ProjectileCount, Pierce,
+        // perks 16–30
+        GuardMult, Dodge, RoomStartBuff, ComboExtraHit, OnHitStatus, OnKillSp, KillStackAtk, CooldownReset, Counter,
+        // epic cards
+        OnComboHitSpawn, SummonAlly, DodgeOverride, LowHpShield, FirstHitImmune, IdleRegen, KillStardust, OnHurtKnock, StartPotion,
+        // talents
+        ComboDebuff, AfterDodgeBuff, ComboHitMult, ElementResonance, GuardInvuln, GuardReflect, ReflectProjectile, RoomStart, SpEmptyFree, StartSkillPoints,
+    }
     public enum RoomKind { Combat, Boss }
-    public enum UnlockKind { Class, StartPotion, RareChance, StartPerk }
+    public enum UnlockKind { Class, StartPotion, RareChance, StartPerk, CardSlot }
 
     /// <summary>
     /// One effect of a perk. The TypeScript is a tagged union; here every field is optional and

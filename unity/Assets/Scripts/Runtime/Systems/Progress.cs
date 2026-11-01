@@ -22,15 +22,21 @@ namespace BoLike.Systems
         {
             if (string.IsNullOrEmpty(bossId)) return null;
             foreach (var ch in GameDb.Chapters)
-                if (ch.unlock != null && ch.unlock.bossKill == bossId && ch.Playable) return ch;
+                if (ch.unlock != null && ch.unlock.bossKill == bossId && ChapterReady(ch)) return ch;
             return null;
         }
+
+        /// <summary>
+        /// A chapter is ready when its data and its art are both in the build: the background painting is the last
+        /// asset the art team delivers for a chapter, so it stands in for "art arrived" (desert ruins: 11/12).
+        /// </summary>
+        public static bool ChapterReady(ChapterDef ch) => ch.Playable && !string.IsNullOrEmpty(ch.bg) && UnityEngine.Resources.Load<UnityEngine.Texture2D>("Bg/" + ch.bg.Replace("bg_", "")) != null;
 
         /// <summary>Chapters the title screen can start right now, in play order.</summary>
         public static List<ChapterDef> PlayableChapters(SaveData save)
         {
             var list = new List<ChapterDef>();
-            foreach (var ch in GameDb.Chapters) if (ch.Playable && ChapterUnlocked(save, ch)) list.Add(ch);
+            foreach (var ch in GameDb.Chapters) if (ChapterReady(ch) && ChapterUnlocked(save, ch)) list.Add(ch);
             return list;
         }
 

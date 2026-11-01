@@ -233,6 +233,10 @@ namespace BoLike.Sim
                     }
                     return;
                 case EnemyBehavior.Melee:
+                case EnemyBehavior.Burrower: // desert ruins behaviours (design doc 08 §2.5) land one by one; melee until then
+                case EnemyBehavior.Reviver:
+                case EnemyBehavior.Crab:
+                case EnemyBehavior.BossGuardian:
                     if (dist < def.attackRange && aligned && canAttack) { SetState(FighterState.Windup); return; }
                     vx = dist > def.attackRange * 0.7f ? sdx * sp : 0;
                     vy = Clamp1(dy / 20) * sp * 0.7f;

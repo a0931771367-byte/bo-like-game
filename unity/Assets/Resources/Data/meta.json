@@ -69,7 +69,32 @@
    "runClear": 30,
    "firstClearBonus": 60
   },
-  "targetRunMs": 240000
+  "targetRunMs": 240000,
+  "cards": {
+   "startSlots": 2,
+   "maxSlots": 3,
+   "firstKillSignature": true,
+   "dropsPerKill": 1,
+   "shardsPerDuplicate": 1,
+   "shardsPerStar": 3,
+   "maxStars": 3,
+   "legendaryEnabled": false
+  },
+  "talents": {
+   "nodesPerClass": 10,
+   "resetFree": true,
+   "linear": true
+  },
+  "affixes": {
+   "chancePerRoom": 0.5,
+   "maxPerRoom": 1,
+   "onlyAfterStageClear": true,
+   "skipFirstRoom": true
+  },
+  "resume": {
+   "enabled": true,
+   "savePoint": "roomStart"
+  }
  },
  "unlocks": [
   {
@@ -111,9 +136,95 @@
    "cost": 150,
    "kind": "startPerk",
    "value": 1
+  },
+  {
+   "id": "cardSlot3",
+   "name": "卡匣擴充",
+   "desc": "史詩卡片裝備格 +1",
+   "cost": 120,
+   "kind": "cardSlot",
+   "value": 1
   }
  ],
  "startingClasses": [
   "swordsman"
- ]
+ ],
+ "affixes": [
+  {
+   "id": "fog",
+   "name": "濃霧",
+   "desc": "視野縮小，敵人出現前有紫光提示",
+   "effect": {
+    "kind": "fog",
+    "visionMult": 0.6,
+    "warnMs": 800
+   }
+  },
+  {
+   "id": "poisonGround",
+   "name": "毒沼",
+   "desc": "地面兩塊區域持續扣血",
+   "effect": {
+    "kind": "poisonGround",
+    "zones": 2,
+    "dpsFraction": 0.01
+   }
+  },
+  {
+   "id": "treasure",
+   "name": "寶箱房",
+   "desc": "清完多一次三選一",
+   "effect": {
+    "kind": "treasure",
+    "extraPerkPicks": 1
+   }
+  },
+  {
+   "id": "elite",
+   "name": "精英房",
+   "desc": "必定出現精英，星塵 ×2",
+   "effect": {
+    "kind": "elite",
+    "forceElite": true,
+    "stardustMult": 2
+   }
+  },
+  {
+   "id": "rush",
+   "name": "急襲",
+   "desc": "波次間隔減半，敵人 HP -20%",
+   "effect": {
+    "kind": "rush",
+    "waveTimeoutMult": 0.5,
+    "hpMult": 0.8
+   }
+  }
+ ],
+ "elite": {
+  "chanceByChapterOrder": [
+   0,
+   0.15,
+   0.25
+  ],
+  "hpMult": 2.5,
+  "atkMult": 1.4,
+  "sizeMult": 1.3,
+  "stardust": 10,
+  "modifiers": [
+   "shield",
+   "haste",
+   "volatile"
+  ],
+  "shieldHits": 3,
+  "hasteMult": 1.4,
+  "volatilePower": 1,
+  "volatileRadius": 140,
+  "excludeBehaviors": [
+   "turret",
+   "burrower",
+   "bossSlime",
+   "bossTreant",
+   "bossGuardian"
+  ]
+ }
 }
