@@ -39,17 +39,12 @@
    "boss": "jellyKing",
    "rarity": "epic",
    "starScale": 0.2,
-   "desc": "★ 擊殺敵人時 25% 機率分出一隻友方小果凍，持續 6 秒",
+   "desc": "★ 擊殺的敵人分裂爆開，對周圍 120 px 造成 80% 攻擊力的傷害",
    "effects": [
     {
-     "kind": "summonAlly",
-     "trigger": "kill",
-     "enemy": "jelly",
-     "count": 1,
-     "chance": 0.25,
-     "hpMult": 0.6,
-     "lifetime": 6000,
-     "respawn": 0
+     "kind": "onKillAoe",
+     "power": 0.8,
+     "radius": 120
     }
    ]
   },
@@ -113,17 +108,15 @@
    "name": "蜜蜂衛隊",
    "boss": "treant",
    "rarity": "epic",
-   "starScale": 0.2,
-   "desc": "★ 每間房開始時召出 2 隻友方蜜蜂，死亡後 20 秒重生",
+   "starScale": 0.25,
+   "desc": "蜂針：普攻 30% 機率使敵人中毒 3 秒，每秒 5 點傷害",
    "effects": [
     {
-     "kind": "summonAlly",
-     "trigger": "room",
-     "enemy": "bee",
-     "count": 2,
-     "hpMult": 0.5,
-     "lifetime": 0,
-     "respawn": 20000
+     "kind": "onHitStatus",
+     "status": "poison",
+     "chance": 0.3,
+     "duration": 3000,
+     "value": 5
     }
    ]
   },
@@ -225,13 +218,13 @@
   {
    "boss": "treant",
    "name": "樹精母體套裝",
-   "desc": "友方單位（果凍、蜜蜂）傷害 +50%",
+   "desc": "中毒與燃燒中的敵人受到的傷害 +30%",
    "need": 2,
    "effects": [
     {
-     "kind": "mult",
-     "target": "skillPower",
-     "value": 1
+     "kind": "comboDebuff",
+     "defMult": 0.7,
+     "duration": 3000
     }
    ]
   },
