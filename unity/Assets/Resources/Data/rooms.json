@@ -2073,45 +2073,5 @@
   "wolfAmbush",
   "emberField"
  ],
- "boss": "jellyThrone",
- "scenes": [
-  {
-   "id": "grassland",
-   "name": "果凍草原",
-   "pool": [
-    "meadow",
-    "beetleNest",
-    "wolfAmbush",
-    "emberField"
-   ],
-   "boss": "jellyThrone"
-  },
-  {
-   "id": "mistForest",
-   "name": "蘑菇森林",
-   "pool": [
-    "mistTrail",
-    "sporeHollow",
-    "thornGarden",
-    "wolfDen"
-   ],
-   "boss": "heartOfTheWood"
-  },
-  {
-   "id": "desertRuins",
-   "name": "沙漠遺跡",
-   "pool": [
-    "sandDune",
-    "cactusGrove",
-    "tombHall",
-    "crabShore"
-   ],
-   "boss": "guardianAltar"
-  }
- ],
- "sceneOrder": [
-  "grassland",
-  "mistForest",
-  "desertRuins"
- ]
+ "boss": "jellyThrone"
 }

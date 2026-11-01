@@ -20,7 +20,8 @@ await build({
     contents: `
       export { CLASSES } from './src/data/classes';
       export { ENEMIES } from './src/data/enemies';
-      export { ROOMS, ROOM_POOL, BOSS_ROOM, RUN_STAGES } from './src/data/rooms';
+      export { ROOMS, ROOM_POOL, BOSS_ROOM } from './src/data/rooms';
+      export { RUN_STAGES } from './src/data/chapters';
       export { PERKS } from './src/data/perks';
       export { RUN_RULES } from './src/data/meta';
       export { lv } from './src/data/types';
