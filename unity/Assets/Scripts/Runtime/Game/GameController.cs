@@ -172,7 +172,23 @@ namespace BoLike.Game
             if (!string.IsNullOrEmpty(chapter.ambience)) AudioManager.Instance.PlayAmbience(chapter.ambience, 0.35f); else AudioManager.Instance.StopAmbience();
             EnterRoom(snap != null ? Mathf.Clamp(snap.roomIndex, 0, run.waveSetByRoom.Count - 1) : 0);
             if (snap != null) hud.Toast(GameDb.Str("chapter.resumed"), 2.5f);
-            else ShowStory(run.Stage.story?.before, "before", null);
+            else StartCoroutine(WhenRevealed(() => ShowStory(run.Stage.story?.before, "before", null)));
+        }
+
+        /// <summary>Runs <paramref name="then"/> once the launch transition has lifted (right away when there is none).</summary>
+        System.Collections.IEnumerator WhenRevealed(System.Action then)
+        {
+            while (ScreenTransition.Playing) yield return null;
+            then?.Invoke();
+        }
+
+        /// <summary>A loading-screen tip for this run's chapter: the desert hints in chapter 3, the basics elsewhere.</summary>
+        string LoadingTip()
+        {
+            string[] basics = { "hint.move", "hint.attack", "hint.skill", "hint.dodge", "hint.potion", "hint.door" };
+            string[] desert = { "hint.burrow", "hint.revive", "hint.crab", "hint.guardianBeam", "hint.guardianQuake" };
+            var pool = run.Chapter.order >= 3 ? desert : basics;
+            return GameDb.Str(pool[UnityEngine.Random.Range(0, pool.Length)]);
         }
 
         // ---------- story (S4) ----------
@@ -189,16 +205,25 @@ namespace BoLike.Game
             if (lines == null || lines.Count == 0 || save.storySeen.Contains(seenKey)) { then?.Invoke(); return; }
             save.storySeen.Add(seenKey);
             SaveSystem.Save();
-            var layer = NewOverlay(0.35f);
+            var layer = NewOverlay(0.5f);
             var cls = GameDb.Class(classId);
+            // The speaker's portrait lives in the box; the in-world sprite would otherwise stand half behind the box
+            // with its head poking out above it (罐子 11/3 #1), so the fighters step out of frame for the scene.
+            SetFightersVisible(false);
             DialogueBox.Show(layer, lines, cls.name, $"{classId}_front", () =>
             {
+                SetFightersVisible(true);
                 ClearOverlay();
                 then?.Invoke();
             });
         }
 
         void OnDestroy() => GameInput.Disable();
+
+        void SetFightersVisible(bool on)
+        {
+            foreach (var kv in views) if (kv.Value != null) kv.Value.gameObject.SetActive(on);
+        }
 
         // ---------- resume snapshot (S5) ----------
 
@@ -292,8 +317,8 @@ namespace BoLike.Game
             string label = run.InBossRoom ? room.name : $"第 {index + 1} 房  {room.name}";
             SaveSnapshot();
             // The chapter title card on the first room is the cheapest "something new" cue when a scene unlocks (S1).
-            if (index == 0) fx.Banner($"{GameDb.Str("chapter.start").Replace("{n}", run.Chapter.order.ToString())}  {run.Chapter.name}", 0xfff4de, 56);
-            world.Delay(index == 0 ? 1400 : 0, () => fx.Banner(label, 0xffffff, 48));
+            if (index == 0) world.Delay(0, () => fx.Banner($"{GameDb.Str("chapter.start").Replace("{n}", run.Chapter.order.ToString())}  {run.Chapter.name}", 0xfff4de, 56));
+            world.Delay(index == 0 ? 1400 : 350, () => fx.Banner(label, 0xffffff, 48));
             if (affix != null)
             {
                 var a = affix;
@@ -467,8 +492,17 @@ namespace BoLike.Game
             if (world.Player.x >= room.width - 80)
             {
                 transitioning = true;
-                hud.ScreenFlash(1f, run.Rules.roomTransition / 1000f * 0.5f);
-                world.Delay(run.Rules.roomTransition * 0.4f, () => EnterRoom(run.roomIndex + 1));
+                int nextIndex = run.roomIndex + 1;
+                string nextId = run.RoomIdAt(nextIndex);
+                var nextRoom = nextId != null ? GameDb.Room(nextId) : null;
+                bool nextIsBoss = nextIndex >= run.CombatRooms;
+                string title = nextRoom == null ? "" : nextIsBoss ? nextRoom.name : $"第 {nextIndex + 1} 房  {nextRoom.name}";
+                world.Paused = true;
+                hud.ShowGo(false);
+                ScreenTransition.Play(title, LoadingTip(),
+                    onCovered: () => EnterRoom(nextIndex),
+                    onDone: () => { if (overlay == null) world.Paused = false; },
+                    hold: Mathf.Clamp(run.Rules.roomTransition / 1000f * 0.45f, 0.35f, 0.8f));
             }
         }
 
@@ -673,9 +707,9 @@ namespace BoLike.Game
         RectTransform NewOverlay(float dim = 0.7f)
         {
             ClearOverlay();
-            var layer = UiKit.Layer(overlayCanvas, "Panel");
-            overlay = layer.gameObject;
-            UiKit.Dim(layer, dim);
+            // Modal covers the whole screen (dim + vignette), the returned layer is the safe area for the content.
+            var layer = UiKit.Modal(overlayCanvas.transform, dim);
+            overlay = layer.parent.gameObject;
             world.Paused = true;
             return layer;
         }
@@ -686,10 +720,13 @@ namespace BoLike.Game
             if (choices.Count == 0) { OpenDoor(); return; }
             if (roomLog != null) { roomLog.offered.Clear(); foreach (var c in choices) roomLog.offered.Add(c.id); }
             var layer = NewOverlay(0.6f);
-            UiKit.Text(layer, 0, 110, "選擇一個強化", 34, 0xfff4de, UiKit.TopCenter, UiKit.TopCenter, TextAnchor.UpperCenter, true);
-            // Art department card frames: 360×520 originals with a 56 px 9-slice border; layout from beta-ui/README.md scaled to the card width.
-            float cardW = 300, cardH = 300f * 520 / 360, gap = 30, k = cardW / 360f;
+            UiKit.Text(layer, 0, 54, "選擇一個強化", 34, 0xfff4de, UiKit.TopCenter, UiKit.TopCenter, TextAnchor.UpperCenter, true);
+            // Art department card frames: 360×520 originals with a 56 px 9-slice border. Layout (罐子 11/3 #6): the icon
+            // sits higher and smaller so the description gets a full block of its own above the button; the rarity moved
+            // to a tag in the top-left corner; the whole card is tappable, not only the button.
+            float cardW = 330, cardH = 330f * 520 / 360, gap = 28, k = cardW / 360f;
             float startX = -(choices.Count * cardW + (choices.Count - 1) * gap) / 2;
+            float cardY = 104;
             for (int i = 0; i < choices.Count; i++)
             {
                 var perk = choices[i];
@@ -699,25 +736,41 @@ namespace BoLike.Game
                 Image card;
                 if (frameSprite != null)
                 {
-                    card = UiKit.Sprite(layer, frameSprite, startX + i * (cardW + gap), 140, cardW, cardH, UiKit.TopCenter);
+                    card = UiKit.Sprite(layer, frameSprite, startX + i * (cardW + gap), cardY, cardW, cardH, UiKit.TopCenter);
                     card.type = Image.Type.Sliced;
                     card.preserveAspect = false;
                 }
                 else
                 {
-                    card = UiKit.Rect(layer, startX + i * (cardW + gap), 140, cardW, cardH, frame, 0.95f, UiKit.TopCenter);
+                    card = UiKit.Rect(layer, startX + i * (cardW + gap), cardY, cardW, cardH, frame, 0.95f, UiKit.TopCenter);
                     UiKit.Rect(card.transform, 6, 6, cardW - 12, cardH - 12, 0xf3ecdc, 0.95f);
                 }
-                var icon = Resources.Load<Sprite>("Icons/perk_" + perk.id);
-                if (icon != null) UiKit.Sprite(card.transform, icon, 0, 40 * k, 220 * k, 220 * k, UiKit.TopCenter, UiKit.TopCenter);
-                UiKit.Text(card.transform, 0, 280 * k, perk.name, (int)(40 * k), 0x2b2140, UiKit.TopCenter, UiKit.TopCenter, TextAnchor.UpperCenter, true, 0);
-                var desc = UiKit.Text(card.transform, 0, 340 * k, perk.desc, (int)(26 * k), 0x4a4060, UiKit.TopCenter, UiKit.TopCenter, TextAnchor.UpperCenter, false, 0);
-                desc.rectTransform.sizeDelta = new Vector2(260 * k, 130 * k);
-                desc.horizontalOverflow = HorizontalWrapMode.Wrap;
+                // Tap anywhere on the card.
+                card.raycastTarget = true;
+                var tap = card.gameObject.AddComponent<Button>();
+                tap.transition = Selectable.Transition.None;
+                tap.onClick.AddListener(() => PickPerk(perk));
                 string rarity = perk.rarity == PerkRarity.Epic ? "史詩" : perk.rarity == PerkRarity.Rare ? "稀有" : "普通";
-                string held = run.perkStacks.TryGetValue(perk.id, out var n) && n > 0 ? $"  已持有 ×{n}" : "";
-                UiKit.Text(card.transform, 0, 478 * k, rarity + held, (int)(20 * k), 0x4a4060, UiKit.TopCenter, UiKit.TopCenter, TextAnchor.UpperCenter, false, 0);
-                UiKit.Button(card.transform, 0, -52, 200, 48, $"選擇 ({i + 1})", 0xf28c28, () => PickPerk(perk), 20, new Vector2(0.5f, 0), new Vector2(0.5f, 0));
+                var tag = UiKit.Rect(card.transform, 22, 22, 64, 26, frame, 0.95f);
+                UiKit.Text(tag.transform, 0, 0, rarity, 14, 0xffffff, UiKit.Center, UiKit.Center, TextAnchor.MiddleCenter, true, 0);
+                if (run.perkStacks.TryGetValue(perk.id, out var n) && n > 0)
+                {
+                    var held = UiKit.Rect(card.transform, -22, 22, 92, 26, 0x2b2140, 0.85f, UiKit.TopRight, UiKit.TopRight);
+                    UiKit.Text(held.transform, 0, 0, $"已持有 ×{n}", 13, 0xffd36b, UiKit.Center, UiKit.Center, TextAnchor.MiddleCenter, true, 0);
+                }
+                var icon = Resources.Load<Sprite>("Icons/perk_" + perk.id);
+                if (icon != null) UiKit.Sprite(card.transform, icon, 0, 58 * k, 180 * k, 180 * k, UiKit.TopCenter, UiKit.TopCenter);
+                UiKit.Text(card.transform, 0, 248 * k, perk.name, (int)(38 * k), 0x2b2140, UiKit.TopCenter, UiKit.TopCenter, TextAnchor.UpperCenter, true, 0);
+                // Description on its own light plate: dark text, 22 px, wrapped, never under the button.
+                float descTop = 304 * k, descH = 118 * k;
+                UiKit.Rect(card.transform, 0, descTop - 8, cardW - 64, descH + 14, 0xfffaf0, 0.7f, UiKit.TopCenter, UiKit.TopCenter);
+                var desc = UiKit.Text(card.transform, 0, descTop, perk.desc, 22, 0x2b2140, UiKit.TopCenter, UiKit.TopCenter, TextAnchor.UpperCenter, false, 0);
+                desc.rectTransform.sizeDelta = new Vector2(cardW - 84, descH);
+                desc.horizontalOverflow = HorizontalWrapMode.Wrap;
+                desc.verticalOverflow = VerticalWrapMode.Truncate;
+                desc.lineSpacing = 1.1f;
+                desc.resizeTextForBestFit = true; desc.resizeTextMinSize = 15; desc.resizeTextMaxSize = 22;
+                UiKit.Button(card.transform, 0, -30, 210, 50, $"選擇 ({i + 1})", 0xf28c28, () => PickPerk(perk), 21, new Vector2(0.5f, 0), new Vector2(0.5f, 0));
             }
             perkChoices = choices;
         }
@@ -982,12 +1035,16 @@ namespace BoLike.Game
 
         void Restart(string cls)
         {
-            Destroy(gameObject);
-            Destroy(worldRoot.gameObject);
-            Destroy(cam.gameObject);
-            Destroy(hud.gameObject);
-            if (touch != null) Destroy(touch.gameObject);
-            Launch(cls, stageId);
+            string stage = stageId;
+            ScreenTransition.Play(run.Chapter.name, LoadingTip(), () =>
+            {
+                Destroy(gameObject);
+                Destroy(worldRoot.gameObject);
+                Destroy(cam.gameObject);
+                Destroy(hud.gameObject);
+                if (touch != null) Destroy(touch.gameObject);
+                Launch(cls, stage);
+            });
         }
 
         void OnApplicationPause(bool pauseStatus)
@@ -1021,6 +1078,12 @@ namespace BoLike.Game
 
         void Update()
         {
+            if (ScreenTransition.Playing)
+            {
+                GameInput.Reset();
+                foreach (var kv in views) kv.Value.Sync();
+                return;
+            }
             if (overlay != null)
             {
                 var kb = Keyboard.current;

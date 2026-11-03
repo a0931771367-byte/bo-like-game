@@ -42,7 +42,11 @@ namespace BoLike.Game
 
         public void SnapTo(float playerX)
         {
-            centerX = playerX + 150;
+            // Clamp like Follow does: a room starts with the player at x = 200, and an unclamped snap on a wide phone
+            // put the camera's left edge at x < 0, showing the void left of the painting until the first Follow()
+            // (and for the whole opening dialogue, since the world is paused then).
+            float half = ViewW / 2f;
+            centerX = Mathf.Clamp(playerX + 150, half, Mathf.Max(half, world.StageWidth - half));
             Apply();
         }
 

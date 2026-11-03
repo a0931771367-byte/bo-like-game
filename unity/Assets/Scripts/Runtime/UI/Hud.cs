@@ -82,14 +82,15 @@ namespace BoLike.UI
             goText = UiKit.Text(layer, -60, 300, "GO →", 44, Colors.Crit, UiKit.TopRight, UiKit.TopRight, TextAnchor.UpperRight, true);
             UiKit.SetAlpha(goText, 0);
 
-            fogImg = UiKit.Rect(layer, 0, 0, 10, 10, 0x1a0f2e, 0f);
-            var fogRt = fogImg.rectTransform;
-            fogRt.anchorMin = Vector2.zero; fogRt.anchorMax = Vector2.one; fogRt.offsetMin = Vector2.zero; fogRt.offsetMax = Vector2.zero;
+            // Fog and flash cover the whole screen, not just the safe area: on a notched phone the layer stops short of
+            // the left/right edges and a strip of untouched picture showed on either side of every "black screen".
+            fogImg = UiKit.Rect(canvas.transform, 0, 0, 10, 10, 0x1a0f2e, 0f);
+            UiKit.Stretch(fogImg.rectTransform);
             fogImg.raycastTarget = false;
             fogImg.transform.SetAsFirstSibling();
-            flashImg = UiKit.Rect(layer, 0, 0, 10, 10, 0xffffff, 0f);
-            var frt = flashImg.rectTransform;
-            frt.anchorMin = Vector2.zero; frt.anchorMax = Vector2.one; frt.offsetMin = Vector2.zero; frt.offsetMax = Vector2.zero;
+            flashImg = UiKit.Rect(canvas.transform, 0, 0, 10, 10, 0xffffff, 0f);
+            UiKit.Stretch(flashImg.rectTransform);
+            flashImg.raycastTarget = false;
         }
 
         public void ShowBoss(Enemy e)
@@ -211,8 +212,9 @@ namespace BoLike.UI
                 UiKit.SetAlpha(t, a);
                 if (Time.time > until) { Destroy(t.gameObject); banners.RemoveAt(i); }
             }
-            float fl = flashUntil > Time.time ? flashAlpha * (flashUntil - Time.time) / flashDur : 0;
-            UiKit.SetAlpha(flashImg, fl);
+            // Ease-out instead of a linear ramp: the boss-entry flash now pops and settles rather than greying the screen.
+            float fk = flashUntil > Time.time ? Mathf.Clamp01((flashUntil - Time.time) / flashDur) : 0;
+            UiKit.SetAlpha(flashImg, flashAlpha * fk * fk);
         }
     }
 }

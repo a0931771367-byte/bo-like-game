@@ -120,6 +120,10 @@ export const STRINGS: Record<string, string> = {
   'card.set': '套裝：{name}',
   'card.setHint': '同一位 Boss 的 2 張卡一起裝備時生效',
   'card.slotsFull': '卡片格已滿，先卸下一張',
+  'card.soon': '效果即將推出',
+  'card.owned': '已取得',
+  'card.equipped': '裝備中',
+  'card.maxStars': '已滿星',
 
   // ---- 天賦 ----
   'talent.title': '天賦',

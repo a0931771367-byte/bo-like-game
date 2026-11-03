@@ -175,8 +175,11 @@ namespace BoLike.Game
             if (!views.TryGetValue(f, out var v) || v.Body.sprite == null) return;
             int tint = f is Player p ? p.cls.accent : 0xffffff;
             var it = Make("Ghost", v.Body.sprite, f.x, f.y - f.z, tint, 0.45f, Space.Order(f.y) - 1, 0.26f);
-            it.transform.rotation = v.View.rotation;
-            it.transform.localScale = new Vector3(v.BodyScale * f.facing, v.BodyScale, 1);
+            // Copy the body's world transform so the copy matches a rolling / squashed / re-pivoted sprite exactly.
+            var bt = v.Body.transform;
+            it.transform.position = new Vector3(bt.position.x, bt.position.y, it.transform.position.z);
+            it.transform.rotation = bt.rotation;
+            it.transform.localScale = bt.lossyScale;
             it.sr.material = SpriteBank.FlashMaterial;
             var mpb = new MaterialPropertyBlock();
             mpb.SetFloat("_Flash", 1f);
