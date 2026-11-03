@@ -48,9 +48,13 @@ namespace BoLike.UI
             tap.image.color = new Color(0, 0, 0, 0);
             tap.transition = Selectable.Transition.None;
 
-            box = UiKit.Rect(layer, 0, -24, 1180, 200, 0x14121f, 0.92f, UiKit.BottomCenter, UiKit.BottomCenter);
+            // Soft shadow under the box, then the box itself with an accent rule along the top.
+            var shadow = UiKit.Rect(layer, 0, -16, 1196, 212, 0x000000, 0.35f, UiKit.BottomCenter, UiKit.BottomCenter);
+            shadow.raycastTarget = false;
+            box = UiKit.Rect(layer, 0, -24, 1180, 200, 0x14121f, 0.94f, UiKit.BottomCenter, UiKit.BottomCenter);
             box.raycastTarget = false;
             UiKit.Rect(box.transform, 0, 0, 1180, 3, 0xf28c28, 1f, UiKit.TopCenter, UiKit.TopCenter).raycastTarget = false;
+            UiKit.Rect(box.transform, 0, 3, 1180, 24, 0xf28c28, 0.10f, UiKit.TopCenter, UiKit.TopCenter).raycastTarget = false;
             portraitImg = UiKit.Sprite(layer, SpriteBank.Pixel, -470, -40, 240, 240, UiKit.BottomCenter, UiKit.BottomCenter);
             portraitImg.preserveAspect = true;
             portraitImg.raycastTarget = false;
@@ -88,11 +92,15 @@ namespace BoLike.UI
             var sprite = string.IsNullOrEmpty(key) ? null : SpriteBank.Get(key);
             portraitImg.enabled = sprite != null;
             if (sprite != null) portraitImg.sprite = sprite;
-            // Enemies speak from the right, the player and NPCs from the left; the text column follows.
+            // Enemies speak from the right, the player and NPCs from the left; the text column follows. Lines without a
+            // portrait (narrator, NPCs with no art yet) use the full width instead of leaving a blank column.
             bool right = line.who == "enemy";
+            float textX = sprite == null ? 48 : right ? 60 : 230;
+            float textW = sprite == null ? 1084 : 880;
             portraitImg.rectTransform.anchoredPosition = new Vector2(right ? 470 : -470, 40);
-            speaker.rectTransform.anchoredPosition = new Vector2(right ? 60 : 230, -18);
-            body.rectTransform.anchoredPosition = new Vector2(right ? 60 : 230, -58);
+            speaker.rectTransform.anchoredPosition = new Vector2(textX, -18);
+            body.rectTransform.anchoredPosition = new Vector2(textX, -58);
+            body.rectTransform.sizeDelta = new Vector2(textW, 130);
             AudioManager.Instance.Play(line.who == "narrator" ? "dialogNarrator" : "dialogBlip");
         }
 

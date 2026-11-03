@@ -414,11 +414,15 @@ namespace BoLike.Sim
             dodgeSpeed = dd.kind == DodgeKind.Blink ? 0 : dd.distance / (dodgeMs / 1000f) / 0.7f; // the speed curve below averages 0.7×
             invulnUntil = Now + dd.invuln;
             dodgeReadyAt = Now + dd.cooldown;
-            dodgeHealUsed = dodgeTeleported = dodgeEnded = false;
+            dodgeHealUsed = dodgeTeleported = dodgeEnded = rollLanded = false;
             struck.Clear();
             SetState(FighterState.Dodge);
             switch (dd.kind)
             {
+                case DodgeKind.Roll:
+                    Fx.Dust(x - dodgeDir * 10, y, 5, 1.0f); // push-off
+                    Sfx.Play("dodge");
+                    break;
                 case DodgeKind.Blink:
                     Fx.Aura(x, y - 20, cls.accent);
                     Sfx.Play("cast", 0.7f);
@@ -465,7 +469,21 @@ namespace BoLike.Sim
                 }
                 return;
             }
-            vx = dodgeDir * dodgeSpeed * (1 - stateTime / dodgeMs * 0.6f);
+            if (dd.kind == DodgeKind.Roll)
+            {
+                // Roll: barely moves during the crouch, covers the distance in the tumble, settles on the landing.
+                // The profile integrates to ≈1 over the dodge, so the distance still matches the data.
+                float u = stateTime / dodgeMs;
+                float profile = u < 0.14f ? 0.3f : u < 0.82f ? 1.3f : 0.35f;
+                vx = dodgeDir * dd.distance / (dodgeMs / 1000f) * profile;
+                if (!rollLanded && u >= 0.82f)
+                {
+                    rollLanded = true;
+                    Fx.Dust(x, y, 7, 1.15f);
+                    Sfx.Play("land", 0.55f);
+                }
+            }
+            else vx = dodgeDir * dodgeSpeed * (1 - stateTime / dodgeMs * 0.6f);
             vy = MoveY * 200;
             if (dd.kind == DodgeKind.JetDash && Now - lastStepAt > 50) { lastStepAt = Now; Fx.Dust(x - dodgeDir * 24, y, 1, 0.9f); }
             if (dd.knock > 0)
@@ -488,7 +506,7 @@ namespace BoLike.Sim
             if (stateTime >= dodgeMs) { OnDodgeEnd(); SetState(FighterState.Idle); }
         }
 
-        bool dodgeEnded;
+        bool dodgeEnded, rollLanded;
 
         /// <summary>
         /// Where the dodge ends, dodgeOverride landings leave a zone (荊棘之心 thorn wall, 流沙步伐 quicksand, talents'

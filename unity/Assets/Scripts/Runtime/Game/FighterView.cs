@@ -24,6 +24,8 @@ namespace BoLike.Game
         bool placeholder; int placeholderTint;
         MaterialPropertyBlock mpb;
         float bodyScale = 1f;
+        /// <summary>Extra lift (px) applied this frame so a rotation turns around the body centre (roll).</summary>
+        float pivotUp;
         AnimSet anim;
         string classId;
         Color baseTint = Color.white;
@@ -155,10 +157,15 @@ namespace BoLike.Game
             if (hpBg != null) { hpBg.sortingOrder = order + 1; hpBar.sortingOrder = order + 2; }
 
             float lean = 0, sx = 1, sy = 1, bob = 0, alpha = 1;
+            pivotUp = 0;
             if (f is Player p) SyncPlayer(p, ref lean, ref sx, ref sy, ref bob, ref alpha);
             else if (f is Enemy e) SyncEnemy(e, ref lean, ref sx, ref sy, ref alpha);
 
-            view.localPosition = new Vector3(0, (f.z - bob) * Space.Scale, 0);
+            // Sprites pivot at the feet, so `lean` tilts around the ground contact. A roll must turn about the body's
+            // centre instead: the body is dropped by half its (squashed) height inside the view and the view raised by
+            // the same amount, so the rotation revolves the sprite around its middle while the feet still land on y.
+            view.localPosition = new Vector3(0, (f.z - bob + pivotUp) * Space.Scale, 0);
+            body.transform.localPosition = new Vector3(0, -pivotUp * Space.Scale, 0);
             view.localScale = new Vector3(f.facing, 1, 1);
             // Phaser angles are clockwise; Unity's z rotation is counter-clockwise.
             view.localRotation = Quaternion.Euler(0, 0, -lean * f.facing);
@@ -252,7 +259,7 @@ namespace BoLike.Game
                     switch (p.Dodge.kind)
                     {
                         case DodgeKind.Blink: sx = 1 - 0.25f * u; sy = 1 + 0.15f * u; break;                     // mage: gathers, then vanishes (alpha below)
-                        case DodgeKind.Roll: lean = 360f * u; bob = Mathf.Sin(u * Mathf.PI) * 28f; break;        // archer: forward roll
+                        case DodgeKind.Roll: Roll(u, ref lean, ref sx, ref sy, ref bob); break;                      // archer: forward roll (below)
                         case DodgeKind.JetDash: lean = 24; sx = 1.15f; sy = 0.92f; break;                         // merchant: jet slide
                         case DodgeKind.ShadowStep: lean = 32; sx = 1.15f; sy = 0.88f; break;                      // thief: low dash
                         case DodgeKind.GraceStep: lean = 8; bob = 10 + Mathf.Sin(u * Mathf.PI) * 8; sy = 1.04f; break; // acolyte: glides
@@ -280,7 +287,42 @@ namespace BoLike.Game
             bool blink = now < p.invulnUntil && p.state != FighterState.Dodge;
             alpha = p.Hidden ? 0.3f : blink ? ((int)(now / 60) % 2 == 1 ? 0.35f : 1f)
                 : p.state == FighterState.Dodge ? (p.Dodge.kind == DodgeKind.Blink ? Mathf.Clamp01(1 - t / p.dodgeMs)
-                    : p.Dodge.kind == DodgeKind.ShadowStep ? 0.5f : p.Dodge.kind == DodgeKind.ShieldDash ? 1f : 0.6f) : 1f;
+                    : p.Dodge.kind == DodgeKind.ShadowStep ? 0.5f : p.Dodge.kind == DodgeKind.ShieldDash || p.Dodge.kind == DodgeKind.Roll ? 1f : 0.6f) : 1f;
+        }
+
+        /// <summary>
+        /// Archer's roll (罐子 11/3 #7). Three beats over the dodge: a crouch (the body gathers, no turn yet), the tumble
+        /// (one full turn about the body centre with ease-in/out so it carries momentum, tucked into a ball, lifting
+        /// along a small arc) and the landing (a squash that springs back to standing). The old version spun the upright
+        /// sprite 360° around its feet, which read as a cartwheel of the whole character.
+        /// </summary>
+        void Roll(float u, ref float lean, ref float sx, ref float sy, ref float bob)
+        {
+            const float crouchEnd = 0.14f, tumbleEnd = 0.82f;
+            float h = body.sprite != null ? body.sprite.rect.height * bodyScale : Player.PlayerH;
+            if (u < crouchEnd)
+            {
+                float c = u / crouchEnd;
+                sx = 1 + 0.10f * c; sy = 1 - 0.20f * c;
+                lean = 12f * c;
+            }
+            else if (u < tumbleEnd)
+            {
+                float r = (u - crouchEnd) / (tumbleEnd - crouchEnd);
+                float e = 0.5f - 0.5f * Mathf.Cos(r * Mathf.PI); // ease-in-out: slow off the ground, fast over the top, slow into the landing
+                lean = 12f + 348f * e;
+                float tuck = Mathf.Sin(r * Mathf.PI);          // tightest mid-roll
+                sx = 1.06f - 0.10f * tuck; sy = 0.80f - 0.14f * tuck;
+                bob = Mathf.Sin(r * Mathf.PI) * 26f;
+                pivotUp = h * sy * 0.5f;
+            }
+            else
+            {
+                float l = (u - tumbleEnd) / (1 - tumbleEnd);
+                float spring = Mathf.Sin(l * Mathf.PI);
+                sx = 1 + 0.14f * spring; sy = 1 - 0.16f * spring;
+                lean = 360f + 6f * (1 - l);
+            }
         }
 
         // ---------- enemy ----------

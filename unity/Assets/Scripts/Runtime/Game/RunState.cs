@@ -45,6 +45,8 @@ namespace BoLike.Game
         public string BossEnemyId => Stage.finale?.enemy;
         public bool InBossRoom => roomIndex >= CombatRooms && Stage.HasBossRoom;
         public string CurrentRoomId => InBossRoom ? Stage.finale.room : roomOrder[roomIndex];
+        /// <summary>Room id the run will be in at <paramref name="index"/> (boss room past the combat rooms), null when out of range.</summary>
+        public string RoomIdAt(int index) => index >= CombatRooms ? (Stage.HasBossRoom ? Stage.finale.room : null) : index >= 0 && index < roomOrder.Count ? roomOrder[index] : null;
         public int CurrentSlot => roomIndex;
         public int CurrentWaveSet => roomIndex < waveSetByRoom.Count ? waveSetByRoom[roomIndex] : 0;
 

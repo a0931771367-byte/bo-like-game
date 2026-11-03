@@ -53,11 +53,14 @@ namespace BoLike.UI
         }
 
         /// <summary>A full-canvas child whose children use top-left coordinates. Width follows the real aspect.</summary>
-        public static RectTransform Layer(Canvas canvas, string name)
+        public static RectTransform Layer(Canvas canvas, string name) => Layer(canvas.transform, name);
+
+        /// <summary>Safe-area layer under any full-screen parent (a modal root, for instance).</summary>
+        public static RectTransform Layer(Transform parent, string name)
         {
             var go = new GameObject(name, typeof(RectTransform));
             var rt = go.GetComponent<RectTransform>();
-            rt.SetParent(canvas.transform, false);
+            rt.SetParent(parent, false);
             // Keep controls and HUD inside the iPhone safe area (notch / home indicator); backgrounds use the canvas root instead.
             // The fitter re-applies the anchors whenever the safe area or screen size changes: on iOS the first frames
             // after launch (or a rotation) can report stale portrait values, which squeezed every button into the middle.
@@ -145,10 +148,141 @@ namespace BoLike.UI
         public static Image Dim(Transform parent, float alpha = 0.7f)
         {
             var img = Rect(parent, 0, 0, 10, 10, 0x05060a, alpha);
-            var rt = img.rectTransform;
-            rt.anchorMin = Vector2.zero; rt.anchorMax = Vector2.one; rt.offsetMin = Vector2.zero; rt.offsetMax = Vector2.zero;
+            Stretch(img.rectTransform);
             img.raycastTarget = true;
             return img;
+        }
+
+        /// <summary>Anchors a RectTransform to the four corners of its parent.</summary>
+        public static RectTransform Stretch(RectTransform rt)
+        {
+            rt.anchorMin = Vector2.zero; rt.anchorMax = Vector2.one; rt.offsetMin = Vector2.zero; rt.offsetMax = Vector2.zero;
+            return rt;
+        }
+
+        static Sprite vignette;
+
+        /// <summary>
+        /// 256² radial gradient: clear in the middle, dark at the corners. Stretched over the screen on top of a flat dim
+        /// it gives overlays a soft cinematic falloff instead of a flat grey wash.
+        /// </summary>
+        public static Sprite Vignette
+        {
+            get
+            {
+                if (vignette != null) return vignette;
+                const int n = 256;
+                var tex = new Texture2D(n, n, TextureFormat.RGBA32, false) { filterMode = FilterMode.Bilinear, wrapMode = TextureWrapMode.Clamp };
+                var px = new Color32[n * n];
+                for (int y = 0; y < n; y++)
+                    for (int x = 0; x < n; x++)
+                    {
+                        float u = (x + 0.5f) / n * 2f - 1f, v = (y + 0.5f) / n * 2f - 1f;
+                        float d = Mathf.Sqrt(u * u + v * v) / 1.25f;   // corners ≈ 1.13 → clamp
+                        float a = Mathf.SmoothStep(0f, 1f, Mathf.Clamp01((d - 0.25f) / 0.85f));
+                        px[y * n + x] = new Color32(255, 255, 255, (byte)Mathf.RoundToInt(255f * a));
+                    }
+                tex.SetPixels32(px);
+                tex.Apply();
+                vignette = UnityEngine.Sprite.Create(tex, new Rect(0, 0, n, n), new Vector2(0.5f, 0.5f), 100f, 0, SpriteMeshType.FullRect);
+                return vignette;
+            }
+        }
+
+        static Sprite verticalFade;
+
+        /// <summary>4×64 strip, opaque at the top fading to clear at the bottom (glows under edges, text plates).</summary>
+        public static Sprite VerticalFade
+        {
+            get
+            {
+                if (verticalFade != null) return verticalFade;
+                const int h = 64;
+                var tex = new Texture2D(4, h, TextureFormat.RGBA32, false) { filterMode = FilterMode.Bilinear, wrapMode = TextureWrapMode.Clamp };
+                var px = new Color32[4 * h];
+                for (int y = 0; y < h; y++)
+                {
+                    byte a = (byte)Mathf.RoundToInt(255f * Mathf.Pow((y + 0.5f) / h, 1.6f)); // row 0 is the bottom
+                    for (int x = 0; x < 4; x++) px[y * 4 + x] = new Color32(255, 255, 255, a);
+                }
+                tex.SetPixels32(px);
+                tex.Apply();
+                verticalFade = UnityEngine.Sprite.Create(tex, new Rect(0, 0, 4, h), new Vector2(0.5f, 0.5f), 100f, 0, SpriteMeshType.FullRect);
+                return verticalFade;
+            }
+        }
+
+        /// <summary>
+        /// A modal overlay that covers the *whole* screen (including the notch strips outside the safe area) and blocks
+        /// clicks: a flat dim plus a vignette, with a safe-area layer on top for the content. Returns that content layer;
+        /// close it with <see cref="CloseModal"/>. With <paramref name="hide"/> set, the layer underneath is faded out
+        /// while the modal is open (title screen panels), so its text never shows through the dim.
+        /// </summary>
+        public static RectTransform Modal(Transform canvasOrLayer, float dimAlpha = 0.7f, RectTransform hide = null)
+        {
+            var root = new GameObject("Modal", typeof(RectTransform));
+            var rrt = root.GetComponent<RectTransform>();
+            // Mount on the canvas itself so the dim is not clipped to the safe area of a layer.
+            Transform mount = canvasOrLayer;
+            while (mount.parent != null && mount.GetComponent<Canvas>() == null) mount = mount.parent;
+            rrt.SetParent(mount, false);
+            Stretch(rrt);
+            root.transform.SetAsLastSibling();
+            var m = root.AddComponent<ModalRoot>();
+            var dim = Rect(rrt, 0, 0, 10, 10, 0x05060a, Mathf.Clamp01(dimAlpha * 0.82f));
+            Stretch(dim.rectTransform);
+            dim.raycastTarget = true;
+            var vig = Rect(rrt, 0, 0, 10, 10, 0x05060a, Mathf.Clamp01(dimAlpha * 0.75f));
+            Stretch(vig.rectTransform);
+            vig.sprite = Vignette;
+            vig.type = Image.Type.Simple;
+            vig.preserveAspect = false;
+            if (hide != null)
+            {
+                var cg = hide.GetComponent<CanvasGroup>() ?? hide.gameObject.AddComponent<CanvasGroup>();
+                cg.alpha = 0f; cg.interactable = false; cg.blocksRaycasts = false;
+                m.hidden = cg;
+            }
+            m.content = Layer(rrt, "Content");
+            m.FadeIn();
+            return m.content;
+        }
+
+        /// <summary>Destroys the modal that <paramref name="inside"/> belongs to (any transform under it works).</summary>
+        public static void CloseModal(Transform inside)
+        {
+            var m = inside != null ? inside.GetComponentInParent<ModalRoot>() : null;
+            if (m != null) Object.Destroy(m.gameObject);
+        }
+    }
+
+    /// <summary>Root of a <see cref="UiKit.Modal"/>: fades in over a few frames and restores whatever it hid when destroyed.</summary>
+    public class ModalRoot : MonoBehaviour
+    {
+        public RectTransform content;
+        public CanvasGroup hidden;
+        CanvasGroup group;
+        float t;
+        const float FadeSeconds = 0.18f;
+
+        public void FadeIn()
+        {
+            group = gameObject.AddComponent<CanvasGroup>();
+            group.alpha = 0f;
+        }
+
+        void Update()
+        {
+            if (group == null || group.alpha >= 1f) return;
+            t += Time.unscaledDeltaTime;
+            float k = Mathf.Clamp01(t / FadeSeconds);
+            group.alpha = k * k * (3 - 2 * k);
+            if (content != null) content.localScale = Vector3.one * Mathf.Lerp(1.03f, 1f, k);
+        }
+
+        void OnDestroy()
+        {
+            if (hidden != null) { hidden.alpha = 1f; hidden.interactable = true; hidden.blocksRaycasts = true; }
         }
     }
 

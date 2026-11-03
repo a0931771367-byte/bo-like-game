@@ -60,13 +60,16 @@ namespace BoLike.Game
         static float PixelSize() => SpriteBank.Pixel.bounds.size.x;
 
         /// <summary>Average colour of the painting's bottom row. Compressed iOS textures aren't readable, so the
-        /// shipped paintings are tabled (measured from the PNGs); anything else falls back to dark soil.</summary>
+        /// shipped paintings are tabled (measured from the PNGs with tools/bg_bottom_row.py); anything else falls back
+        /// to dark soil. The band under the strip has to continue the walkable ground: the old chapter 1/2 values were
+        /// taken from earlier paintings (brown soil / dark loam) and drew a "floor" 110 px below where the fighters
+        /// actually stand, so the grass read as a wall (罐子 11/3 #2).</summary>
         static Color BottomRowColour(Texture2D tex)
         {
             switch (tex.name)
             {
-                case "chapter1": return new Color(0.326f, 0.248f, 0.18f);
-                case "chapter2": return new Color(0.143f, 0.149f, 0.13f);
+                case "chapter1": return new Color(0.498f, 0.785f, 0.253f);
+                case "chapter2": return new Color(0.379f, 0.581f, 0.385f);
                 case "chapter3": return new Color(0.827f, 0.604f, 0.373f);
                 case "chapter3_boss": return new Color(0.876f, 0.521f, 0.246f);
             }
