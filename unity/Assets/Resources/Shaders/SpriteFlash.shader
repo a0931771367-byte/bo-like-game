@@ -7,6 +7,7 @@ Shader "BoLike/SpriteFlash"
         _Color ("Tint", Color) = (1,1,1,1)
         _FlashColor ("Flash Colour", Color) = (1,1,1,1)
         _Flash ("Flash Amount", Range(0,1)) = 0
+        _Shade ("Ground Shade", Range(0,1)) = 0
     }
     SubShader
     {
@@ -30,6 +31,7 @@ Shader "BoLike/SpriteFlash"
             fixed4 _Color;
             fixed4 _FlashColor;
             float _Flash;
+            float _Shade;
 
             v2f vert(appdata_t IN)
             {
@@ -43,6 +45,9 @@ Shader "BoLike/SpriteFlash"
             fixed4 frag(v2f IN) : SV_Target
             {
                 fixed4 c = tex2D(_MainTex, IN.texcoord) * IN.color;
+                // Ground shade: the lowest third of the canvas (feet, shins) is darkened a little so the body reads
+                // as standing on the ground instead of pasted over it. Frames keep the feet on the bottom edge.
+                c.rgb *= lerp(1.0 - _Shade, 1.0, saturate(IN.texcoord.y / 0.35));
                 c.rgb = lerp(c.rgb, _FlashColor.rgb, _Flash);
                 c.rgb *= c.a;
                 return c;

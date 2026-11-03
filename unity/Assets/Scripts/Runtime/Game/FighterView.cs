@@ -14,6 +14,9 @@ namespace BoLike.Game
         [System.NonSerialized] public Fighter fighter;
         Transform view;
         SpriteRenderer body, shadow, hpBg, hpBar, aura;
+        /// <summary>Second body renderer for frame cross-fades: shows the upcoming walk/idle frame fading in over the current one.</summary>
+        SpriteRenderer bodyNext;
+        MaterialPropertyBlock mpbNext;
         /// <summary>Art's hit poses for enemies (<id>_hurt/_knock/_down/_flat); null when the monster has none yet.</summary>
         Sprite sideSprite, hurtSprite, knockSprite, downSprite, flatSprite, pileSprite;
         /// <summary>ruinGuardian extras (art dept 11/1): _slam 砸地, _beam 雷射起手, _petrify 石化, _phase2 狂怒碎甲.</summary>
@@ -31,6 +34,26 @@ namespace BoLike.Game
         Color baseTint = Color.white;
         static readonly int FlashId = Shader.PropertyToID("_Flash");
         static readonly int FlashColorId = Shader.PropertyToID("_FlashColor");
+        static readonly int ShadeId = Shader.PropertyToID("_Shade");
+
+        // ---- motion smoothing (罐子 11/4: 動畫要像參考影片一樣順、有重量) ----
+        // Every procedural pose value runs through a damped spring, so a state change flows over a few frames with
+        // follow-through, and landings / hits kick the springs for a squash that rebounds on its own.
+        Spring leanS = new(0), sxS = new(1), syS = new(1);
+        /// <summary>Walk cycle position in frames (fractional); advances with the fighter's actual speed so the feet don't slide.</summary>
+        float walkPhase;
+        /// <summary>Idle cycle position in frames (fractional) for the idle cross-fade.</summary>
+        float idlePhase;
+        int lastWalkFrame = -1;
+        FighterState prevState;
+        float prevZ;
+        bool attackActiveKicked;
+        /// <summary>Set by the state code when the springs must track the target exactly this frame (the roll's 360° turn).</summary>
+        bool snapPose;
+        /// <summary>Cross-fade request for this frame: the sprite to fade in and how far along (0 = none).</summary>
+        Sprite nextSprite; float nextBlend;
+        const float ShadeAmount = 0.10f;
+        const float WalkFrameMs = 75f, IdleFrameMs = 170f;
 
         public SpriteRenderer Body => body;
         public float BodyScale => bodyScale;
@@ -119,6 +142,12 @@ namespace BoLike.Game
             }
             body.material = SpriteBank.FlashMaterial;
             body.color = baseTint;
+            bodyNext = MakeSprite("BodyNext", view, null);
+            bodyNext.material = SpriteBank.FlashMaterial;
+            bodyNext.enabled = false;
+            mpbNext = new MaterialPropertyBlock();
+            prevState = f.state;
+            prevZ = f.z;
             SetBodyScale(1, 1);
             Sync();
         }
@@ -149,31 +178,99 @@ namespace BoLike.Game
             var f = fighter;
             transform.position = Space.ToWorld(f.x, f.y);
             int order = Space.Order(f.y);
-            float shadowScale = Mathf.Max(0.45f, 1 - f.z / 400f);
-            shadow.transform.localScale = new Vector3(f.w * 1.1f / 64f * shadowScale, Mathf.Max(12f, f.w * 0.28f) / 64f * shadowScale, 1);
-            shadow.sortingOrder = order - 1;
             body.sortingOrder = order;
             if (aura != null) aura.sortingOrder = order - 1;
             if (hpBg != null) { hpBg.sortingOrder = order + 1; hpBar.sortingOrder = order + 2; }
 
+            // The sim's scaled dt: the springs hold still through hit-stop like everything else.
+            float dt = Mathf.Clamp(f.world.LastDt, 0f, 0.05f);
+            bool stateChanged = f.state != prevState;
+            bool landed = prevZ > 0f && f.z <= 0f;
+
             float lean = 0, sx = 1, sy = 1, bob = 0, alpha = 1;
             pivotUp = 0;
-            if (f is Player p) SyncPlayer(p, ref lean, ref sx, ref sy, ref bob, ref alpha);
-            else if (f is Enemy e) SyncEnemy(e, ref lean, ref sx, ref sy, ref alpha);
+            snapPose = false;
+            nextSprite = null; nextBlend = 0;
+            if (f is Player p) SyncPlayer(p, ref lean, ref sx, ref sy, ref bob, ref alpha, stateChanged);
+            else if (f is Enemy e) SyncEnemy(e, ref lean, ref sx, ref sy, ref alpha, stateChanged);
 
+            // Landing: squash that springs back by itself (any state; Knock lands into Down which adds its own pose).
+            if (landed && f.state != FighterState.Dodge)
+            {
+                float k = Mathf.Clamp(-prevVz / 900f, 0.6f, 1.6f);
+                syS.velocity -= 3.2f * k;
+                sxS.velocity += 2.2f * k;
+            }
+
+            // Springs. Lean is unwrapped first so the end of a 360° roll settles to 0 without unwinding.
+            if (snapPose) { leanS.Snap(lean); sxS.Snap(sx); syS.Snap(sy); }
+            else
+            {
+                leanS.value = lean - AnimCurves.DeltaAngle(leanS.value, lean);
+                leanS.Step(lean, dt, 13f, 0.72f);
+                sxS.Step(sx, dt, 15f, 0.7f);
+                syS.Step(sy, dt, 15f, 0.7f);
+            }
+            float L = leanS.value, SX = Mathf.Clamp(sxS.value, 0.5f, 1.8f), SY = Mathf.Clamp(syS.value, 0.4f, 1.8f);
+
+            // Hit-stop: the striker and the struck shiver 1.5 px and swell 4% while the sim is slowed.
+            float jitter = 0;
+            bool struck = f.Now < f.flashUntil;
+            bool striking = f is Player pp && pp.state == FighterState.Attack;
+            if (f.world.InHitStop && (struck || striking))
+            {
+                jitter = (Time.frameCount & 1) == 0 ? 1.5f : -1.5f;
+                SX *= 1.04f; SY *= 0.97f;
+            }
+
+            // `bob` lifts the body (positive = up; the Phaser port had the sign inverted, so the walk bob and the roll's
+            // arc used to push the sprite into the ground).
             // Sprites pivot at the feet, so `lean` tilts around the ground contact. A roll must turn about the body's
             // centre instead: the body is dropped by half its (squashed) height inside the view and the view raised by
             // the same amount, so the rotation revolves the sprite around its middle while the feet still land on y.
-            view.localPosition = new Vector3(0, (f.z - bob + pivotUp) * Space.Scale, 0);
-            body.transform.localPosition = new Vector3(0, -pivotUp * Space.Scale, 0);
+            view.localPosition = new Vector3(0, (f.z + bob + pivotUp) * Space.Scale, 0);
+            body.transform.localPosition = new Vector3(jitter * Space.Scale, -pivotUp * Space.Scale, 0);
             view.localScale = new Vector3(f.facing, 1, 1);
             // Phaser angles are clockwise; Unity's z rotation is counter-clockwise.
-            view.localRotation = Quaternion.Euler(0, 0, -lean * f.facing);
-            SetBodyScale(sx, sy);
+            view.localRotation = Quaternion.Euler(0, 0, -L * f.facing);
+            SetBodyScale(SX, SY);
+
+            // Ground shadow: shrinks and fades with height (jump, roll arc and the walk bob alike); darkest on contact.
+            float lift = Mathf.Max(0f, f.z + bob);
+            float shadowScale = Mathf.Max(0.45f, 1 - lift / 400f) * shadowMul;
+            shadow.transform.localScale = new Vector3(f.w * 1.1f / 64f * shadowScale * Mathf.Lerp(1f, SX, 0.5f), Mathf.Max(12f, f.w * 0.28f) / 64f * shadowScale, 1);
+            shadow.sortingOrder = order - 1;
+            if (!(f is Enemy en && (en.state == FighterState.Dying || en.Pile)))
+                shadow.color = new Color(0, 0, 0, 0.3f * Mathf.Clamp(1 - lift / 300f, 0.45f, 1f) * alpha);
 
             var c = baseTint;
             c.a = alpha;
             body.color = c;
+            bool flashing = struck;
+            body.GetPropertyBlock(mpb);
+            mpb.SetFloat(FlashId, flashing ? 1f : 0f);
+            mpb.SetColor(FlashColorId, Colors.Rgb(f.flashColor));
+            mpb.SetFloat(ShadeId, ShadeAmount);
+            body.SetPropertyBlock(mpb);
+
+            // Frame cross-fade: the next frame sits on top of the current one and fades in over the frame's duration.
+            if (nextSprite != null && nextBlend > 0.001f && nextSprite != body.sprite)
+            {
+                bodyNext.enabled = true;
+                bodyNext.sprite = nextSprite;
+                bodyNext.sortingOrder = order + 1;
+                bodyNext.transform.localPosition = body.transform.localPosition;
+                bodyNext.transform.localScale = body.transform.localScale;
+                var cn = c; cn.a = alpha * nextBlend;
+                bodyNext.color = cn;
+                bodyNext.GetPropertyBlock(mpbNext);
+                mpbNext.SetFloat(FlashId, flashing ? 1f : 0f);
+                mpbNext.SetColor(FlashColorId, Colors.Rgb(f.flashColor));
+                mpbNext.SetFloat(ShadeId, ShadeAmount);
+                bodyNext.SetPropertyBlock(mpbNext);
+            }
+            else if (bodyNext.enabled) bodyNext.enabled = false;
+
             if (outlines != null)
                 foreach (var o in outlines)
                 {
@@ -182,16 +279,23 @@ namespace BoLike.Game
                     o.sortingOrder = order - 1;
                     o.color = new Color(1, 1, 1, alpha);
                 }
-            bool flashing = f.Now < f.flashUntil;
-            body.GetPropertyBlock(mpb);
-            mpb.SetFloat(FlashId, flashing ? 1f : 0f);
-            mpb.SetColor(FlashColorId, Colors.Rgb(f.flashColor));
-            body.SetPropertyBlock(mpb);
+
+            prevState = f.state;
+            prevZ = f.z;
+            prevVz = f.vz;
         }
+        float prevVz;
+        /// <summary>Extra shadow shrink set by the enemy death pose (1 = none).</summary>
+        float shadowMul = 1f;
 
         // ---------- player ----------
 
-        Sprite FrameFor(Player p)
+        /// <summary>
+        /// Picks the frame for this state. Walk and idle are cyclic and come with a cross-fade into the following
+        /// frame (the art is 8 frames at 75 ms ≈ 13 fps; the fade fills the gaps at 60 fps). Attack frames are
+        /// key poses held by the hit timing and stay crisp.
+        /// </summary>
+        Sprite FrameFor(Player p, float dt, bool stateChanged)
         {
             var a = anim;
             string id = classId;
@@ -199,7 +303,27 @@ namespace BoLike.Game
             string key;
             switch (p.state)
             {
-                case FighterState.Walk: key = SpriteBank.AnimKey(id, "walk", (int)(t / 80) % a.walk); break;
+                case FighterState.Walk:
+                {
+                    if (stateChanged) { walkPhase = 0; lastWalkFrame = -1; }
+                    // Cycle speed follows the real speed (slow stick = slow steps); the lane axis counts 1/0.6 like the sim.
+                    float move = Mathf.Max(1f, (float)p.d.move);
+                    float speed = Mathf.Sqrt(p.vx * p.vx + (p.vy / 0.6f) * (p.vy / 0.6f));
+                    walkSpeedK = Mathf.Clamp(speed / move, 0.5f, 1.4f);
+                    walkPhase += dt * 1000f / WalkFrameMs * walkSpeedK;
+                    int fi = (int)walkPhase % a.walk;
+                    float frac = walkPhase - Mathf.Floor(walkPhase);
+                    key = SpriteBank.AnimKey(id, "walk", fi);
+                    nextSprite = SpriteBank.Get(SpriteBank.AnimKey(id, "walk", (fi + 1) % a.walk));
+                    nextBlend = AnimCurves.CrossFade(frac);
+                    // Footfalls on frame 0 and the opposite frame (two steps per cycle).
+                    if (fi != lastWalkFrame)
+                    {
+                        if (lastWalkFrame >= 0 && (fi == 0 || fi == a.walk / 2) && p.z <= 0f) p.Fx.Step(p.x, p.y, p.facing);
+                        lastWalkFrame = fi;
+                    }
+                    break;
+                }
                 case FighterState.Attack:
                 {
                     var h = p.Timing(p.cls.combo[p.combo]);
@@ -212,45 +336,93 @@ namespace BoLike.Game
                 case FighterState.Dodge: key = SpriteBank.AnimKey(id, "walk", Mathf.Min(2, a.walk - 1)); break;
                 case FighterState.Cast:
                 case FighterState.CastEnd: key = SpriteBank.AnimKey(id, "attack", Mathf.Min(t < 200 ? 0 : 3, a.attack - 1)); break;
-                default: key = SpriteBank.AnimKey(id, "idle", (int)(p.Now / 170) % a.idle); break;
+                default:
+                {
+                    idlePhase += dt * 1000f / IdleFrameMs;
+                    int fi = (int)idlePhase % a.idle;
+                    key = SpriteBank.AnimKey(id, "idle", fi);
+                    nextSprite = SpriteBank.Get(SpriteBank.AnimKey(id, "idle", (fi + 1) % a.idle));
+                    nextBlend = AnimCurves.CrossFade(idlePhase - Mathf.Floor(idlePhase));
+                    break;
+                }
             }
             return SpriteBank.Get(key);
         }
+        float walkSpeedK = 1f;
 
-        void SyncPlayer(Player p, ref float lean, ref float sx, ref float sy, ref float bob, ref float alpha)
+        void SyncPlayer(Player p, ref float lean, ref float sx, ref float sy, ref float bob, ref float alpha, bool stateChanged)
         {
             float t = p.stateTime;
             double now = p.Now;
+            float dt = Mathf.Clamp(p.world.LastDt, 0f, 0.05f);
             if (anim != null)
             {
-                var s = FrameFor(p);
+                var s = FrameFor(p, dt, stateChanged);
                 if (s != null && body.sprite != s) body.sprite = s;
             }
-            float k = anim != null ? 0.35f : 1f; // frames carry most of the motion; keep a little squash on top
+            else if (p.state == FighterState.Walk) { walkPhase += dt * 1000f / WalkFrameMs; walkSpeedK = 1f; }
+            float k = anim != null ? 1f : 1.5f; // without frames the procedural motion has to carry everything
             float breath = Mathf.Sin((float)(now / 420));
+            if (stateChanged)
+            {
+                attackActiveKicked = false;
+                // Entry impulses: the pose snaps toward the new state and the springs add the follow-through.
+                switch (p.state)
+                {
+                    case FighterState.Hurt: leanS.velocity -= 260f; sxS.velocity -= 1.6f; break;
+                    case FighterState.Knock: leanS.velocity -= 400f; break;
+                    case FighterState.Idle: if (prevState == FighterState.Walk) { syS.velocity -= 1.0f; leanS.velocity -= 60f; } break; // stops short
+                    case FighterState.Jump: syS.velocity += 2.4f; sxS.velocity -= 1.2f; break; // take-off stretch
+                    case FighterState.Attack: break;
+                }
+            }
             switch (p.state)
             {
-                case FighterState.Idle: sy = 1 + breath * 0.028f * k; sx = 1 - breath * 0.014f * k; lean = Mathf.Sin((float)(now / 840)) * 1.5f * k; break;
+                case FighterState.Idle:
+                    sy = 1 + breath * 0.022f * k; sx = 1 - breath * 0.011f * k;
+                    lean = Mathf.Sin((float)(now / 840)) * 1.2f * k;
+                    break;
                 case FighterState.Walk:
                 {
-                    float ph = t / 75f;
-                    bob = Mathf.Abs(Mathf.Sin(ph)) * 6 * k;
-                    sy = 1 + Mathf.Sin(ph) * 0.04f * k;
-                    sx = 1 - Mathf.Sin(ph) * 0.03f * k;
-                    lean = (7 + Mathf.Sin(ph * 2) * 2.5f) * k;
+                    // Gait tied to the frames: two steps per cycle, lowest on contact, 6 px (≈5% of the body) at the top,
+                    // a touch of squash into the contact and stretch over the top, a forward lean that grows with speed.
+                    int framesPerStep = Mathf.Max(1, (anim != null ? anim.walk : 8) / 2);
+                    float stepPhase = walkPhase / framesPerStep;
+                    float lift = AnimCurves.GaitLift(stepPhase);
+                    bob = lift * 6f * k;
+                    sy = 0.975f + 0.045f * lift * k;
+                    sx = 1.015f - 0.03f * lift * k;
+                    lean = (5f + 3.5f * walkSpeedK + Mathf.Sin(stepPhase * Mathf.PI * 2f) * 1.2f) * (anim != null ? 1f : 1.2f);
                     break;
                 }
                 case FighterState.Guard: sx = 0.92f; sy = 1 + breath * 0.015f; lean = -6; break;
                 case FighterState.Attack:
                 {
                     var h = p.Timing(p.cls.combo[p.combo]);
-                    if (t < h.startup) { sx = 1 - 0.1f * k * (1 - t / h.startup); lean = -8 * k; }
-                    else if (t < h.startup + h.active) { sx = 1 + 0.15f * k; sy = 1 - 0.05f * k; lean = 10 * k; }
-                    else { sx = 1 + 0.05f * k; lean = 6 * k; }
+                    if (t < h.startup)
+                    {
+                        // Anticipation: gathers back quickly, then holds the wind-up.
+                        float u = AnimCurves.EaseOutQuad(t / Mathf.Max(1f, h.startup));
+                        sx = 1 - 0.08f * u; sy = 1 + 0.04f * u; lean = -7f * u;
+                    }
+                    else if (t < h.startup + h.active)
+                    {
+                        // Hit: a smear kicked into the springs on the first active frame, then a long, low lunge.
+                        if (!attackActiveKicked) { attackActiveKicked = true; sxS.velocity += 3.2f; syS.velocity -= 1.2f; leanS.velocity += 320f; }
+                        float u = (t - h.startup) / Mathf.Max(1f, h.active);
+                        sx = 1.12f - 0.06f * u; sy = 0.96f; lean = 9f;
+                    }
+                    else { sx = 1.02f; lean = 5f; }
                     break;
                 }
                 case FighterState.AirAttack: lean = 18; sx = 1.1f; break;
-                case FighterState.Jump: sy = 1.08f; sx = 0.95f; lean = 5; break;
+                case FighterState.Jump:
+                {
+                    // Stretch while rising, neutral at the apex, a slight lean-in while falling.
+                    float up = Mathf.Clamp01(p.vz / 700f), down = Mathf.Clamp01(-p.vz / 900f);
+                    sy = 1 + 0.08f * up + 0.02f * down; sx = 1 - 0.05f * up - 0.01f * down; lean = 4 + 3 * down;
+                    break;
+                }
                 case FighterState.Cast: sy = 1.05f + Mathf.Sin(t / 50f) * 0.02f; lean = -4; break;
                 case FighterState.CastEnd: sx = 1.1f; lean = 8; break;
                 case FighterState.Dodge:
@@ -259,7 +431,7 @@ namespace BoLike.Game
                     switch (p.Dodge.kind)
                     {
                         case DodgeKind.Blink: sx = 1 - 0.25f * u; sy = 1 + 0.15f * u; break;                     // mage: gathers, then vanishes (alpha below)
-                        case DodgeKind.Roll: Roll(u, ref lean, ref sx, ref sy, ref bob); break;                      // archer: forward roll (below)
+                        case DodgeKind.Roll: Roll(u, ref lean, ref sx, ref sy, ref bob); snapPose = true; break;    // archer: forward roll (below); the turn is exact, no spring lag
                         case DodgeKind.JetDash: lean = 24; sx = 1.15f; sy = 0.92f; break;                         // merchant: jet slide
                         case DodgeKind.ShadowStep: lean = 32; sx = 1.15f; sy = 0.88f; break;                      // thief: low dash
                         case DodgeKind.GraceStep: lean = 8; bob = 10 + Mathf.Sin(u * Mathf.PI) * 8; sy = 1.04f; break; // acolyte: glides
@@ -267,7 +439,7 @@ namespace BoLike.Game
                     }
                     break;
                 }
-                case FighterState.Hurt: lean = -14; sx = 0.92f; break;
+                case FighterState.Hurt: lean = -12; sx = 0.94f; sy = 1.03f; break;
                 case FighterState.Knock: lean = -45; break;
                 case FighterState.Down:
                 case FighterState.Dead: lean = -90; break;
@@ -327,8 +499,18 @@ namespace BoLike.Game
 
         // ---------- enemy ----------
 
-        void SyncEnemy(Enemy e, ref float lean, ref float sx, ref float sy, ref float alpha)
+        void SyncEnemy(Enemy e, ref float lean, ref float sx, ref float sy, ref float alpha, bool stateChanged)
         {
+            if (stateChanged)
+            {
+                switch (e.state)
+                {
+                    case FighterState.Hurt: leanS.velocity -= 220f; sxS.velocity -= 1.4f; break;
+                    case FighterState.Knock: leanS.velocity -= 380f; break;
+                    case FighterState.Attack:
+                    case FighterState.Lunge: sxS.velocity += 2.4f; leanS.velocity += 260f; break;
+                }
+            }
             if (hpBar != null)
             {
                 float frac = Mathf.Max(0, e.hp / e.maxHp);
@@ -384,7 +566,7 @@ namespace BoLike.Game
                 float k = Mathf.Clamp01((ms - 240f) / 200f);
                 alpha = 1 - k;
                 shadow.color = new Color(0, 0, 0, 0.28f * (1 - k));
-                shadow.transform.localScale = new Vector3(shadow.transform.localScale.x * (1 - 0.5f * k), shadow.transform.localScale.y * (1 - 0.5f * k), 1);
+                shadowMul = 1 - 0.5f * k;
                 return;
             }
             switch (e.state)

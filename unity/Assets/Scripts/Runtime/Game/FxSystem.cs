@@ -169,6 +169,29 @@ namespace BoLike.Game
             }
         }
 
+        /// <summary>
+        /// Footstep (罐子 11/4 animation pass). Two 3–5 px motes drift back and up from the heel at 30% alpha over
+        /// 0.22 s. The earlier footstep puffs were removed because they read as small explosions on the phone; this
+        /// one is sized to be felt rather than seen.
+        /// </summary>
+        public void Step(float x, float y, int facing)
+        {
+            for (int i = 0; i < 2; i++)
+            {
+                float px = x - facing * (6 + R(0, 8)), py = y - R(0, 3);
+                float rad = 3 + R(0, 2);
+                var it = Make("Step", SpriteBank.SoftCircle, px, py, 0xf2ead8, 0.3f, Space.Order(y) + 1, 0.2f + R(0, 0.06f));
+                var end = it.start + new Vector3(-facing * (10 + R(0, 10)) * Space.Scale, (6 + R(0, 8)) * Space.Scale, 0);
+                it.tick = (o, k) =>
+                {
+                    float e = EaseOutCubic(k);
+                    o.transform.position = Vector3.Lerp(o.start, end, e);
+                    o.transform.localScale = Vector3.one * (rad / 32f) * Mathf.Lerp(1, 1.6f, e);
+                    var c = o.sr.color; c.a = 0.3f * (1 - e); o.sr.color = c;
+                };
+            }
+        }
+
         /// <summary>A fading copy of the fighter's sprite (dash afterimage).</summary>
         public void Ghost(Fighter f)
         {

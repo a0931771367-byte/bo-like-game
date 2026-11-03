@@ -12,6 +12,8 @@ namespace BoLike.Sim
         void Ring(float x, float y, float radius, int color, float depthY);
         void Pillar(float x, float y, int color);
         void Dust(float x, float y, int n = 5, float size = 1f);
+        /// <summary>A footstep: two faint motes kicked back from the heel, far smaller than <see cref="Dust"/>.</summary>
+        void Step(float x, float y, int facing);
         void Ghost(Fighter f);
         void Flash(float alpha = 0.8f, float ms = 260f);
         void Aura(float x, float y, int color);
@@ -32,6 +34,7 @@ namespace BoLike.Sim
         public void Ring(float x, float y, float radius, int color, float depthY) { }
         public void Pillar(float x, float y, int color) { }
         public void Dust(float x, float y, int n = 5, float size = 1f) { }
+        public void Step(float x, float y, int facing) { }
         public void Ghost(Fighter f) { }
         public void Flash(float alpha = 0.8f, float ms = 260f) { }
         public void Aura(float x, float y, int color) { }
