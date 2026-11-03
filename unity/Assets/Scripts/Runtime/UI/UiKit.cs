@@ -184,7 +184,7 @@ namespace BoLike.UI
                     }
                 tex.SetPixels32(px);
                 tex.Apply();
-                vignette = Sprite.Create(tex, new Rect(0, 0, n, n), new Vector2(0.5f, 0.5f), 100f, 0, SpriteMeshType.FullRect);
+                vignette = UnityEngine.Sprite.Create(tex, new Rect(0, 0, n, n), new Vector2(0.5f, 0.5f), 100f, 0, SpriteMeshType.FullRect);
                 return vignette;
             }
         }
@@ -207,7 +207,7 @@ namespace BoLike.UI
                 }
                 tex.SetPixels32(px);
                 tex.Apply();
-                verticalFade = Sprite.Create(tex, new Rect(0, 0, 4, h), new Vector2(0.5f, 0.5f), 100f, 0, SpriteMeshType.FullRect);
+                verticalFade = UnityEngine.Sprite.Create(tex, new Rect(0, 0, 4, h), new Vector2(0.5f, 0.5f), 100f, 0, SpriteMeshType.FullRect);
                 return verticalFade;
             }
         }
