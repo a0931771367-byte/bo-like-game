@@ -143,6 +143,8 @@ namespace BoLike.Sim
         }
 
         public void HitStop(float ms) => hitStopUntil = Math.Max(hitStopUntil, Now + ms);
+        /// <summary>True while a hit-stop slows the simulation; the views add a micro-shake and a scale punch.</summary>
+        public bool InHitStop => Now < hitStopUntil;
         public void Toast(string msg) => Toasted?.Invoke(msg);
         public void Delay(float ms, Action act) => delayed.Add((Now + ms, act));
 
